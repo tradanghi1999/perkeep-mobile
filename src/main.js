@@ -672,7 +672,7 @@ function renderFilters() {
   if (filterActive()) {
     const clr = document.createElement('button');
     clr.className = 'fchip clear';
-    clr.textContent = t('fl_clear');
+    clr.innerHTML = `${icon('filterOff', 16)}<b>${esc(t('fl_clear'))}</b>`;
     clr.onclick = () => {
       Object.assign(filters, { type: 'all', time: 'any', sort: 'newest', by: 'name', keyword: '', advanced: '' });
       qEl.value = '';
@@ -701,7 +701,7 @@ function openGroupSheet(g) {
     <div class="expr" id="g-expr"></div>
     <p class="meta" id="g-note"></p>
     ${showAdv ? `<button class="rowbtn" id="g-apply">${icon('check')}<span>${esc(t('fl_apply'))}</span></button>` : ''}
-    <button class="rowbtn" id="g-reset">${icon('close')}<span>${esc(t('fl_clear'))}</span></button>`);
+    <button class="rowbtn" id="g-reset">${icon('filterOff')}<span>${esc(t('fl_clear'))}</span></button>`);
 
   const advInput = sheetBody.querySelector('#g-adv');
   const paintExpr = () => {

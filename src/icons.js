@@ -26,6 +26,8 @@ const P = {
   archive: '<rect x="3" y="4" width="18" height="5" rx="1.8"/><path d="M5 9v10.5h14V9"/><path d="M10 13h4"/>',
   file: '<path d="M14 3.5H7.5A2.5 2.5 0 0 0 5 6v12a2.5 2.5 0 0 0 2.5 2.5h9A2.5 2.5 0 0 0 19 18V8.5z"/><path d="M14 3.5V8.5h5"/>',
   close: '<path d="M6.5 6.5l11 11M17.5 6.5l-11 11"/>',
+  // phễu gạch chéo = xoá bộ lọc (khác hẳn icon đóng ✕)
+  filterOff: '<path d="M3.5 5.5h17l-6.5 7.3v5.7l-4-2v-3.7z"/><path d="M4 4l16 16"/>',
   chevron: '<path d="M9.5 6l6 6-6 6"/>',
   check: '<path d="M5 12.5 9.5 17 19 7.5"/>'
 };
