@@ -49,8 +49,8 @@ jobs:
         run: |
           MAN=$(find android/app/build/intermediates -name AndroidManifest.xml -path "*merged_manifest*" | head -1)
           echo "merged manifest: $MAN"
-          echo "--- quyền / foregroundServiceType ---"
-          grep -Eo 'android.permission.[A-Z_]+|foregroundServiceType="[A-Za-z]+"|usesCleartextTraffic="true"' "$MAN" | sort -u
+          echo "--- quyền / foregroundServiceType / provider ---"
+          grep -Eo 'android.permission.[A-Z_]+|foregroundServiceType="[A-Za-z]+"|usesCleartextTraffic="true"|androidx.core.content.FileProvider' "$MAN" | sort -u
           echo "--- APK ---"
           ls -lh android/app/build/outputs/apk/debug/app-debug.apk
 

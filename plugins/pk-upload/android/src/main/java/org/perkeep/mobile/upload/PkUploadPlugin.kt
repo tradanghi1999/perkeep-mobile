@@ -266,6 +266,34 @@ class PkUploadPlugin : Plugin() {
         }
     }
 
+    /** Mở file bằng app khác (VLC/MX Player): tải về cache rồi ACTION_VIEW. */
+    @PluginMethod
+    fun openExternally(call: PluginCall) {
+        val ref = call.getString("fileRef") ?: run { call.reject("Thiếu fileRef"); return }
+        val args = MediaOpener.Args(
+            base = call.getString("base") ?: "",
+            user = call.getString("user"),
+            pass = call.getString("pass"),
+            fileRef = ref,
+            mime = call.getString("mime") ?: "",
+            name = call.getString("name") ?: ""
+        )
+        if (args.base.isBlank()) {
+            call.resolve(JSObject().put("opened", false))
+            return
+        }
+        // Tải file có thể lâu (file to) -> chạy thread nền, không chặn bridge
+        Thread {
+            val ok = try {
+                MediaOpener.downloadAndOpen(context.applicationContext, args)
+            } catch (t: Throwable) {
+                Log.w(TAG, "openExternally lỗi", t)
+                false
+            }
+            call.resolve(JSObject().put("opened", ok))
+        }.start()
+    }
+
     /** Log crash lần trước (không cần adb). */
     @PluginMethod
     fun getLastCrash(call: PluginCall) {

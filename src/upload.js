@@ -72,6 +72,24 @@ export async function mediaProxyUrl(server, fileRef) {
   }
 }
 
+/** Mở file bằng app khác (VLC/MX Player): tải về cache rồi hiện danh sách app. */
+export async function openExternally(server, meta) {
+  if (!uploadSupported()) return false;
+  try {
+    const r = await PkUpload.openExternally({
+      fileRef: meta.fileRef,
+      base: server?.url || '',
+      user: server?.user,
+      pass: server?.pass,
+      mime: meta.mime || '',
+      name: meta.name || ''
+    });
+    return !!r?.opened;
+  } catch {
+    return false;
+  }
+}
+
 /** Chọn file rồi đưa vào hàng đợi upload nền. */
 export async function pickAndUpload(server, { wifiOnly = true, tag = 'mobile' } = {}) {
   const picked = await PkUpload.pickFiles();

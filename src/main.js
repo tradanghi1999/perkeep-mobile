@@ -79,6 +79,7 @@ const I18N = {
     tag_fail: 'Không đổi được tag', tag_need_permanode: 'Mục này không phải permanode nên chưa gắn tag được.',
     tag_remove: 'Bỏ tag này',
     vw_view: 'Xem trong app', vw_open_ext: 'Mở bằng ứng dụng khác', vw_unsupported: 'Loại file này không xem được trong app. Bạn mở bằng ứng dụng khác nhé.',
+    vw_open_app: 'Mở bằng VLC / ứng dụng khác', vw_downloading: 'Đang tải file để mở bằng ứng dụng khác…', vw_no_app: 'Không mở được, thử tải về máy',
     vw_need_auth: 'Server cần đăng nhập nên app không phát trực tiếp được. Mở bằng ứng dụng khác hoặc tải về máy nhé.',
     vw_codec: (c) => `Video dùng codec ${c} — máy này không giải mã được. Mở bằng VLC / MX Player, hoặc xem bản đã chuyển sang H.264.`,
     ptr: 'Đang tải lại…',
@@ -150,6 +151,7 @@ const I18N = {
     tag_fail: 'Could not change tag', tag_need_permanode: 'This item is not a permanode, cannot tag it.',
     tag_remove: 'Remove this tag',
     vw_view: 'View in app', vw_open_ext: 'Open with another app', vw_unsupported: 'This file type cannot be previewed in the app. Open it with another app?',
+    vw_open_app: 'Open with VLC / another app', vw_downloading: 'Downloading to open with another app…', vw_no_app: 'Could not open, try downloading',
     vw_need_auth: 'The server requires sign-in, so the app cannot stream this. Open with another app or download it.',
     vw_codec: (c) => `This video uses ${c} — this device cannot decode it. Open with VLC / MX Player, or use an H.264 version.`,
     ptr: 'Reloading…',
@@ -953,11 +955,22 @@ function viewerFallback(meta, why, codec) {
     : t('vw_unsupported');
   vwBody.innerHTML = `<div class="vw-note">${esc(hint)}
     <div class="vw-actions">
-      <button id="vw-open-ext">${icon('external')}<span>${esc(t('vw_open_ext'))}</span></button>
+      <button id="vw-open-ext">${icon('external')}<span>${esc(t('vw_open_app'))}</span></button>
       <button class="alt" id="vw-download">${icon('download')}<span>${esc(t('fa_download'))}</span></button>
     </div></div>`;
-  vwBody.querySelector('#vw-open-ext').onclick = () => window.open(directUrl(meta.fileRef), '_blank');
+  vwBody.querySelector('#vw-open-ext').onclick = () => openWithOtherApp(meta);
   vwBody.querySelector('#vw-download').onclick = () => window.open(directUrl(meta.fileRef), '_blank');
+}
+
+/** Mở file bằng VLC/MX Player (tải về cache rồi chia sẻ), không thì mở trình duyệt. */
+async function openWithOtherApp(meta) {
+  if (up.uploadSupported()) {
+    snack(t('vw_downloading'));
+    const ok = await up.openExternally(active(), meta);
+    if (ok) return;
+    snack(t('vw_no_app'));
+  }
+  window.open(directUrl(meta.fileRef), '_blank');
 }
 
 async function renderViewer() {
@@ -1396,8 +1409,8 @@ function fileActions(blob, meta) {
         closeSheet();
         openViewer(idx >= 0 ? idx : 0);
       } else if (b.dataset.k === 'external') {
-        window.open(directUrl(ref), '_blank');
         closeSheet();
+        await openWithOtherApp(meta);
       } else if (b.dataset.k === 'download') {
         window.open(directUrl(ref), '_blank');
         closeSheet();
