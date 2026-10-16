@@ -62,7 +62,11 @@ class PkUploadPlugin : Plugin() {
             return
         }
         val uris = ArrayList<Uri>()
-        data.clipData?.let { cd -> for (i in 0 until cd.count) uris.add(cd.getUri(i)) }
+        data.clipData?.let { cd ->
+            for (i in 0 until cd.itemCount) {
+                cd.getItemAt(i)?.uri?.let { u -> uris.add(u) }
+            }
+        }
         data.data?.let { uris.add(it) }
         val files = JSArray()
         for (u in uris) {
