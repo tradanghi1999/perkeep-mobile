@@ -1,25 +1,38 @@
-ext {
-    pkUploadVersion = project.hasProperty('pkUploadVersion') ? project.pkUploadVersion : '0.1.0'
-    androidxWorkVersion = project.hasProperty('androidxWorkVersion') ? project.androidxWorkVersion : '2.9.1'
-}
-
+// Plugin local pk-upload.
+// Lưu ý: project Android do Capacitor sinh ra không bật Kotlin plugin,
+// nên phải tự khai classpath kotlin-gradle-plugin ở đây (giống các plugin
+// Capacitor chính thức). Version khớp với Capacitor (1.9.10).
 buildscript {
+    ext.pkKotlinVersion = '1.9.10'
     repositories {
         google()
         mavenCentral()
+    }
+    dependencies {
+        classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$pkKotlinVersion"
     }
 }
 
 apply plugin: 'com.android.library'
 apply plugin: 'kotlin-android'
 
+ext {
+    pkUploadVersion = project.hasProperty('pkUploadVersion') ? project.pkUploadVersion : '0.1.0'
+    androidxWorkVersion = project.hasProperty('androidxWorkVersion') ? project.androidxWorkVersion : '2.9.1'
+}
+
+// Lấy version từ rootProject.ext (Capacitor variables.gradle), có fallback.
+def pkCompileSdk = rootProject.ext.has('compileSdkVersion') ? rootProject.ext.compileSdkVersion : 34
+def pkMinSdk = rootProject.ext.has('minSdkVersion') ? rootProject.ext.minSdkVersion : 23
+def pkTargetSdk = rootProject.ext.has('targetSdkVersion') ? rootProject.ext.targetSdkVersion : 34
+
 android {
     namespace "org.perkeep.mobile.upload"
-    compileSdk project.hasProperty('compileSdkVersion') ? rootProject.ext.compileSdkVersion : 34
+    compileSdk pkCompileSdk
 
     defaultConfig {
-        minSdkVersion project.hasProperty('minSdkVersion') ? rootProject.ext.minSdkVersion : 23
-        targetSdkVersion project.hasProperty('targetSdkVersion') ? rootProject.ext.targetSdkVersion : 34
+        minSdkVersion pkMinSdk
+        targetSdkVersion pkTargetSdk
     }
 
     compileOptions {
@@ -38,7 +51,8 @@ repositories {
 }
 
 dependencies {
-    implementation "androidx.core:core-ktx:1.13.1"
+    implementation "org.jetbrains.kotlin:kotlin-stdlib:$pkKotlinVersion"
+    implementation "androidx.core:core-ktx:1.12.0"
     implementation "androidx.work:work-runtime-ktx:$androidxWorkVersion"
     implementation project(':capacitor-android')
 }
