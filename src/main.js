@@ -771,7 +771,9 @@ function renderFilters() {
     $('btn-view-grid').classList.toggle('on', filters.view === 'grid');
     $('btn-view-list').title = t('view_list');
     $('btn-view-grid').title = t('view_grid');
+    seg.hidden = currentTab() === 't-set';
   }
+  updateTabTitle();
   el.hidden = false;
 }
 
@@ -1063,7 +1065,14 @@ function switchTab(tab) {
   $(tab).classList.add('on');
   document.querySelectorAll('.nav button').forEach((b) => b.classList.toggle('on', b.dataset.t === tab));
   $('fab').hidden = tab === 't-set';
+  $('viewseg').hidden = tab === 't-set'; // tab Cài đặt không cần đổi kiểu xem
+  updateTabTitle();
   renderFilters();
+}
+
+const TAB_TITLES = { 't-home': 'home_title', 't-star': 'star_title', 't-files': 'files_title', 't-set': 'set_title' };
+function updateTabTitle() {
+  $('tab-title').textContent = t(TAB_TITLES[currentTab()] || 'home_title');
 }
 document.querySelectorAll('.nav button').forEach((b) => {
   b.onclick = () => {

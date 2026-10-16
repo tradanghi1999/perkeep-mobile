@@ -116,7 +116,12 @@ h3 { margin: 12px 4px; font-size: 1.0625rem; }
   background: linear-gradient(transparent, #000a); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .tile .noimg { display: flex; align-items: center; justify-content: center; height: 100%; color: var(--green); }
 
-/* ---------- Thanh bộ lọc + nút kiểu xem (cùng hàng, nút ở bên phải) ---------- */
+/* ---------- Hàng tiêu đề mục + nút kiểu xem ---------- */
+.tabhead { display: flex; align-items: center; justify-content: space-between; gap: 8px;
+  padding: 0 12px 6px; flex: none; }
+.tabhead h3 { margin: 0; font-size: 1.0625rem; }
+
+/* ---------- Thanh bộ lọc ---------- */
 .filterbar { display: flex; align-items: center; gap: 8px; padding: 0 12px 10px; flex: none; }
 .filters { flex: 1; min-width: 0; display: flex; gap: 8px; overflow-x: auto; scrollbar-width: none; }
 .filters::-webkit-scrollbar { display: none; }
