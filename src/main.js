@@ -44,9 +44,11 @@ const I18N = {
   vi: {
     ob_title: 'Kết nối Perkeep', ob_sub: 'Nhập địa chỉ server để bắt đầu',
     f_name: 'Tên gợi nhớ', f_url: 'Địa chỉ server', f_user: 'Tài khoản (nếu có)', f_pass: 'Mật khẩu',
-    f_cf_title: 'Cloudflare Access (nếu dùng tunnel)',
-    f_cf_hint: 'Khi Perkeep nằm sau Cloudflare Tunnel + Zero Trust, tạo Service Token trong Cloudflare Zero Trust → Access → Service Auth rồi dán vào đây. Không dùng được luồng xác thực bằng email vì app không mở được trang đăng nhập của Cloudflare.',
+    f_cf_title: 'Cloudflare Access — không bắt buộc (chỉ khi dùng tunnel)',
+    f_cf_hint: 'Để TRỐNG nếu bạn dùng Perkeep qua LAN hoặc chỉ cần tài khoản/mật khẩu ở trên. Chỉ điền khi server nằm sau Cloudflare Tunnel + Zero Trust: tạo Service Token trong Cloudflare Zero Trust → Access → Service Auth, rồi thêm rule Service Auth vào policy của ứng dụng. App gửi cả hai kiểu cùng lúc nếu bạn điền cả hai.',
     f_cf_id: 'CF-Access-Client-Id', f_cf_secret: 'CF-Access-Client-Secret',
+    auth_basic: 'tài khoản/mật khẩu', auth_cf: 'Cloudflare Access',
+    login_how: 'Cách xác thực (chọn 1 hoặc cả 2, đều không bắt buộc):\n• Perkeep userpass → điền Tài khoản / Mật khẩu\n• Cloudflare Access → dán Service Token ở mục bên dưới',
     ob_connect: 'Kết nối →', ob_skip: 'Dùng thử không cần server →',
     ob_bad: 'URL phải bắt đầu http(s)://', ob_fail: 'Không kết nối được. Kiểm tra IP / WiFi / firewall 3179.',
     ob_cf: 'Server đang yêu cầu xác thực Cloudflare Access. Hãy tạo Service Token và dán vào mục Cloudflare Access bên dưới.',
@@ -121,9 +123,11 @@ const I18N = {
   en: {
     ob_title: 'Connect Perkeep', ob_sub: 'Enter your server address to start',
     f_name: 'Display name', f_url: 'Server address', f_user: 'Username (if any)', f_pass: 'Password',
-    f_cf_title: 'Cloudflare Access (for tunnels)',
-    f_cf_hint: 'If Perkeep sits behind a Cloudflare Tunnel + Zero Trust, create a Service Token in Cloudflare Zero Trust → Access → Service Auth and paste it here. Email OTP login cannot be used because the app cannot open Cloudflare’s login page.',
+    f_cf_title: 'Cloudflare Access — optional (tunnels only)',
+    f_cf_hint: 'Leave EMPTY if you reach Perkeep on the LAN or only need username/password above. Fill this only when the server sits behind a Cloudflare Tunnel + Zero Trust: create a Service Token in Cloudflare Zero Trust → Access → Service Auth and add a Service Auth rule to the app policy. If you fill both, the app sends both.',
     f_cf_id: 'CF-Access-Client-Id', f_cf_secret: 'CF-Access-Client-Secret',
+    auth_basic: 'username/password', auth_cf: 'Cloudflare Access',
+    login_how: 'Authentication (pick one or both — none required):\n• Perkeep userpass → fill Username / Password\n• Cloudflare Access → paste a Service Token below',
     ob_connect: 'Connect →', ob_skip: 'Try without a server →',
     ob_bad: 'URL must start with http(s)://', ob_fail: 'Cannot connect. Check IP / WiFi / firewall 3179.',
     ob_cf: 'This server requires Cloudflare Access. Create a Service Token and paste it under Cloudflare Access below.',
@@ -937,20 +941,33 @@ const codecLabel = (codec) => (codec ? CODEC_LABEL[codec] || codec : '');
 // Khi server THẬT SỰ chặn truy cập ẩn danh thì <video> không gửi được header xác thực,
 // phải phát qua proxy nội bộ hoặc tải hẳn về rồi phát từ blob (chỉ file vừa phải).
 const BLOB_PLAY_LIMIT = 150 * 1024 * 1024;
-// Cloudflare Access: OkHttp tự đi theo redirect nên nhận về HTML trang đăng nhập
-const CF_RE = /cloudflareaccess|Cloudflare Access|cf-access/i;
+// Cloudflare Access: OkHttp tự đi theo redirect nên nhận về HTML trang đăng nhập.
+// Regex phải CHẶT: chỉ dùng dấu hiệu đặc trưng của Cloudflare, KHÔNG dùng cụm
+// "Cloudflare Access" vì cụm đó có trong i18n của chính app -> báo nhầm.
+const CF_RE = /cloudflareaccess\.com|cf-access-jwt|cf_chl_|__cf_bm|cf-mitigated/i;
 let authProbe = { base: null, needed: false };
+
+/** Gọi endpoint discovery của Perkeep để biết server có cho truy cập ẩn danh không.
+ *  - Trả JSON có blobRoot  -> Perkeep trả lời bình thường (không cần xác thực)
+ *  - 401/403, HTML, trang Cloudflare... -> cần xác thực  */
+async function probeServer(url, headers = {}) {
+  const b = String(url || '').replace(/\/+$/, '');
+  try {
+    const r = await http(b + '/?camli.mode=config', { headers });
+    let j = null;
+    try { j = JSON.parse(r.text); } catch {}
+    const ok = !!(r.ok && j && j.blobRoot);
+    return { ok, cf: !ok && CF_RE.test(r.text || ''), status: r.status, json: j };
+  } catch (e) {
+    return { ok: false, cf: false, status: 0, error: e.message };
+  }
+}
+
 async function serverNeedsAuth() {
   const b = base();
   if (authProbe.base === b) return authProbe.needed;
-  try {
-    const r = await http(b + '/', {}); // cố tình KHÔNG gửi thông tin đăng nhập
-    const blocked = r.status === 401 || r.status === 403 ||
-      (r.status >= 200 && r.status < 400 && CF_RE.test(r.text || ''));
-    authProbe = { base: b, needed: blocked };
-  } catch {
-    authProbe = { base: b, needed: true };
-  }
+  const p = await probeServer(b); // KHÔNG gửi thông tin đăng nhập
+  authProbe = { base: b, needed: !p.ok };
   return authProbe.needed;
 }
 
@@ -1566,10 +1583,11 @@ function renderSvcSheet() {
   for (const s of servers) {
     let host = s.url;
     try { host = new URL(s.url).host; } catch {}
+    const badges = [s.user ? t('auth_basic') : null, s.cfId ? t('auth_cf') : null].filter(Boolean);
     html += `<div class="svc${s.id === activeId ? ' active' : ''}">
       <button class="pick" data-pick="${esc(s.id)}">
         <span class="sd"></span>
-        <span class="st"><b>${esc(s.name)}</b><small>${esc(host)}${s.user ? ' · ' + esc(s.user) : ''}</small></span>
+        <span class="st"><b>${esc(s.name)}</b><small>${esc(host)}${badges.length ? ' · ' + esc(badges.join(' + ')) : ''}</small></span>
       </button>
       <button class="ib" data-edit="${esc(s.id)}" title="${esc(t('btn_edit'))}">${icon('edit', 19)}</button>
       <button class="ib danger-text" data-rm="${esc(s.id)}" title="${esc(t('btn_del'))}">${icon('trash', 19)}</button>
@@ -1725,14 +1743,9 @@ const currentTab = () => document.querySelector('.tabs.on')?.id || 't-home';
 async function testServer() {
   const b = base();
   if (!b) return false;
-  try {
-    const r = await http(b + '/', { headers: authHeaders() });
-    log(`GET ${b}/ → HTTP ${r.status}`);
-    return r.ok;
-  } catch (e) {
-    log(`FAIL: ${e.message}`);
-    return false;
-  }
+  const p = await probeServer(b, authHeaders());
+  log(`GET ${b}/?camli.mode=config → HTTP ${p.status}${p.ok ? ' · Perkeep OK' : p.cf ? ' · Cloudflare Access chặn' : ''}`);
+  return p.ok;
 }
 
 // ============================================================
@@ -1773,10 +1786,15 @@ $('ob-connect').onclick = async () => {
       headers['CF-Access-Client-Id'] = cfId;
       headers['CF-Access-Client-Secret'] = cfSecret;
     }
-    const r = await http(url + '/', { headers });
-    if (!r.ok) throw new Error('HTTP ' + r.status);
-    // Bị Cloudflare Access chặn thì trả về trang đăng nhập -> phải cảnh báo
-    if (CF_RE.test(r.text || '') && !cfId) throw new Error('CF Access');
+    const p = await probeServer(url, headers);
+    if (!p.ok) {
+      const box = $('ob-cf');
+      if (p.cf && !cfId) {
+        if (box) box.open = true;
+        throw new Error('CF Access');
+      }
+      throw new Error('HTTP ' + p.status);
+    }
     servers = [{ id: 's' + Date.now(), name, url, user, pass, cfId, cfSecret }];
     activeId = servers[0].id;
     save();
