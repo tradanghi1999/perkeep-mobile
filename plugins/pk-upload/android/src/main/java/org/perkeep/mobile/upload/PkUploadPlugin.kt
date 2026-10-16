@@ -247,6 +247,25 @@ class PkUploadPlugin : Plugin() {
         }
     }
 
+    /** URL phát media qua proxy nội bộ (dùng khi server đòi đăng nhập). */
+    @PluginMethod
+    fun mediaUrl(call: PluginCall) {
+        val ref = call.getString("fileRef") ?: run { call.reject("Thiếu fileRef"); return }
+        val base = (call.getString("base") ?: "").trimEnd('/')
+        if (base.isEmpty()) {
+            call.resolve(JSObject().put("url", org.json.JSONObject.NULL))
+            return
+        }
+        try {
+            val srv = MediaProxyServer.get(context)
+            srv.configure(base, call.getString("user"), call.getString("pass"))
+            call.resolve(JSObject().put("url", srv.urlFor(ref)))
+        } catch (t: Throwable) {
+            Log.w(TAG, "không tạo được media proxy url", t)
+            call.resolve(JSObject().put("url", org.json.JSONObject.NULL))
+        }
+    }
+
     /** Log crash lần trước (không cần adb). */
     @PluginMethod
     fun getLastCrash(call: PluginCall) {

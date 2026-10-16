@@ -932,14 +932,18 @@ async function serverNeedsAuth() {
   return authProbe.needed;
 }
 
-/** URL xem được. Ảnh + server đòi đăng nhập thì lấy qua endpoint thumbnail;
- *  còn lại LUÔN phát trực tiếp (Range giúp tua được, không giới hạn kích thước). */
+/** URL xem được:
+ *  - server không đòi đăng nhập: phát trực tiếp (Range, tua được, mọi kích thước)
+ *  - server đòi đăng nhập: qua proxy nội bộ của app (proxy thêm Basic auth rồi stream)
+ *  - nếu proxy không có (chạy web): ảnh dùng endpoint thumbnail, còn lại chịu
+ */
 async function mediaUrl(meta, big = false) {
   if (!meta.fileRef) return null;
-  if (isImage(meta.mime) && (await serverNeedsAuth())) {
-    return await thumbObjectUrl(meta.fileRef, big ? 1600 : 400);
-  }
-  return directUrl(meta.fileRef);
+  if (!(await serverNeedsAuth())) return directUrl(meta.fileRef);
+  const proxied = await up.mediaProxyUrl(active(), meta.fileRef);
+  if (proxied) return proxied;
+  if (isImage(meta.mime)) return await thumbObjectUrl(meta.fileRef, big ? 1600 : 400);
+  return null;
 }
 
 function viewerFallback(meta, why, codec) {

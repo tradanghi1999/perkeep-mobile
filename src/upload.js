@@ -56,6 +56,22 @@ export async function notificationPermission() {
   }
 }
 
+/** URL phát media qua proxy nội bộ (Android) — để <video> xem được file cần đăng nhập. */
+export async function mediaProxyUrl(server, fileRef) {
+  if (!uploadSupported()) return null;
+  try {
+    const r = await PkUpload.mediaUrl({
+      fileRef,
+      base: server?.url || '',
+      user: server?.user,
+      pass: server?.pass
+    });
+    return r?.url || null;
+  } catch {
+    return null;
+  }
+}
+
 /** Chọn file rồi đưa vào hàng đợi upload nền. */
 export async function pickAndUpload(server, { wifiOnly = true, tag = 'mobile' } = {}) {
   const picked = await PkUpload.pickFiles();
