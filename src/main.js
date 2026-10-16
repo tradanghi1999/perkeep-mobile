@@ -80,7 +80,6 @@ const I18N = {
     tag_remove: 'Bỏ tag này',
     vw_view: 'Xem trong app', vw_open_ext: 'Mở bằng ứng dụng khác', vw_unsupported: 'Loại file này không xem được trong app. Bạn mở bằng ứng dụng khác nhé.',
     vw_need_auth: 'Server cần đăng nhập nên app không phát trực tiếp được. Mở bằng ứng dụng khác hoặc tải về máy nhé.',
-    vw_too_big: 'File quá lớn để phát trong app khi server cần đăng nhập. Mở bằng ứng dụng khác hoặc tải về máy.',
     vw_codec: (c) => `Video dùng codec ${c} — máy này không giải mã được. Mở bằng VLC / MX Player, hoặc xem bản đã chuyển sang H.264.`,
     ptr: 'Đang tải lại…',
     fl_title: 'Bộ lọc', fl_type: 'Loại tệp', fl_time: 'Thời gian', fl_sort: 'Sắp xếp',
@@ -152,7 +151,6 @@ const I18N = {
     tag_remove: 'Remove this tag',
     vw_view: 'View in app', vw_open_ext: 'Open with another app', vw_unsupported: 'This file type cannot be previewed in the app. Open it with another app?',
     vw_need_auth: 'The server requires sign-in, so the app cannot stream this. Open with another app or download it.',
-    vw_too_big: 'Too large to play in-app while the server requires sign-in. Open with another app or download it.',
     vw_codec: (c) => `This video uses ${c} — this device cannot decode it. Open with VLC / MX Player, or use an H.264 version.`,
     ptr: 'Reloading…',
     fl_title: 'Filters', fl_type: 'File type', fl_time: 'Time', fl_sort: 'Sort',
@@ -917,11 +915,9 @@ async function sniffMp4Codec(ref) {
 }
 const codecLabel = (codec) => (codec ? CODEC_LABEL[codec] || codec : '');
 
-// WebView chạy ở origin https://localhost (Capacitor mặc định) nên media http://
-// bị chặn vì mixed content -> đã bật android.allowMixedContent trong capacitor.config.json.
-// Ở đây chỉ cần biết server CÓ thật sự đòi đăng nhập hay không: nhiều người điền
-// tài khoản nhưng server không bật auth, khi đó vẫn phát media trực tiếp được.
-const FULL_MEDIA_LIMIT = 80 * 1024 * 1024;
+// Khi server THẬT SỰ đòi đăng nhập thì <video> không gửi được header Authorization,
+// phải tải hẳn về rồi phát từ blob — chỉ làm với file vừa phải.
+const BLOB_PLAY_LIMIT = 150 * 1024 * 1024;
 let authProbe = { base: null, needed: false };
 async function serverNeedsAuth() {
   const b = base();
@@ -936,25 +932,20 @@ async function serverNeedsAuth() {
   return authProbe.needed;
 }
 
-/** URL xem được. Trả null nếu không thể phát trực tiếp. */
+/** URL xem được. Ảnh + server đòi đăng nhập thì lấy qua endpoint thumbnail;
+ *  còn lại LUÔN phát trực tiếp (Range giúp tua được, không giới hạn kích thước). */
 async function mediaUrl(meta, big = false) {
   if (!meta.fileRef) return null;
-  const authed = await serverNeedsAuth();
-  if (!authed) return directUrl(meta.fileRef); // phát trực tiếp, không vướng header
-  // Server thật sự cần đăng nhập:
-  if (isImage(meta.mime)) return await thumbObjectUrl(meta.fileRef, big ? 1600 : 400);
-  // Video/audio: <video> không gửi được header -> tải cả file (nếu vừa) rồi phát từ blob
-  if (!meta.size || meta.size > FULL_MEDIA_LIMIT) return null;
-  const r = await httpBytes(directUrl(meta.fileRef), authHeaders());
-  if (!r.ok || !r.bytes?.length) return null;
-  return URL.createObjectURL(new Blob([r.bytes], { type: meta.mime || 'video/mp4' }));
+  if (isImage(meta.mime) && (await serverNeedsAuth())) {
+    return await thumbObjectUrl(meta.fileRef, big ? 1600 : 400);
+  }
+  return directUrl(meta.fileRef);
 }
 
 function viewerFallback(meta, why, codec) {
   const hint =
     why === 'codec' ? t('vw_codec')(codec || '?')
     : why === 'auth' ? t('vw_need_auth')
-    : why === 'big' ? t('vw_too_big')
     : t('vw_unsupported');
   vwBody.innerHTML = `<div class="vw-note">${esc(hint)}
     <div class="vw-actions">
@@ -991,12 +982,8 @@ async function renderViewer() {
 
   if (/^(video|audio)\//i.test(mime)) {
     let src = null;
-    let why = null;
     try { src = await mediaUrl(meta); } catch (e) { log(`media FAIL: ${e.message}`); }
-    if (!src) {
-      why = (await serverNeedsAuth()) ? (meta.size > FULL_MEDIA_LIMIT ? 'big' : 'auth') : 'unsupported';
-      return viewerFallback(meta, why);
-    }
+    if (!src) return viewerFallback(meta, 'unsupported');
     if (viewIndex !== currentItems.indexOf(it)) return;
     const tag = /^video\//i.test(mime) ? 'video' : 'audio';
     const el = document.createElement(tag);
@@ -1007,11 +994,31 @@ async function renderViewer() {
       el.setAttribute('playsinline', '');
     }
     el.onerror = async () => {
-      const c = el.error;
-      // code 4 = định dạng không hỗ trợ -> dò codec trong 32 byte đầu để nói rõ lý do
-      const codec = c?.code === 4 ? await sniffMp4Codec(meta.fileRef) : null;
+      const code = el.error?.code;
+      // 1) Server đòi đăng nhập -> thẻ media không gửi được header.
+      //    Thử tải hẳn file rồi phát từ blob (chỉ với file vừa phải).
+      if (await serverNeedsAuth()) {
+        if (meta.size && meta.size <= BLOB_PLAY_LIMIT) {
+          try {
+            const r = await httpBytes(directUrl(meta.fileRef), authHeaders());
+            if (r.ok && r.bytes?.length) {
+              el.onerror = null;
+              el.src = URL.createObjectURL(new Blob([r.bytes], { type: mime }));
+              el.load();
+              log(`media: đã tải ${(r.bytes.length / 1048576).toFixed(1)}MB và phát từ blob`);
+              return;
+            }
+          } catch (e) { log(`media blob FAIL: ${e.message}`); }
+        } else {
+          log(`media: cần đăng nhập và file ${fmtSize(meta.size)} quá lớn để tải hẳn về`);
+        }
+        return viewerFallback(meta, 'auth');
+      }
+      // 2) Không cần đăng nhập -> nhiều khả năng do codec máy không giải mã được.
+      //    Dò codec bằng 32 byte đầu của file (không cần ffprobe).
+      const codec = code === 4 ? await sniffMp4Codec(meta.fileRef) : null;
       const risky = codec && CODEC_RISKY.includes(codec);
-      log(`media error: code=${c?.code ?? '?'} ${c?.message || ''} codec=${codec || '(không rõ)'}`);
+      log(`media error: code=${code ?? '?'} codec=${codec || '(không rõ)'}`);
       viewerFallback(meta, risky ? 'codec' : 'unsupported', risky ? codecLabel(codec) : '');
     };
     el.src = src;
