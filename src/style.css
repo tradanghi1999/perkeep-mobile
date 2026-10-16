@@ -34,9 +34,6 @@ body {
 }
 .searchbar .s-ico { display: flex; color: #5f6b7a; }
 .searchbar input { flex: 1; border: 0; background: transparent; font-size: 1rem; outline: none; min-width: 0; color: inherit; }
-.searchbar .s-filter { border: 0; background: none; color: #5f6b7a; width: 40px; height: 40px; flex: none;
-  display: flex; align-items: center; justify-content: center; border-radius: 50%; }
-.searchbar .s-filter.on { color: var(--green); background: #dff0e7; }
 .avatar {
   width: 38px; height: 38px; flex: none; border-radius: 50%;
   background: var(--green); color: #fff; font-weight: 700; font-size: 0.9375rem;
@@ -114,13 +111,18 @@ h3 { margin: 12px 4px; font-size: 1.0625rem; }
   background: linear-gradient(transparent, #000a); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .tile .noimg { display: flex; align-items: center; justify-content: center; height: 100%; color: var(--green); }
 
-/* ---------- Bộ lọc ---------- */
-.filters { display: flex; gap: 8px; overflow-x: auto; padding: 0 12px 8px; flex: none; }
-.fchip { flex: none; display: inline-flex; align-items: center; gap: 6px; background: #e8f0ea; color: var(--green-d);
-  border: 0; border-radius: 14px; padding: 7px 12px; font-size: 0.8125rem; font-family: inherit; }
-.fchip b { font-weight: 600; }
-.fchip .x { font-size: 0.9375rem; line-height: 1; opacity: .7; }
-.fchip.clear { background: #f3f3f3; color: #555; }
+/* ---------- Thanh bộ lọc luôn hiện (kiểu Google Drive) ---------- */
+.filters { display: flex; gap: 8px; overflow-x: auto; padding: 0 12px 10px; flex: none;
+  scrollbar-width: none; }
+.filters::-webkit-scrollbar { display: none; }
+.fchip { flex: none; display: inline-flex; align-items: center; gap: 5px; background: #f2f4f6; color: #333;
+  border: 1px solid #e3e6e9; border-radius: 18px; padding: 8px 12px; font-size: 0.8125rem; font-family: inherit; }
+.fchip b { font-weight: 600; color: #111; }
+.fchip .lab { color: #666; }
+.fchip .caret { color: #888; font-size: 0.7rem; }
+.fchip.active { background: #e8f0ea; border-color: #cfe0d6; color: var(--green-d); }
+.fchip.active b { color: var(--green-d); }
+.fchip.clear { background: #fdecec; border-color: #f6d4d4; color: #c62828; }
 .sheet .opt { display: flex; align-items: center; gap: 12px; width: 100%; border: 0; background: none;
   padding: 14px 10px; font-size: 1rem; font-family: inherit; text-align: left; border-radius: 12px; color: inherit; }
 .sheet .opt.on { background: #f2f7f3; color: var(--green); font-weight: 600; }

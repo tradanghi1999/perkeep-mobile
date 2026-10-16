@@ -3,11 +3,15 @@
 Client Perkeep cho Android: tìm kiếm, thumbnail, upload chạy nền. Web chỉ để dev; APK build trên GitHub Actions.
 
 ## Tính năng
-- **Tìm kiếm không cần cú pháp**: gõ từ khóa tự nhiên (không dấu cũng được) + nút **Bộ lọc** cho Loại tệp / Thời gian / Sắp xếp. Không phải học cú pháp Perkeep.
-  - Bộ lọc đang bật hiện thành chip, bấm ✕ để bỏ từng cái; có nút "Xoá bộ lọc".
-  - Sheet lọc hiện luôn **câu lệnh sẽ gửi tới Perkeep** (để ai muốn học thì thấy), và ghi rõ phần nào lọc ngay trên máy.
-  - Ô "Nâng cao" cho phép nhập thẳng cú pháp Perkeep nếu cần.
-  - Vì sao lọc thời gian/từ khóa làm ở máy: `after:` của Perkeep so mốc khác nhau tuỳ câu truy vấn (thời gian file vs permanode), còn `filename:` là glob **phân biệt hoa/thường**. Lọc ở máy cho kết quả đúng như ngày/tên đang hiển thị.
+- **Tìm kiếm không cần cú pháp**: thanh chip lọc **luôn hiện** dưới ô tìm kiếm (kiểu Google Drive):
+  - `Loại tệp: Tất cả ▾` — Ảnh / Video / Âm thanh / Tài liệu (ẩn ở tab Ảnh vì tab đó vốn là ảnh)
+  - `Thời gian: Bất kỳ ▾` — Hôm nay / 7 ngày qua / Tháng này / Năm nay
+  - `Sắp xếp: Mới nhất ▾` — Mới nhất / Cũ nhất / Tên A→Z
+  - `Tìm theo: Tên tệp ▾` — **Tên tệp** (mặc định) / **Tag** / **Cú pháp Perkeep**
+  - Chạm một chip để mở sheet riêng của nhóm đó; sheet luôn hiện **câu lệnh sẽ gửi tới Perkeep**
+  - Khi gõ từ khoá sẽ có chip `Từ khoá: … ✕` để bỏ nhanh; có nút "Xoá bộ lọc"
+  - Ô nhập đổi gợi ý theo kiểu tìm (`Nhập tên tệp…` / `Nhập tag (đúng chính xác)…` / `vd: tag:phone before:2026`)
+- **Vì sao lọc thời gian/từ khoá-theo-tên làm ở máy**: `after:` của Perkeep so mốc khác nhau tuỳ câu truy vấn (thời gian file vs permanode), còn `filename:` là glob **phân biệt hoa/thường**; lọc ở máy cho kết quả đúng như ngày/tên đang hiển thị, bỏ dấu tiếng Việt. Tìm theo Tag thì dùng `tag:` của server (khớp chính xác).
 - **Xem file trong app**: chạm vào dòng để mở trình xem toàn màn hình — ảnh, video (có điều khiển, tự phát), audio.
   - Chuyển file bằng nút ‹ › hoặc **vuốt ngang**; **vuốt xuống để đóng**; Esc khi test desktop.
   - PDF và loại khác: WebView Android không render được → nút **Mở bằng ứng dụng khác** (Chrome/ứng dụng PDF) và **Tải về máy**.

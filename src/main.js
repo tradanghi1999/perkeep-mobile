@@ -68,6 +68,8 @@ const I18N = {
     fl_any_time: 'Bất kỳ', fl_today: 'Hôm nay', fl_week: '7 ngày qua', fl_month: 'Tháng này', fl_year: 'Năm nay',
     fl_newest: 'Mới nhất', fl_oldest: 'Cũ nhất', fl_name: 'Tên A→Z',
     fl_clear: 'Xoá bộ lọc', fl_kw: 'Từ khoá', fl_adv_chip: 'Cú pháp riêng',
+    fl_by: 'Tìm theo', fl_by_name: 'Tên tệp', fl_by_tag: 'Tag', fl_by_raw: 'Cú pháp Perkeep',
+    fl_ph_name: 'Nhập tên tệp…', fl_ph_tag: 'Nhập tag (đúng chính xác)…', fl_ph_raw: 'vd: tag:phone before:2026',
     fl_advanced: 'Nâng cao: cú pháp Perkeep (để trống nếu không dùng)',
     fl_expr: 'Câu lệnh gửi tới Perkeep', fl_apply: 'Áp dụng',
     fl_local: 'Lọc ngay trên máy',
@@ -112,6 +114,8 @@ const I18N = {
     fl_any_time: 'Any time', fl_today: 'Today', fl_week: 'Last 7 days', fl_month: 'This month', fl_year: 'This year',
     fl_newest: 'Newest', fl_oldest: 'Oldest', fl_name: 'Name A→Z',
     fl_clear: 'Clear filters', fl_kw: 'Keyword', fl_adv_chip: 'Custom query',
+    fl_by: 'Search by', fl_by_name: 'File name', fl_by_tag: 'Tag', fl_by_raw: 'Perkeep query',
+    fl_ph_name: 'Type a file name…', fl_ph_tag: 'Type an exact tag…', fl_ph_raw: 'e.g. tag:phone before:2026',
     fl_advanced: 'Advanced: raw Perkeep query (leave empty to ignore)',
     fl_expr: 'Query sent to Perkeep', fl_apply: 'Apply',
     fl_local: 'Filtered on device',
@@ -323,22 +327,26 @@ function timeFrom(kind) {
 
 // Bộ lọc hiện tại (nhớ cho lần mở sau)
 const filters = Object.assign(
-  { type: 'all', time: 'any', sort: 'newest', keyword: '', advanced: '' },
+  { type: 'all', time: 'any', sort: 'newest', by: 'name', keyword: '', advanced: '' },
   JSON.parse(localStorage.getItem('pk-filters-v1') || '{}')
 );
 const saveFilters = () => localStorage.setItem('pk-filters-v1', JSON.stringify(filters));
 const filterActive = () =>
-  filters.type !== 'all' || filters.time !== 'any' || filters.sort !== 'newest' || !!filters.keyword || !!filters.advanced;
+  filters.type !== 'all' || filters.time !== 'any' || filters.sort !== 'newest' || filters.by !== 'name' || !!filters.keyword || !!filters.advanced;
 
 /** Dịch bộ lọc thành expression Perkeep.
- *  Lọc thời gian + từ khóa làm ngay trên máy (xem fillList) vì:
- *  - after: của Perkeep so mốc khác nhau tuỳ câu truy vấn (file vs permanode)
- *  - filename: là glob PHÂN BIỆT hoa/thường, title: chỉ khớp thuộc tính title
+ *  - Lọc thời gian + từ khoá theo tên làm ở máy (xem fillList)
+ *  - "Tìm theo = Tag" thì thêm tag:<kw> cho server
+ *  - "Tìm theo = Cú pháp Perkeep" thì ghép cú pháp người dùng nhập
  */
 function buildExpression(forceType) {
-  if (filters.advanced) return filters.advanced.trim();
   const type = forceType || filters.type;
-  return type !== 'all' && TYPE_EXPR[type] ? TYPE_EXPR[type] : '';
+  const parts = [];
+  if (type !== 'all' && TYPE_EXPR[type]) parts.push(TYPE_EXPR[type]);
+  const kw = filters.keyword.trim();
+  if (filters.by === 'tag' && kw) parts.push(`tag:${/\s/.test(kw) ? `"${kw}"` : kw}`);
+  if (filters.by === 'raw' && filters.advanced.trim()) parts.push(filters.advanced.trim());
+  return parts.join(' ');
 }
 // Perkeep chỉ nhận sort "-created" / "created" / "map".
 // Có lọc thời gian thì luôn lấy trang mới nhất để không sót mục gần đây.
@@ -549,7 +557,7 @@ function photoTile(blob, meta, index = 0) {
 async function fillList(target, expression, render, emptyMsg, limit = 50) {
   target.innerHTML = `<p class="empty">${esc(t('loading'))}</p>`;
   try {
-    const wantKw = !filters.advanced && !!filters.keyword.trim();
+    const wantKw = filters.by === 'name' && !!filters.keyword.trim();
     // Tìm theo tên ở máy -> lấy trang rộng hơn để đỡ sót
     const { blobs, description } = await query(expression, wantKw ? 150 : limit, serverSort());
     target.innerHTML = '';
@@ -566,11 +574,11 @@ async function fillList(target, expression, render, emptyMsg, limit = 50) {
       items = items.filter((it) => norm(it.meta.name || '').includes(needle));
     }
     // Thời gian: lọc theo đúng ngày đang hiển thị cho người dùng
-    if (!filters.advanced && filters.time !== 'any') {
+    if (filters.time !== 'any') {
       const from = timeFrom(filters.time);
       if (from) items = items.filter((it) => (it.meta.date || '').slice(0, 10) >= from);
     }
-    if (!filters.advanced && filters.sort === 'name' && filters.time !== 'any') {
+    if (filters.sort === 'name' && filters.time !== 'any') {
       items.sort((a, b) => (a.meta.name || '').localeCompare(b.meta.name || '', lang === 'vi' ? 'vi' : 'en'));
     }
 
@@ -619,42 +627,63 @@ const SORT_OPTS = [
   { v: 'oldest', k: 'fl_oldest' },
   { v: 'name', k: 'fl_name' }
 ];
+const BY_OPTS = [
+  { v: 'name', k: 'fl_by_name' },
+  { v: 'tag', k: 'fl_by_tag' },
+  { v: 'raw', k: 'fl_by_raw' }
+];
 const optLabel = (list, v) => t((list.find((o) => o.v === v) || list[0]).k);
 
-/** Chip hiển thị bộ lọc đang bật, mỗi chip bỏ được. */
+// Nhóm bộ lọc: chip luôn hiện trên màn hình, chạm để đổi
+const FILTER_GROUPS = [
+  { key: 'type', label: 'fl_type', opts: TYPE_OPTS, def: 'all', clearTo: 'all', queryOnly: true },
+  { key: 'time', label: 'fl_time', opts: TIME_OPTS, def: 'any', clearTo: 'any' },
+  { key: 'sort', label: 'fl_sort', opts: SORT_OPTS, def: 'newest', clearTo: 'newest', queryOnly: true },
+  { key: 'by', label: 'fl_by', opts: BY_OPTS, def: 'name', clearTo: 'name' }
+];
+const isDefault = (g) => filters[g.key] === g.def;
+
+/** Thanh chip: 4 nhóm lọc + từ khoá + xoá. Ẩn nhóm không liên quan ở tab Ảnh. */
 function renderFilters() {
   const el = $('filters');
   if (!el) return;
   el.innerHTML = '';
-  const chips = [];
-  if (filters.type !== 'all') chips.push({ label: optLabel(TYPE_OPTS, filters.type), clear: () => { filters.type = 'all'; } });
-  if (filters.time !== 'any') chips.push({ label: optLabel(TIME_OPTS, filters.time), clear: () => { filters.time = 'any'; } });
-  if (filters.sort !== 'newest') chips.push({ label: optLabel(SORT_OPTS, filters.sort), clear: () => { filters.sort = 'newest'; } });
-  if (filters.keyword) chips.push({ label: `${t('fl_kw')}: ${filters.keyword}`, clear: () => { filters.keyword = ''; qEl.value = ''; } });
-  if (filters.advanced) chips.push({ label: t('fl_adv_chip'), clear: () => { filters.advanced = ''; } });
+  const onPhotos = currentTab() === 't-photo';
+  const groups = FILTER_GROUPS.filter((g) => !(onPhotos && g.key === 'type'));
 
-  el.hidden = chips.length === 0;
-  $('btn-filter').classList.toggle('on', filterActive());
-  for (const c of chips) {
+  for (const g of groups) {
     const b = document.createElement('button');
-    b.className = 'fchip';
-    b.innerHTML = `<b>${esc(c.label)}</b><span class="x">✕</span>`;
-    b.onclick = () => { c.clear(); saveFilters(); renderFilters(); reloadTab(currentTab()); };
+    b.className = 'fchip' + (isDefault(g) ? '' : ' active');
+    b.innerHTML = `<span class="lab">${esc(t(g.label))}:</span><b>${esc(optLabel(g.opts, filters[g.key]))}</b><span class="caret">▾</span>`;
+    b.onclick = () => openGroupSheet(g);
     el.appendChild(b);
   }
-  if (chips.length) {
+
+  if (filters.keyword) {
+    const used = filters.by === 'name' || filters.by === 'tag';
+    if (used) {
+      const b = document.createElement('button');
+      b.className = 'fchip active';
+      b.innerHTML = `<span class="lab">${esc(t('fl_kw'))}:</span><b>${esc(filters.keyword)}</b><span class="caret">✕</span>`;
+      b.onclick = () => { filters.keyword = ''; qEl.value = ''; saveFilters(); renderFilters(); reloadTab(currentTab()); };
+      el.appendChild(b);
+    }
+  }
+  if (filterActive()) {
     const clr = document.createElement('button');
     clr.className = 'fchip clear';
     clr.textContent = t('fl_clear');
     clr.onclick = () => {
-      Object.assign(filters, { type: 'all', time: 'any', sort: 'newest', keyword: '', advanced: '' });
+      Object.assign(filters, { type: 'all', time: 'any', sort: 'newest', by: 'name', keyword: '', advanced: '' });
       qEl.value = '';
-      saveFilters();
-      renderFilters();
-      reloadTab(currentTab());
+      saveFilters(); renderFilters(); reloadTab(currentTab());
     };
     el.appendChild(clr);
   }
+
+  // Gợi ý placeholder theo kiểu tìm
+  qEl.placeholder = filters.by === 'tag' ? t('fl_ph_tag') : filters.by === 'raw' ? t('fl_ph_raw') : t('fl_ph_name');
+  el.hidden = false;
 }
 
 const optRow = (list, value) => list.map((o) => {
@@ -662,63 +691,59 @@ const optRow = (list, value) => list.map((o) => {
   return `<button class="opt${on ? ' on' : ''}" data-v="${o.v}">${o.ico ? icon(o.ico, 20) : ''}<span>${esc(t(o.k))}</span>${on ? `<span class="tick">${icon('check', 18)}</span>` : ''}</button>`;
 }).join('');
 
-function openFilterSheet() {
-  openSheet(`<h3>${esc(t('fl_title'))}</h3>
-    <div class="sec">${esc(t('fl_type'))}</div>${optRow(TYPE_OPTS, filters.type)}
-    <div class="sec">${esc(t('fl_time'))}</div>${optRow(TIME_OPTS, filters.time)}
-    <div class="sec">${esc(t('fl_sort'))}</div>${optRow(SORT_OPTS, filters.sort)}
-    <div class="sec">${esc(t('fl_advanced'))}</div>
-    <input class="adv" id="fl-adv" value="${esc(filters.advanced)}" placeholder="vd: tag:phone before:2026" />
+/** Sheet cho 1 nhóm lọc (Loại tệp / Thời gian / Sắp xếp / Tìm theo). */
+function openGroupSheet(g) {
+  const showAdv = g.key === 'by' && filters.by === 'raw';
+  openSheet(`<h3>${esc(t(g.label))}</h3>${optRow(g.opts, filters[g.key])}
+    ${showAdv ? `<div class="sec">${esc(t('fl_advanced'))}</div>
+      <input class="adv" id="g-adv" value="${esc(filters.advanced)}" placeholder="${esc(t('fl_ph_raw'))}" />` : ''}
     <div class="sec">${esc(t('fl_expr'))}</div>
-    <div class="expr" id="fl-preview"></div>
-    <p class="meta" id="fl-note"></p>
-    <button class="rowbtn" id="fl-apply">${icon('check')}<span>${esc(t('fl_apply'))}</span></button>
-    <button class="rowbtn" id="fl-reset">${icon('close')}<span>${esc(t('fl_clear'))}</span></button>`);
+    <div class="expr" id="g-expr"></div>
+    <p class="meta" id="g-note"></p>
+    ${showAdv ? `<button class="rowbtn" id="g-apply">${icon('check')}<span>${esc(t('fl_apply'))}</span></button>` : ''}
+    <button class="rowbtn" id="g-reset">${icon('close')}<span>${esc(t('fl_clear'))}</span></button>`);
 
-  const advInput = sheetBody.querySelector('#fl-adv');
-  const preview = () => {
-    const saved = filters.advanced;
-    filters.advanced = advInput.value.trim();
-    const expr = buildExpression();
-    sheetBody.querySelector('#fl-preview').textContent = expr || '(trống)';
-    // Nói rõ phần nào lọc ở máy để người dùng không hiểu nhầm
+  const advInput = sheetBody.querySelector('#g-adv');
+  const paintExpr = () => {
+    if (advInput) {
+      const saved = filters.advanced;
+      filters.advanced = advInput.value.trim();
+      sheetBody.querySelector('#g-expr').textContent = buildExpression() || '(trống)';
+      filters.advanced = saved;
+    } else {
+      sheetBody.querySelector('#g-expr').textContent = buildExpression() || '(trống)';
+    }
     const note = [];
-    if (!filters.advanced && filters.time !== 'any') note.push(`${t('fl_time')}: ${optLabel(TIME_OPTS, filters.time)}`);
-    if (!filters.advanced && filters.keyword.trim()) note.push(`${t('fl_kw')}: ${filters.keyword.trim()}`);
-    if (filters.sort === 'name') note.push(t('fl_name'));
-    sheetBody.querySelector('#fl-note').textContent = note.length ? `${t('fl_local')}: ${note.join(' · ')}` : '';
-    filters.advanced = saved;
+    if (filters.time !== 'any') note.push(`${t('fl_time')}: ${optLabel(TIME_OPTS, filters.time)}`);
+    if (filters.by === 'name' && filters.keyword.trim()) note.push(`${t('fl_kw')}: ${filters.keyword.trim()}`);
+    if (filters.sort === 'name' && filters.time !== 'any') note.push(t('fl_name'));
+    sheetBody.querySelector('#g-note').textContent = note.length ? `${t('fl_local')}: ${note.join(' · ')}` : '';
   };
-  advInput.addEventListener('input', preview);
-  preview();
+  if (advInput) advInput.addEventListener('input', paintExpr);
+  paintExpr();
 
   sheetBody.querySelectorAll('.opt').forEach((b) => {
     b.onclick = () => {
-      const v = b.dataset.v;
-      if (TYPE_OPTS.some((o) => o.v === v)) { filters.type = v; filters.advanced = ''; }
-      else if (TIME_OPTS.some((o) => o.v === v)) filters.time = v;
-      else filters.sort = v;
+      filters[g.key] = b.dataset.v;
       saveFilters();
-      openFilterSheet(); // vẽ lại để cập nhật dấu tick
+      closeSheet();
+      renderFilters();
+      reloadTab(currentTab());
     };
   });
-  sheetBody.querySelector('#fl-apply').onclick = () => {
-    filters.advanced = advInput.value.trim();
-    saveFilters();
-    closeSheet();
-    renderFilters();
-    reloadTab(currentTab());
-  };
-  sheetBody.querySelector('#fl-reset').onclick = () => {
-    Object.assign(filters, { type: 'all', time: 'any', sort: 'newest', keyword: '', advanced: '' });
+  sheetBody.querySelector('#g-reset').onclick = () => {
+    Object.assign(filters, { type: 'all', time: 'any', sort: 'newest', by: 'name', keyword: '', advanced: '' });
     qEl.value = '';
-    saveFilters();
-    closeSheet();
-    renderFilters();
-    reloadTab(currentTab());
+    saveFilters(); closeSheet(); renderFilters(); reloadTab(currentTab());
   };
+  const applyBtn = sheetBody.querySelector('#g-apply');
+  if (applyBtn) {
+    applyBtn.onclick = () => {
+      filters.advanced = advInput.value.trim();
+      saveFilters(); closeSheet(); renderFilters(); reloadTab(currentTab());
+    };
+  }
 }
-$('btn-filter').onclick = openFilterSheet;
 
 // ============================================================
 // Trình xem file trong app (ảnh / video / audio)
