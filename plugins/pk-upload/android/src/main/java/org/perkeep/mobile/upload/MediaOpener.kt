@@ -29,7 +29,9 @@ object MediaOpener {
         val pass: String?,
         val fileRef: String,
         val mime: String,
-        val name: String
+        val name: String,
+        val cfId: String? = null,
+        val cfSecret: String? = null
     )
 
     /** Trả về true nếu đã mở được bằng app khác. Chạy ở thread nền. */
@@ -49,6 +51,10 @@ object MediaOpener {
                         android.util.Base64.NO_WRAP
                     )
                     setRequestProperty("Authorization", "Basic $token")
+                }
+                if (!args.cfId.isNullOrEmpty()) {
+                    setRequestProperty("CF-Access-Client-Id", args.cfId)
+                    setRequestProperty("CF-Access-Client-Secret", args.cfSecret ?: "")
                 }
             }
             val code = conn.responseCode

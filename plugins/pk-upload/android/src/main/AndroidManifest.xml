@@ -15,9 +15,11 @@
             android:foregroundServiceType="dataSync"
             tools:node="merge" />
 
-        <!-- Chia sẻ file đã tải cho app khác (VLC/MX Player) qua content:// -->
+        <!-- Chia sẻ file đã tải cho app khác (VLC/MX Player) qua content://.
+             Dùng lớp con PkFileProvider vì app Capacitor đã có FileProvider riêng;
+             khai trùng android:name sẽ gây lỗi manifest merger. -->
         <provider
-            android:name="androidx.core.content.FileProvider"
+            android:name="org.perkeep.mobile.upload.PkFileProvider"
             android:authorities="${applicationId}.pkupload.files"
             android:exported="false"
             android:grantUriPermissions="true">

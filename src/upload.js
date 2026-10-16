@@ -56,7 +56,7 @@ export async function notificationPermission() {
   }
 }
 
-/** URL phát media qua proxy nội bộ (Android) — để <video> xem được file cần đăng nhập. */
+/** URL phát media qua proxy nội bộ (Android) — để <video> xem được file cần xác thực. */
 export async function mediaProxyUrl(server, fileRef) {
   if (!uploadSupported()) return null;
   try {
@@ -64,7 +64,9 @@ export async function mediaProxyUrl(server, fileRef) {
       fileRef,
       base: server?.url || '',
       user: server?.user,
-      pass: server?.pass
+      pass: server?.pass,
+      cfId: server?.cfId,
+      cfSecret: server?.cfSecret
     });
     return r?.url || null;
   } catch {
@@ -81,6 +83,8 @@ export async function openExternally(server, meta) {
       base: server?.url || '',
       user: server?.user,
       pass: server?.pass,
+      cfId: server?.cfId,
+      cfSecret: server?.cfSecret,
       mime: meta.mime || '',
       name: meta.name || ''
     });

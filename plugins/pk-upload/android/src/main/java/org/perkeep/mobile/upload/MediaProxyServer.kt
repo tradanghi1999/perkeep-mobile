@@ -23,9 +23,11 @@ class MediaProxyServer(private val ctx: Context) : NanoHTTPD("127.0.0.1", 0) {
 
     @Volatile private var base: String = ""
     @Volatile private var authHeader: String? = null
+    @Volatile private var cfId: String? = null
+    @Volatile private var cfSecret: String? = null
     private val token: String = UUID.randomUUID().toString().replace("-", "")
 
-    fun configure(baseUrl: String, user: String?, pass: String?) {
+    fun configure(baseUrl: String, user: String?, pass: String?, cfClientId: String? = null, cfClientSecret: String? = null) {
         base = baseUrl.trimEnd('/')
         authHeader = if (!user.isNullOrEmpty()) {
             "Basic " + android.util.Base64.encodeToString(
@@ -33,6 +35,8 @@ class MediaProxyServer(private val ctx: Context) : NanoHTTPD("127.0.0.1", 0) {
                 android.util.Base64.NO_WRAP
             )
         } else null
+        cfId = cfClientId?.takeIf { it.isNotEmpty() }
+        cfSecret = cfClientSecret
     }
 
     /** URL nội bộ để JS gán vào <video>/<img>. */
@@ -52,6 +56,10 @@ class MediaProxyServer(private val ctx: Context) : NanoHTTPD("127.0.0.1", 0) {
                 connectTimeout = 15000
                 readTimeout = 0 // stream dài, không cắt giữa video
                 authHeader?.let { setRequestProperty("Authorization", it) }
+                cfId?.let {
+                    setRequestProperty("CF-Access-Client-Id", it)
+                    setRequestProperty("CF-Access-Client-Secret", cfSecret ?: "")
+                }
                 session.headers["range"]?.let { setRequestProperty("Range", it) } // tua video
                 setRequestProperty("Accept", "*/*")
             }

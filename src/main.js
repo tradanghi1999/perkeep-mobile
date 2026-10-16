@@ -44,8 +44,13 @@ const I18N = {
   vi: {
     ob_title: 'Kết nối Perkeep', ob_sub: 'Nhập địa chỉ server để bắt đầu',
     f_name: 'Tên gợi nhớ', f_url: 'Địa chỉ server', f_user: 'Tài khoản (nếu có)', f_pass: 'Mật khẩu',
+    f_cf_title: 'Cloudflare Access (nếu dùng tunnel)',
+    f_cf_hint: 'Khi Perkeep nằm sau Cloudflare Tunnel + Zero Trust, tạo Service Token trong Cloudflare Zero Trust → Access → Service Auth rồi dán vào đây. Không dùng được luồng xác thực bằng email vì app không mở được trang đăng nhập của Cloudflare.',
+    f_cf_id: 'CF-Access-Client-Id', f_cf_secret: 'CF-Access-Client-Secret',
     ob_connect: 'Kết nối →', ob_skip: 'Dùng thử không cần server →',
     ob_bad: 'URL phải bắt đầu http(s)://', ob_fail: 'Không kết nối được. Kiểm tra IP / WiFi / firewall 3179.',
+    ob_cf: 'Server đang yêu cầu xác thực Cloudflare Access. Hãy tạo Service Token và dán vào mục Cloudflare Access bên dưới.',
+    ob_ok_cf: 'Đã kết nối qua Cloudflare Access',
     btn_search: 'Tìm', btn_close: 'Đóng', btn_save: 'Lưu', btn_cancel: 'Hủy', btn_edit: 'Sửa', btn_del: 'Xóa',
     home_title: 'Được đề xuất', star_title: 'Đã ghim', files_title: 'Tệp', set_title: 'Cài đặt',
     nav_home: 'Nhà', nav_star: 'Ghim', nav_files: 'Tệp', nav_set: 'Cài đặt',
@@ -116,8 +121,13 @@ const I18N = {
   en: {
     ob_title: 'Connect Perkeep', ob_sub: 'Enter your server address to start',
     f_name: 'Display name', f_url: 'Server address', f_user: 'Username (if any)', f_pass: 'Password',
+    f_cf_title: 'Cloudflare Access (for tunnels)',
+    f_cf_hint: 'If Perkeep sits behind a Cloudflare Tunnel + Zero Trust, create a Service Token in Cloudflare Zero Trust → Access → Service Auth and paste it here. Email OTP login cannot be used because the app cannot open Cloudflare’s login page.',
+    f_cf_id: 'CF-Access-Client-Id', f_cf_secret: 'CF-Access-Client-Secret',
     ob_connect: 'Connect →', ob_skip: 'Try without a server →',
     ob_bad: 'URL must start with http(s)://', ob_fail: 'Cannot connect. Check IP / WiFi / firewall 3179.',
+    ob_cf: 'This server requires Cloudflare Access. Create a Service Token and paste it under Cloudflare Access below.',
+    ob_ok_cf: 'Connected via Cloudflare Access',
     btn_search: 'Search', btn_close: 'Close', btn_save: 'Save', btn_cancel: 'Cancel', btn_edit: 'Edit', btn_del: 'Delete',
     home_title: 'Suggested', star_title: 'Starred', files_title: 'Files', set_title: 'Settings',
     nav_home: 'Home', nav_star: 'Starred', nav_files: 'Files', nav_set: 'Settings',
@@ -261,7 +271,14 @@ const active = () => servers.find((s) => s.id === activeId) || servers[0];
 const base = () => (active()?.url || '').trim().replace(/\/+$/, '');
 function authHeaders(extra = {}) {
   const a = active();
-  return a?.user ? { ...extra, Authorization: 'Basic ' + btoa(`${a.user}:${a.pass || ''}`) } : extra;
+  const h = { ...extra };
+  if (a?.user) h.Authorization = 'Basic ' + btoa(`${a.user}:${a.pass || ''}`);
+  // Cloudflare Access Service Token (khi Perkeep nằm sau Cloudflare Tunnel + Zero Trust)
+  if (a?.cfId) {
+    h['CF-Access-Client-Id'] = a.cfId;
+    h['CF-Access-Client-Secret'] = a.cfSecret || '';
+  }
+  return h;
 }
 
 function log(...args) {
@@ -917,17 +934,20 @@ async function sniffMp4Codec(ref) {
 }
 const codecLabel = (codec) => (codec ? CODEC_LABEL[codec] || codec : '');
 
-// Khi server THẬT SỰ đòi đăng nhập thì <video> không gửi được header Authorization,
-// phải tải hẳn về rồi phát từ blob — chỉ làm với file vừa phải.
+// Khi server THẬT SỰ chặn truy cập ẩn danh thì <video> không gửi được header xác thực,
+// phải phát qua proxy nội bộ hoặc tải hẳn về rồi phát từ blob (chỉ file vừa phải).
 const BLOB_PLAY_LIMIT = 150 * 1024 * 1024;
+// Cloudflare Access: OkHttp tự đi theo redirect nên nhận về HTML trang đăng nhập
+const CF_RE = /cloudflareaccess|Cloudflare Access|cf-access/i;
 let authProbe = { base: null, needed: false };
 async function serverNeedsAuth() {
   const b = base();
-  if (!active()?.user) return false;
   if (authProbe.base === b) return authProbe.needed;
   try {
-    const r = await http(b + '/', {}); // cố tình KHÔNG gửi Authorization
-    authProbe = { base: b, needed: r.status === 401 || r.status === 403 };
+    const r = await http(b + '/', {}); // cố tình KHÔNG gửi thông tin đăng nhập
+    const blocked = r.status === 401 || r.status === 403 ||
+      (r.status >= 200 && r.status < 400 && CF_RE.test(r.text || ''));
+    authProbe = { base: b, needed: blocked };
   } catch {
     authProbe = { base: b, needed: true };
   }
@@ -1581,6 +1601,12 @@ function svcEditor(id) {
       <label>${esc(t('f_url'))}</label><input id="e-u" value="${esc(s?.url || '')}" inputmode="url" />
       <label>${esc(t('f_user'))}</label><input id="e-us" value="${esc(s?.user || '')}" autocomplete="username" />
       <label>${esc(t('f_pass'))}</label><input id="e-p" type="password" value="${esc(s?.pass || '')}" autocomplete="current-password" />
+      <details class="cfbox"${s?.cfId ? ' open' : ''}>
+        <summary>${esc(t('f_cf_title'))}</summary>
+        <p class="meta">${esc(t('f_cf_hint'))}</p>
+        <label>${esc(t('f_cf_id'))}</label><input id="e-cfid" value="${esc(s?.cfId || '')}" autocomplete="off" />
+        <label>${esc(t('f_cf_secret'))}</label><input id="e-cfsecret" type="password" value="${esc(s?.cfSecret || '')}" autocomplete="off" />
+      </details>
       <div class="btns"><button data-save>${esc(t('btn_save'))}</button><button class="cx" data-cx>${esc(t('btn_cancel'))}</button></div>
     </div>
     <p class="err" id="e-err" hidden></p>`);
@@ -1593,7 +1619,9 @@ function svcEditor(id) {
       name: sheetBody.querySelector('#e-n').value.trim() || `Server ${servers.length + 1}`,
       url,
       user: sheetBody.querySelector('#e-us').value.trim(),
-      pass: sheetBody.querySelector('#e-p').value
+      pass: sheetBody.querySelector('#e-p').value,
+      cfId: sheetBody.querySelector('#e-cfid').value.trim(),
+      cfSecret: sheetBody.querySelector('#e-cfsecret').value
     };
     if (editingId) Object.assign(servers.find((x) => x.id === editingId), patch);
     else { const nid = 's' + Date.now(); servers.push({ id: nid, ...patch }); activeId = nid; }
@@ -1733,21 +1761,34 @@ $('ob-connect').onclick = async () => {
   const url = $('ob-url').value.trim().replace(/\/+$/, '');
   const user = $('ob-user').value.trim();
   const pass = $('ob-pass').value;
+  const cfId = $('ob-cfid').value.trim();
+  const cfSecret = $('ob-cfsecret').value;
   if (!/^https?:\/\//i.test(url)) { errEl.textContent = t('ob_bad'); errEl.hidden = false; return; }
   errEl.hidden = true;
   $('ob-connect').disabled = true;
   try {
-    const headers = user ? { Authorization: 'Basic ' + btoa(`${user}:${pass}`) } : {};
+    const headers = {};
+    if (user) headers.Authorization = 'Basic ' + btoa(`${user}:${pass}`);
+    if (cfId) {
+      headers['CF-Access-Client-Id'] = cfId;
+      headers['CF-Access-Client-Secret'] = cfSecret;
+    }
     const r = await http(url + '/', { headers });
     if (!r.ok) throw new Error('HTTP ' + r.status);
-    servers = [{ id: 's' + Date.now(), name, url, user, pass }];
+    // Bị Cloudflare Access chặn thì trả về trang đăng nhập -> phải cảnh báo
+    if (CF_RE.test(r.text || '') && !cfId) throw new Error('CF Access');
+    servers = [{ id: 's' + Date.now(), name, url, user, pass, cfId, cfSecret }];
     activeId = servers[0].id;
     save();
     renderSvcSub();
     await finishOnboarding();
-  } catch {
-    errEl.textContent = t('ob_fail');
+  } catch (e) {
+    errEl.textContent = e?.message === 'CF Access' ? t('ob_cf') : t('ob_fail');
     errEl.hidden = false;
+    if (e?.message === 'CF Access') {
+      const box = $('ob-cf');
+      if (box) box.open = true;
+    }
   } finally {
     $('ob-connect').disabled = false;
   }

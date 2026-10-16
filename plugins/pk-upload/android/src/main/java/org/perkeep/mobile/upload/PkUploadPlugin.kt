@@ -258,7 +258,7 @@ class PkUploadPlugin : Plugin() {
         }
         try {
             val srv = MediaProxyServer.get(context)
-            srv.configure(base, call.getString("user"), call.getString("pass"))
+            srv.configure(base, call.getString("user"), call.getString("pass"), call.getString("cfId"), call.getString("cfSecret"))
             call.resolve(JSObject().put("url", srv.urlFor(ref)))
         } catch (t: Throwable) {
             Log.w(TAG, "không tạo được media proxy url", t)
@@ -276,7 +276,9 @@ class PkUploadPlugin : Plugin() {
             pass = call.getString("pass"),
             fileRef = ref,
             mime = call.getString("mime") ?: "",
-            name = call.getString("name") ?: ""
+            name = call.getString("name") ?: "",
+            cfId = call.getString("cfId"),
+            cfSecret = call.getString("cfSecret")
         )
         if (args.base.isBlank()) {
             call.resolve(JSObject().put("opened", false))

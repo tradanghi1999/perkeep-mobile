@@ -22,6 +22,14 @@
       <input id="ob-user" type="text" autocomplete="username" />
       <label data-i18n="f_pass">Mật khẩu</label>
       <input id="ob-pass" type="password" autocomplete="current-password" />
+      <details class="cfbox" id="ob-cf">
+        <summary data-i18n="f_cf_title">Cloudflare Access (nếu dùng tunnel)</summary>
+        <p class="meta" data-i18n="f_cf_hint">…</p>
+        <label data-i18n="f_cf_id">CF-Access-Client-Id</label>
+        <input id="ob-cfid" autocomplete="off" />
+        <label data-i18n="f_cf_secret">CF-Access-Client-Secret</label>
+        <input id="ob-cfsecret" type="password" autocomplete="off" />
+      </details>
       <p id="ob-err" class="err" hidden></p>
       <button class="go" id="ob-connect" data-i18n="ob_connect">Kết nối →</button>
       <div class="seg">
