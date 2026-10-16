@@ -11,13 +11,20 @@ import java.io.InputStream
 import java.net.HttpURLConnection
 import java.net.URL
 import java.security.MessageDigest
+import java.security.NoSuchAlgorithmException
 
 /** Một chunk nội dung file. */
 data class Part(val ref: String, val size: Int, val offset: Long)
 
 object Sha224 {
-    private val md: ThreadLocal<MessageDigest> =
-        ThreadLocal.withInitial { MessageDigest.getInstance("SHA-224") }
+    private val md: ThreadLocal<MessageDigest> = ThreadLocal.withInitial {
+        try {
+            MessageDigest.getInstance("SHA-224")
+        } catch (e: NoSuchAlgorithmException) {
+            // Một số máy hiếm không có SHA-224 -> báo lỗi rõ ràng thay vì crash
+            throw IllegalStateException("Thiết bị không hỗ trợ SHA-224: ${e.message}", e)
+        }
+    }
 
     fun hex(bytes: ByteArray): String {
         val d = md.get().digest(bytes)

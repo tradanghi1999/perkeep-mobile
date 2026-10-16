@@ -6,7 +6,9 @@ import android.app.NotificationManager
 import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
+import android.content.pm.ServiceInfo
 import android.os.Build
+import android.util.Log
 import androidx.core.app.NotificationCompat
 import androidx.work.ForegroundInfo
 
@@ -28,28 +30,46 @@ class UploadNotifier(private val ctx: Context) {
 
     fun foregroundInfo(job: UploadJob, progress: Int, indeterminate: Boolean = false): ForegroundInfo {
         ensureChannel()
-        return ForegroundInfo(notificationId(job.id), build(job, progress, indeterminate))
+        val id = notificationId(job.id)
+        val n = build(job, progress, indeterminate)
+        // Android 14+ bắt buộc khai báo type của foreground service khi start.
+        // Khai rõ dataSync thay vì dựa vào mặc định để tránh
+        // MissingForegroundServiceTypeException.
+        return try {
+            ForegroundInfo(id, n, ServiceInfo.FOREGROUND_SERVICE_TYPE_DATA_SYNC)
+        } catch (t: Throwable) {
+            Log.w(TAG, "ForegroundInfo có type lỗi, dùng mặc định", t)
+            ForegroundInfo(id, n)
+        }
     }
 
     fun update(job: UploadJob, progress: Int, indeterminate: Boolean = false) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
             manager.areNotificationsEnabled().not()
         ) return
-        ensureChannel()
-        manager.notify(notificationId(job.id), build(job, progress, indeterminate))
+        try {
+            ensureChannel()
+            manager.notify(notificationId(job.id), build(job, progress, indeterminate))
+        } catch (t: Throwable) {
+            Log.w(TAG, "update notification lỗi", t)
+        }
     }
 
     fun finish(job: UploadJob, ok: Boolean) {
-        ensureChannel()
-        val text = if (ok) "Đã tải lên xong" else "Tải lên thất bại"
-        val n = NotificationCompat.Builder(ctx, CHANNEL_ID)
-            .setSmallIcon(android.R.drawable.stat_sys_upload)
-            .setContentTitle(job.name.ifEmpty { "Tệp" })
-            .setContentText(text)
-            .setAutoCancel(true)
-            .setContentIntent(openApp())
-            .build()
-        manager.notify(notificationId(job.id), n)
+        try {
+            ensureChannel()
+            val text = if (ok) "Đã tải lên xong" else "Tải lên thất bại"
+            val n = NotificationCompat.Builder(ctx, CHANNEL_ID)
+                .setSmallIcon(android.R.drawable.stat_sys_upload)
+                .setContentTitle(job.name.ifEmpty { "Tệp" })
+                .setContentText(text)
+                .setAutoCancel(true)
+                .setContentIntent(openApp())
+                .build()
+            manager.notify(notificationId(job.id), n)
+        } catch (t: Throwable) {
+            Log.w(TAG, "finish notification lỗi", t)
+        }
     }
 
     private fun build(job: UploadJob, progress: Int, indeterminate: Boolean): Notification {
@@ -90,6 +110,7 @@ class UploadNotifier(private val ctx: Context) {
     private fun notificationId(id: String) = ID_BASE + (id.hashCode() and 0xFFFF)
 
     companion object {
+        private const val TAG = "PkUpload"
         const val CHANNEL_ID = "pk-upload"
         private const val ID_BASE = 41000
     }

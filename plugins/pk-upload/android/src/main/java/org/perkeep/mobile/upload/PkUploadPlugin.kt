@@ -6,6 +6,7 @@ import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Build
 import android.provider.OpenableColumns
+import android.util.Log
 import androidx.activity.result.ActivityResult
 import androidx.core.content.ContextCompat
 import androidx.work.BackoffPolicy
@@ -23,6 +24,8 @@ import com.getcapacitor.PluginMethod
 import com.getcapacitor.annotation.ActivityCallback
 import com.getcapacitor.annotation.CapacitorPlugin
 import com.getcapacitor.annotation.Permission
+import java.io.File
+import java.util.Date
 import java.util.concurrent.TimeUnit
 
 /**
@@ -135,11 +138,23 @@ class PkUploadPlugin : Plugin() {
             )
             list.add(job)
             ids.put(id)
-            enqueueWork(job)
         }
+        // LƯU hàng đợi TRƯỚC khi xếp lịch, nếu không worker có thể chạy trước
+        // khi job được ghi và job bị bỏ im lặng.
         val all = store.jobs().toMutableList()
         all.addAll(list)
         store.save(all)
+        // Xếp lịch từng job; lỗi 1 job không làm hỏng cả hàng đợi
+        for (job in list) {
+            try {
+                enqueueWork(job)
+            } catch (t: Throwable) {
+                Log.e(TAG, "enqueue lỗi cho ${job.id}", t)
+                job.state = UploadJob.STATE_FAILED
+                job.error = t.message ?: t.javaClass.simpleName
+                store.update(job)
+            }
+        }
         val res = JSObject()
         res.put("ids", ids)
         call.resolve(res)
@@ -223,7 +238,26 @@ class PkUploadPlugin : Plugin() {
             call.resolve(JSObject().put("granted", true))
             return
         }
-        requestPermissionForAlias("notifications", call, "notifResult")
+        try {
+            requestPermissionForAlias("notifications", call, "notifResult")
+        } catch (t: Throwable) {
+            // Không xin được quyền thì vẫn cho chạy tiếp: notification chỉ là phụ
+            Log.w(TAG, "requestPermissionForAlias lỗi", t)
+            call.resolve(JSObject().put("granted", false))
+        }
+    }
+
+    /** Log crash lần trước (không cần adb). */
+    @PluginMethod
+    fun getLastCrash(call: PluginCall) {
+        val txt = runCatching { File(context.filesDir, CRASH_FILE).takeIf { it.exists() }?.readText() }.getOrNull()
+        call.resolve(JSObject().put("crash", txt ?: org.json.JSONObject.NULL))
+    }
+
+    @PluginMethod
+    fun clearCrash(call: PluginCall) {
+        runCatching { File(context.filesDir, CRASH_FILE).delete() }
+        call.resolve()
     }
 
     @com.getcapacitor.annotation.PermissionCallback
@@ -234,6 +268,22 @@ class PkUploadPlugin : Plugin() {
     }
 
     companion object {
+        private const val TAG = "PkUpload"
+        private const val CRASH_FILE = "last-crash.txt"
+
+        /** Bắt exception không lường trước -> ghi ra file để app đọc lại lần sau. */
+        fun installCrashHandler(ctx: android.content.Context) {
+            val f = File(ctx.filesDir, CRASH_FILE)
+            val prev = Thread.getDefaultUncaughtExceptionHandler()
+            Thread.setDefaultUncaughtExceptionHandler { t, e ->
+                try {
+                    val head = "=== ${Date()} | thread=${t.name} | Android ${Build.VERSION.SDK_INT} ===\n"
+                    f.writeText(head + Log.getStackTraceString(e))
+                } catch (_: Throwable) {
+                }
+                prev?.uncaughtException(t, e)
+            }
+        }
         /** Job -> dữ liệu cho JS. */
         fun toJS(job: UploadJob): JSObject = JSObject().apply {
             put("id", job.id)
@@ -272,6 +322,11 @@ class PkUploadPlugin : Plugin() {
 
     override fun load() {
         register(this)
+        try {
+            installCrashHandler(context.applicationContext)
+        } catch (t: Throwable) {
+            Log.w(TAG, "không cài được crash handler", t)
+        }
     }
 
     override fun handleOnDestroy() {

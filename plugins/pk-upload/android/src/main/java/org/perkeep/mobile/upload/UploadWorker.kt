@@ -35,8 +35,14 @@ class UploadWorker(ctx: Context, params: WorkerParameters) : CoroutineWorker(ctx
             resolver = applicationContext.contentResolver
         )
 
-        // Notification tiến trình (bắt đầu ngay để WorkManager nâng lên foreground)
-        setForeground(notifier.foregroundInfo(job, 0, indeterminate = true))
+        // Notification tiến trình (bắt đầu ngay để WorkManager nâng lên foreground).
+        // Nếu bước này lỗi (một số máy chặn foreground service khi app ở nền),
+        // vẫn chạy tiếp upload thay vì để cả job thất bại.
+        try {
+            setForeground(notifier.foregroundInfo(job, 0, indeterminate = true))
+        } catch (t: Throwable) {
+            android.util.Log.w("PkUpload", "setForeground lỗi, chạy tiếp không foreground", t)
+        }
 
         try {
             var lastNotify = 0L

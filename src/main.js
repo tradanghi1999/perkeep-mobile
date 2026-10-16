@@ -56,6 +56,12 @@ const I18N = {
     star_is_tag: 'Ghim dùng tag “star” trên Perkeep nên đồng bộ mọi thiết bị.',
     set_svc: 'Dịch vụ Perkeep', set_lang: 'Ngôn ngữ', set_diag: 'Chẩn đoán',
     set_diag_sub: 'Log kỹ thuật, blob, JSON', set_about: 'Giới thiệu Perkeep',
+    diag_crash: 'Lỗi crash lần trước', diag_log: 'Log thao tác gần đây',
+    diag_clear: 'Xoá log crash', diag_cleared: 'Đã xoá log crash',
+    diag_crash_found: 'Có log crash lần trước — mở Cài đặt → Chẩn đoán để xem.',
+    diag_crash: 'Lỗi crash lần trước', diag_log: 'Log thao tác gần đây',
+    diag_clear: 'Xoá log crash', diag_cleared: 'Đã xoá log crash',
+    diag_crash_found: 'Có log crash lần trước — mở Cài đặt → Chẩn đoán để xem.',
     set_about_sub: 'Lưu trữ dữ liệu suốt đời',
     set_vid: 'Thumbnail video', on: 'Bật', off: 'Tắt',
     set_hint: 'Đổi / sửa / xóa dịch vụ: mở mục “Dịch vụ Perkeep”, hoặc chạm avatar trên thanh tìm kiếm.',
@@ -73,6 +79,8 @@ const I18N = {
     tag_fail: 'Không đổi được tag', tag_need_permanode: 'Mục này không phải permanode nên chưa gắn tag được.',
     tag_remove: 'Bỏ tag này',
     vw_view: 'Xem trong app', vw_open_ext: 'Mở bằng ứng dụng khác', vw_unsupported: 'Loại file này không xem được trong app. Bạn mở bằng ứng dụng khác nhé.',
+    vw_need_auth: 'Server cần đăng nhập nên app không phát trực tiếp được. Mở bằng ứng dụng khác hoặc tải về máy nhé.',
+    vw_too_big: 'File quá lớn để phát trong app khi server cần đăng nhập. Mở bằng ứng dụng khác hoặc tải về máy.',
     ptr: 'Đang tải lại…',
     fl_title: 'Bộ lọc', fl_type: 'Loại tệp', fl_time: 'Thời gian', fl_sort: 'Sắp xếp',
     fl_all: 'Tất cả', fl_image: 'Ảnh', fl_video: 'Video', fl_audio: 'Âm thanh', fl_doc: 'Tài liệu',
@@ -112,6 +120,12 @@ const I18N = {
     star_is_tag: 'Starring uses the Perkeep tag “star”, so it syncs across devices.',
     set_svc: 'Perkeep services', set_lang: 'Language', set_diag: 'Diagnostics',
     set_diag_sub: 'Technical log, blobs, JSON', set_about: 'About Perkeep',
+    diag_crash: 'Last crash', diag_log: 'Recent activity log',
+    diag_clear: 'Clear crash log', diag_cleared: 'Crash log cleared',
+    diag_crash_found: 'A crash was recorded — open Settings → Diagnostics to see it.',
+    diag_crash: 'Last crash', diag_log: 'Recent activity log',
+    diag_clear: 'Clear crash log', diag_cleared: 'Crash log cleared',
+    diag_crash_found: 'A crash was recorded — open Settings → Diagnostics to see it.',
     set_about_sub: 'Keep your data for life',
     set_vid: 'Video thumbnails', on: 'On', off: 'Off',
     set_hint: 'Switch / edit / delete services: open “Perkeep services”, or tap the avatar in the search bar.',
@@ -129,6 +143,8 @@ const I18N = {
     tag_fail: 'Could not change tag', tag_need_permanode: 'This item is not a permanode, cannot tag it.',
     tag_remove: 'Remove this tag',
     vw_view: 'View in app', vw_open_ext: 'Open with another app', vw_unsupported: 'This file type cannot be previewed in the app. Open it with another app?',
+    vw_need_auth: 'The server requires sign-in, so the app cannot stream this. Open with another app or download it.',
+    vw_too_big: 'Too large to play in-app while the server requires sign-in. Open with another app or download it.',
     ptr: 'Reloading…',
     fl_title: 'Filters', fl_type: 'File type', fl_time: 'Time', fl_sort: 'Sort',
     fl_all: 'All', fl_image: 'Photos', fl_video: 'Videos', fl_audio: 'Audio', fl_doc: 'Documents',
@@ -852,16 +868,42 @@ function paintViewer() {
 
 const directUrl = (ref) => `${base()}/ui/download/${encodeURIComponent(ref)}`;
 
-/** URL xem được. Có auth thì <img>/<video> không gửi được header -> dùng blob URL. */
-async function mediaUrl(meta, big = false) {
-  if (!meta.fileRef) return null;
-  if (!active()?.user) return directUrl(meta.fileRef);
-  if (isImage(meta.mime)) return await thumbObjectUrl(meta.fileRef, big ? 1600 : 400);
-  return null; // video/audio + auth: không stream trực tiếp được
+// WebView chạy ở origin https://localhost (Capacitor mặc định) nên media http://
+// bị chặn vì mixed content -> đã bật android.allowMixedContent trong capacitor.config.json.
+// Ở đây chỉ cần biết server CÓ thật sự đòi đăng nhập hay không: nhiều người điền
+// tài khoản nhưng server không bật auth, khi đó vẫn phát media trực tiếp được.
+const FULL_MEDIA_LIMIT = 80 * 1024 * 1024;
+let authProbe = { base: null, needed: false };
+async function serverNeedsAuth() {
+  const b = base();
+  if (!active()?.user) return false;
+  if (authProbe.base === b) return authProbe.needed;
+  try {
+    const r = await http(b + '/', {}); // cố tình KHÔNG gửi Authorization
+    authProbe = { base: b, needed: r.status === 401 || r.status === 403 };
+  } catch {
+    authProbe = { base: b, needed: true };
+  }
+  return authProbe.needed;
 }
 
-function viewerFallback(meta) {
-  vwBody.innerHTML = `<div class="vw-note">${esc(t('vw_unsupported'))}
+/** URL xem được. Trả null nếu không thể phát trực tiếp. */
+async function mediaUrl(meta, big = false) {
+  if (!meta.fileRef) return null;
+  const authed = await serverNeedsAuth();
+  if (!authed) return directUrl(meta.fileRef); // phát trực tiếp, không vướng header
+  // Server thật sự cần đăng nhập:
+  if (isImage(meta.mime)) return await thumbObjectUrl(meta.fileRef, big ? 1600 : 400);
+  // Video/audio: <video> không gửi được header -> tải cả file (nếu vừa) rồi phát từ blob
+  if (!meta.size || meta.size > FULL_MEDIA_LIMIT) return null;
+  const r = await httpBytes(directUrl(meta.fileRef), authHeaders());
+  if (!r.ok || !r.bytes?.length) return null;
+  return URL.createObjectURL(new Blob([r.bytes], { type: meta.mime || 'video/mp4' }));
+}
+
+function viewerFallback(meta, why) {
+  const hint = why === 'auth' ? t('vw_need_auth') : why === 'big' ? t('vw_too_big') : t('vw_unsupported');
+  vwBody.innerHTML = `<div class="vw-note">${esc(hint)}
     <div class="vw-actions">
       <button id="vw-open-ext">${icon('external')}<span>${esc(t('vw_open_ext'))}</span></button>
       <button class="alt" id="vw-download">${icon('download')}<span>${esc(t('fa_download'))}</span></button>
@@ -896,8 +938,12 @@ async function renderViewer() {
 
   if (/^(video|audio)\//i.test(mime)) {
     let src = null;
-    try { src = await mediaUrl(meta); } catch {}
-    if (!src) return viewerFallback(meta);
+    let why = null;
+    try { src = await mediaUrl(meta); } catch (e) { log(`media FAIL: ${e.message}`); }
+    if (!src) {
+      why = (await serverNeedsAuth()) ? (meta.size > FULL_MEDIA_LIMIT ? 'big' : 'auth') : 'unsupported';
+      return viewerFallback(meta, why);
+    }
     if (viewIndex !== currentItems.indexOf(it)) return;
     const tag = /^video\//i.test(mime) ? 'video' : 'audio';
     const el = document.createElement(tag);
@@ -907,7 +953,11 @@ async function renderViewer() {
       el.playsInline = true;
       el.setAttribute('playsinline', '');
     }
-    el.onerror = () => viewerFallback(meta);
+    el.onerror = () => {
+      const c = el.error;
+      log(`media error: code=${c?.code ?? '?'} ${c?.message || ''} src=${String(src).slice(0, 80)}`);
+      viewerFallback(meta, 'unsupported');
+    };
     el.src = src;
     vwBody.innerHTML = '';
     vwBody.appendChild(el);
@@ -1525,6 +1575,8 @@ function boot() {
   switchTab('t-home');
   loadHome();
   refreshUploads();
+  // Nếu lần trước app bị crash, nhắc ngay để người dùng mở Chẩn đoán
+  up.getLastCrash().then((c) => { if (c) snack(t('diag_crash_found')); }).catch(() => {});
   up.onProgress((job) => {
     uploadJobs.set(job.id, job);
     renderUploads();

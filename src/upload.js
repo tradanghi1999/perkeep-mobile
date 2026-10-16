@@ -1,16 +1,26 @@
-import { Capacitor } from '@capacitor/core';
+import { Capacitor, CapacitorHttp } from '@capacitor/core';
 import PkUpload from 'pk-upload';
 
 // Upload nền chỉ có trên Android (WorkManager + foreground service).
 export const uploadSupported = () =>
   Capacitor.isNativePlatform() && Capacitor.getPlatform() === 'android';
 
+/** GET JSON qua native HTTP (tránh CORS của Perkeep) + fallback fetch cho web. */
+async function getJson(url, headers) {
+  try {
+    const r = await CapacitorHttp.request({ url, method: 'GET', headers });
+    return typeof r.data === 'string' ? JSON.parse(r.data) : r.data;
+  } catch {
+    const r = await fetch(url, { headers });
+    return r.json();
+  }
+}
+
 /** Lấy blobRoot/jsonSignRoot từ discovery của server. */
 export async function discovery(base, auth) {
   const url = base.replace(/\/+$/, '') + '/?camli.mode=config';
   try {
-    const r = await fetch(url, { headers: auth || {} });
-    const j = await r.json();
+    const j = await getJson(url, auth || {});
     return {
       blobRoot: j.blobRoot || '/bs-and-maybe-also-index/',
       jsonSignRoot: j.jsonSignRoot || '/sighelper/',
@@ -69,6 +79,15 @@ export const listJobs = async () => {
 export const cancelJob = (id) => PkUpload.cancel({ id });
 export const retryJob = (id) => PkUpload.retry({ id });
 export const clearFinished = () => PkUpload.clearFinished();
+/** Log crash lần trước (bắt bằng uncaught handler ở native) — để chẩn đoán không cần adb. */
+export const getLastCrash = async () => {
+  if (!uploadSupported()) return null;
+  try { return (await PkUpload.getLastCrash())?.crash || null; } catch { return null; }
+};
+export const clearCrash = async () => {
+  if (!uploadSupported()) return;
+  try { await PkUpload.clearCrash(); } catch {}
+};
 export const getWifiOnly = async () => {
   if (!uploadSupported()) return true;
   try { return !!(await PkUpload.wifiOnly()).value; } catch { return true; }
