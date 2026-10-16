@@ -2,6 +2,16 @@
 
 Client Perkeep cho Android: tìm kiếm, thumbnail, upload chạy nền. Web chỉ để dev; APK build trên GitHub Actions.
 
+## Tính năng
+- **Tìm kiếm**: gõ chữ thường (`health`) hoặc expression Perkeep (`tag:x`, `after:2026-01-01`); chip nhanh Ảnh / Video / Giấy tờ / Tháng này.
+- **Xem file trong app**: chạm vào dòng để mở trình xem toàn màn hình — ảnh, video (có điều khiển, tự phát), audio. Chuyển file bằng nút ‹ › hoặc vuốt ngang; Esc để đóng.
+  - PDF và loại khác: WebView Android không render được → nút **Mở bằng ứng dụng khác** (Chrome/ứng dụng PDF) và **Tải về máy**.
+  - Server bật auth: ảnh lấy qua endpoint thumbnail; video/audio dùng nút mở ngoài.
+- **Kéo xuống để tải lại** (pull-to-refresh) ở tab Nhà / Ảnh / Tệp.
+- **Thumbnail**: ảnh do server sinh; video do app tự lấy khung hình.
+- **Upload nền** kiểu Google Drive (WorkManager + notification tiến trình).
+- **Nhiều dịch vụ Perkeep** + song ngữ VI/EN.
+
 ## 1. Cài tối thiểu (không cài Android Studio)
 - Bun + VS Code
 - Không cần java / flutter / adb local

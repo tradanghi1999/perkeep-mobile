@@ -55,6 +55,34 @@ h3 { margin: 10px 4px; font-size: 15px; }
 .danger-text { color: #c62828; }
 .empty { text-align: center; color: var(--muted); padding: 28px 12px; font-size: 13px; }
 
+/* ---------- Trình xem file ---------- */
+.viewer { position: fixed; inset: 0; z-index: 40; background: #0d0d0d; color: #fff; display: flex; flex-direction: column; }
+.vw-top { display: flex; align-items: center; gap: 8px; padding: 10px 8px; background: #161616; }
+.vw-title { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.vw-title b { font-size: 14px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.vw-title small { color: #9aa0a6; font-size: 11px; }
+.vw-btn { border: 0; background: none; color: #fff; width: 44px; height: 44px; flex: none; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center; }
+.vw-btn:active { background: #ffffff22; }
+.vw-body { flex: 1; display: flex; align-items: center; justify-content: center; overflow: hidden; position: relative; }
+.vw-body img, .vw-body video { max-width: 100%; max-height: 100%; display: block; }
+.vw-body video { width: 100%; background: #000; }
+.vw-body audio { width: 90%; }
+.vw-note { padding: 24px; text-align: center; color: #cfd4d8; font-size: 14px; line-height: 1.6; }
+.vw-note .vw-actions { display: flex; flex-direction: column; gap: 10px; margin-top: 18px; }
+.vw-note button { border: 0; border-radius: 12px; padding: 14px; font-size: 15px; font-family: inherit;
+  background: var(--green); color: #fff; font-weight: 700; display: flex; gap: 10px; align-items: center; justify-content: center; }
+.vw-note button.alt { background: #2a2a2a; font-weight: 400; }
+.vw-nav { display: flex; align-items: center; justify-content: center; gap: 18px; padding: 8px 8px calc(10px + env(safe-area-inset-bottom)); background: #161616; }
+.vw-count { color: #9aa0a6; font-size: 13px; min-width: 60px; text-align: center; }
+/* ---------- Kéo xuống để tải lại ---------- */
+.ptr { position: absolute; left: 0; right: 0; top: 54px; z-index: 6; display: flex; gap: 8px; align-items: center;
+  justify-content: center; color: var(--muted); font-size: 12px; height: 0; overflow: hidden; transition: height .15s; }
+.ptr.on { height: 34px; }
+.ptr-spin { width: 14px; height: 14px; border: 2px solid #d5d9dd; border-top-color: var(--green);
+  border-radius: 50%; animation: ptr-spin .8s linear infinite; }
+@keyframes ptr-spin { to { transform: rotate(360deg); } }
+
 /* ---------- Hàng đợi upload ---------- */
 .uploads { margin: 4px 4px 10px; border: 1px solid var(--line); border-radius: 12px; overflow: hidden; }
 .up-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 8px 10px; background: #f6f9f7; font-size: 13px; }

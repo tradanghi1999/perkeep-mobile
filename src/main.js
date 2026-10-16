@@ -61,6 +61,8 @@ const I18N = {
     empty: 'Không có kết quả.', empty_photo: 'Chưa có ảnh trong kho.', loading: 'Đang tải…',
     found: (n, s) => `${n} kết quả · ${s}`,
     fa_download: 'Tải về máy', fa_share: 'Sao chép link', fa_open: 'Mở trong Perkeep', fa_detail: 'Chi tiết',
+    vw_view: 'Xem trong app', vw_open_ext: 'Mở bằng ứng dụng khác', vw_unsupported: 'Loại file này không xem được trong app. Bạn mở bằng ứng dụng khác nhé.',
+    ptr: 'Đang tải lại…',
     fab_title: 'Tạo mới', fab_upload: 'Tải tệp lên (chạy nền)', fab_note: 'Tạo ghi chú', fab_soon: '(sắp có)',
     up_waiting: 'Chờ mạng…', up_preparing: 'Đang chuẩn bị…', up_uploading: 'Đang tải lên',
     up_signing: 'Đang tạo mục…', up_done: 'Đã tải lên', up_failed: 'Lỗi', up_canceled: 'Đã huỷ',
@@ -94,6 +96,8 @@ const I18N = {
     empty: 'No results.', empty_photo: 'No photos in store yet.', loading: 'Loading…',
     found: (n, s) => `${n} results · ${s}`,
     fa_download: 'Download', fa_share: 'Copy link', fa_open: 'Open in Perkeep', fa_detail: 'Details',
+    vw_view: 'View in app', vw_open_ext: 'Open with another app', vw_unsupported: 'This file type cannot be previewed in the app. Open it with another app?',
+    ptr: 'Reloading…',
     fab_title: 'Create', fab_upload: 'Upload files (background)', fab_note: 'New note', fab_soon: '(coming soon)',
     up_waiting: 'Waiting for network…', up_preparing: 'Preparing…', up_uploading: 'Uploading',
     up_signing: 'Creating item…', up_done: 'Uploaded', up_failed: 'Failed', up_canceled: 'Canceled',
@@ -397,25 +401,28 @@ function lazyThumb(el, slot, meta) {
 }
 
 // ---------- render 1 dòng file ----------
-function fileRow(blob, meta) {
+function fileRow(blob, meta, index = 0) {
   const row = document.createElement('div');
   row.className = 'frow';
   row.innerHTML = `
     <div class="fic">${iconFor(meta.mime)}</div>
     <div class="fx"><b>${esc(meta.name)}</b><small>${esc([fmtSize(meta.size), fmtDate(meta.date)].filter(Boolean).join(' · '))}</small></div>
     <button class="dot-ico" aria-label="menu">${icon('more', 20)}</button>`;
-  const slot = row.querySelector('.fic');
-  lazyThumb(row, slot, meta);
-  row.querySelector('.dot-ico').onclick = () => fileActions(blob, meta);
+  lazyThumb(row, row.querySelector('.fic'), meta);
+  row.querySelector('.dot-ico').onclick = (e) => {
+    e.stopPropagation();
+    fileActions(blob, meta);
+  };
+  row.onclick = () => openViewer(index); // chạm vào dòng = mở xem
   return row;
 }
-function photoTile(blob, meta) {
+function photoTile(blob, meta, index = 0) {
   const b = document.createElement('button');
   b.className = 'tile';
   b.innerHTML = `<span class="noimg">${iconFor(meta.mime)}</span><span class="cap">${esc(meta.name)}</span>`;
   const slot = b.querySelector('.noimg');
-  lazyThumb(b, slot, meta);
-  b.onclick = () => fileActions(blob, meta);
+  if (isImage(meta.mime) && meta.fileRef) lazyThumb(b, slot, meta);
+  b.onclick = () => openViewer(index);
   return b;
 }
 
@@ -426,9 +433,13 @@ async function fillList(target, expression, render, emptyMsg, limit = 50) {
     target.innerHTML = '';
     if (!blobs.length) {
       target.innerHTML = `<p class="empty">${esc(emptyMsg)}</p>`;
+      if (target === listEl || target === fileEl || target === photoEl) currentItems = [];
       return;
     }
-    for (const blob of blobs) target.appendChild(render(blob, metaFor(blob, description)));
+    const items = blobs.map((b) => ({ blob: b, meta: metaFor(b, description) }));
+    // Trình xem cần danh sách của tab đang xem để chuyển qua lại
+    if (target === listEl || target === fileEl || target === photoEl) currentItems = items;
+    items.forEach((it, i) => target.appendChild(render(it.blob, it.meta, i)));
     log(`HTTP 200 · ${blobs.length} blobs · expression="${expression}"`);
   } catch (e) {
     target.innerHTML = `<p class="empty">${esc(String(e.message).includes('expression') ? t('search_err') : t('conn_err'))}</p>`;
@@ -496,6 +507,178 @@ function pushRecent(label, expr) {
   renderChips();
 }
 
+// ============================================================
+// Trình xem file trong app (ảnh / video / audio)
+// PDF và loại khác: WebView Android không render được -> mở bằng app ngoài
+// ============================================================
+let currentItems = [];
+let viewIndex = -1;
+
+const viewerEl = $('viewer');
+const vwBody = $('vw-body');
+const vwName = $('vw-name');
+const vwSub = $('vw-sub');
+const vwCount = $('vw-count');
+
+function paintViewer() {
+  $('vw-close').innerHTML = icon('close');
+  $('vw-external').innerHTML = icon('external');
+  $('vw-prev').innerHTML = icon('chevron', 22).replace('<svg', '<svg style="transform:rotate(180deg)"');
+  $('vw-next').innerHTML = icon('chevron');
+}
+
+const directUrl = (ref) => `${base()}/ui/download/${encodeURIComponent(ref)}`;
+
+/** URL xem được. Có auth thì <img>/<video> không gửi được header -> dùng blob URL. */
+async function mediaUrl(meta, big = false) {
+  if (!meta.fileRef) return null;
+  if (!active()?.user) return directUrl(meta.fileRef);
+  if (isImage(meta.mime)) return await thumbObjectUrl(meta.fileRef, big ? 1600 : 400);
+  return null; // video/audio + auth: không stream trực tiếp được
+}
+
+function viewerFallback(meta) {
+  vwBody.innerHTML = `<div class="vw-note">${esc(t('vw_unsupported'))}
+    <div class="vw-actions">
+      <button id="vw-open-ext">${icon('external')}<span>${esc(t('vw_open_ext'))}</span></button>
+      <button class="alt" id="vw-download">${icon('download')}<span>${esc(t('fa_download'))}</span></button>
+    </div></div>`;
+  vwBody.querySelector('#vw-open-ext').onclick = () => window.open(directUrl(meta.fileRef), '_blank');
+  vwBody.querySelector('#vw-download').onclick = () => window.open(directUrl(meta.fileRef), '_blank');
+}
+
+async function renderViewer() {
+  const it = currentItems[viewIndex];
+  if (!it) return closeViewer();
+  const meta = it.meta;
+  vwName.textContent = meta.name || it.blob;
+  vwSub.textContent = [meta.mime, fmtSize(meta.size), fmtDate(meta.date)].filter(Boolean).join(' · ');
+  vwCount.textContent = `${viewIndex + 1}/${currentItems.length}`;
+  vwBody.innerHTML = `<p class="vw-note">${esc(t('loading'))}</p>`;
+  const mime = meta.mime || '';
+
+  if (isImage(mime)) {
+    let src = null;
+    try { src = await mediaUrl(meta, true); } catch {}
+    if (!src) return viewerFallback(meta);
+    if (viewIndex !== currentItems.indexOf(it)) return; // người dùng đã chuyển file
+    const img = document.createElement('img');
+    img.alt = meta.name || '';
+    img.onerror = () => viewerFallback(meta);
+    img.src = src;
+    vwBody.innerHTML = '';
+    vwBody.appendChild(img);
+    return;
+  }
+
+  if (/^(video|audio)\//i.test(mime)) {
+    let src = null;
+    try { src = await mediaUrl(meta); } catch {}
+    if (!src) return viewerFallback(meta);
+    if (viewIndex !== currentItems.indexOf(it)) return;
+    const tag = /^video\//i.test(mime) ? 'video' : 'audio';
+    const el = document.createElement(tag);
+    el.controls = true;
+    el.autoplay = true;
+    if (tag === 'video') {
+      el.playsInline = true;
+      el.setAttribute('playsinline', '');
+    }
+    el.onerror = () => viewerFallback(meta);
+    el.src = src;
+    vwBody.innerHTML = '';
+    vwBody.appendChild(el);
+    return;
+  }
+
+  viewerFallback(meta);
+}
+
+function openViewer(i) {
+  if (i < 0 || i >= currentItems.length) return;
+  viewIndex = i;
+  paintViewer();
+  viewerEl.hidden = false;
+  renderViewer();
+}
+function closeViewer() {
+  viewerEl.hidden = true;
+  vwBody.innerHTML = ''; // dừng phát video/audio
+  viewIndex = -1;
+}
+const stepViewer = (d) => {
+  if (viewIndex < 0) return;
+  const n = viewIndex + d;
+  if (n < 0 || n >= currentItems.length) return;
+  viewIndex = n;
+  renderViewer();
+};
+
+$('vw-close').onclick = closeViewer;
+$('vw-prev').onclick = () => stepViewer(-1);
+$('vw-next').onclick = () => stepViewer(1);
+$('vw-external').onclick = () => {
+  const it = currentItems[viewIndex];
+  if (it?.meta.fileRef) window.open(directUrl(it.meta.fileRef), '_blank');
+};
+document.addEventListener('keydown', (e) => {
+  if (viewerEl.hidden) return;
+  if (e.key === 'Escape') closeViewer();
+  else if (e.key === 'ArrowLeft') stepViewer(-1);
+  else if (e.key === 'ArrowRight') stepViewer(1);
+});
+// Vuốt ngang để chuyển file
+let vwTouch = null;
+viewerEl.addEventListener('touchstart', (e) => {
+  vwTouch = e.touches[0].clientX;
+}, { passive: true });
+viewerEl.addEventListener('touchend', (e) => {
+  if (vwTouch == null) return;
+  const dx = e.changedTouches[0].clientX - vwTouch;
+  vwTouch = null;
+  if (Math.abs(dx) < 60) return;
+  stepViewer(dx < 0 ? 1 : -1);
+}, { passive: true });
+
+// ============================================================
+// Kéo xuống để tải lại (pull-to-refresh)
+// ============================================================
+const ptrEl = $('ptr');
+function setupPullToRefresh(el, onRefresh) {
+  let startY = 0;
+  let dist = 0;
+  let armed = false;
+  const THRESHOLD = 70;
+
+  el.addEventListener('touchstart', (e) => {
+    armed = el.scrollTop <= 0;
+    startY = e.touches[0].clientY;
+    dist = 0;
+  }, { passive: true });
+
+  el.addEventListener('touchmove', (e) => {
+    if (!armed) return;
+    dist = e.touches[0].clientY - startY;
+    if (dist > 0) ptrEl.classList.toggle('on', dist > THRESHOLD * 0.6);
+    else armed = dist > -10 ? armed : false;
+  }, { passive: true });
+
+  el.addEventListener('touchend', () => {
+    const should = armed && dist > THRESHOLD;
+    armed = false;
+    dist = 0;
+    if (!should) {
+      ptrEl.classList.remove('on');
+      return;
+    }
+    ptrEl.classList.add('on');
+    Promise.resolve(onRefresh()).finally(() => setTimeout(() => ptrEl.classList.remove('on'), 400));
+  }, { passive: true });
+}
+['t-home', 't-photo', 't-files'].forEach((id) => {
+  setupPullToRefresh($(id), () => reloadTab(id));
+});
+
 // ---------- search từ thanh trên ----------
 function switchTab(tab) {
   document.querySelectorAll('.tabs').forEach((x) => x.classList.remove('on'));
@@ -523,10 +706,12 @@ async function doSearch(raw, label) {
 
 // ---------- sheet thao tác file ----------
 function fileActions(blob, meta) {
+  const idx = currentItems.findIndex((x) => x.blob === blob);
   const rows = [
+    { k: 'view', ico: 'image', label: t('vw_view') },
+    { k: 'external', ico: 'external', label: t('vw_open_ext') },
     { k: 'download', ico: 'download', label: t('fa_download') },
     { k: 'share', ico: 'link', label: t('fa_share') },
-    { k: 'open', ico: 'external', label: t('fa_open') },
     { k: 'detail', ico: 'info', label: t('fa_detail') }
   ];
   openSheet(`<h3>${esc(meta.name)}</h3>
@@ -535,8 +720,14 @@ function fileActions(blob, meta) {
   sheetBody.querySelectorAll('[data-k]').forEach((b) => {
     b.onclick = async () => {
       const ref = meta.fileRef || blob;
-      if (b.dataset.k === 'download') {
-        window.open(`${base()}/ui/download/${encodeURIComponent(ref)}`, '_blank');
+      if (b.dataset.k === 'view') {
+        closeSheet();
+        openViewer(idx >= 0 ? idx : 0);
+      } else if (b.dataset.k === 'external') {
+        window.open(directUrl(ref), '_blank');
+        closeSheet();
+      } else if (b.dataset.k === 'download') {
+        window.open(directUrl(ref), '_blank');
         closeSheet();
       } else if (b.dataset.k === 'share') {
         const link = `${base()}/ui/?p=${encodeURIComponent(ref)}`;
@@ -845,6 +1036,7 @@ $('ob-skip').onclick = () => {
 // ============================================================
 function boot() {
   paintIcons();
+  paintViewer();
   renderSvcSub();
   renderVidState();
   renderWifiState();

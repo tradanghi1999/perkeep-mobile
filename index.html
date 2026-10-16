@@ -40,6 +40,8 @@
         <span class="avatar" id="av" title="Dịch vụ">P</span>
       </div>
 
+      <div class="ptr" id="ptr"><span class="ptr-spin"></span><span data-i18n="ptr">Đang tải lại…</span></div>
+
       <div class="tabs on" id="t-home">
         <h3 data-i18n="home_title">Được đề xuất</h3>
         <div id="uploads" class="uploads" hidden></div>
@@ -94,6 +96,21 @@
       </div>
 
       <button class="fab" id="fab" aria-label="add"></button>
+
+      <!-- Trình xem file toàn màn hình -->
+      <div class="viewer" id="viewer" hidden>
+        <div class="vw-top">
+          <button class="vw-btn" id="vw-close" aria-label="close"></button>
+          <div class="vw-title"><b id="vw-name"></b><small id="vw-sub"></small></div>
+          <button class="vw-btn" id="vw-external" aria-label="open external"></button>
+        </div>
+        <div class="vw-body" id="vw-body"></div>
+        <div class="vw-nav">
+          <button class="vw-btn" id="vw-prev" aria-label="prev"></button>
+          <span class="vw-count" id="vw-count"></span>
+          <button class="vw-btn" id="vw-next" aria-label="next"></button>
+        </div>
+      </div>
 
       <div class="sheet" id="sheet" hidden>
         <div id="sheet-body"></div>
