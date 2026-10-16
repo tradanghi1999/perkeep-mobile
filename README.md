@@ -3,11 +3,16 @@
 Client Perkeep cho Android: tìm kiếm, thumbnail, upload chạy nền. Web chỉ để dev; APK build trên GitHub Actions.
 
 ## Tính năng
-- **Tìm kiếm**: gõ chữ thường (`health`) hoặc expression Perkeep (`tag:x`, `after:2026-01-01`); chip nhanh Ảnh / Video / Giấy tờ / Tháng này.
-- **Xem file trong app**: chạm vào dòng để mở trình xem toàn màn hình — ảnh, video (có điều khiển, tự phát), audio. Chuyển file bằng nút ‹ › hoặc vuốt ngang; Esc để đóng.
+- **Tìm kiếm không cần cú pháp**: gõ từ khóa tự nhiên (không dấu cũng được) + nút **Bộ lọc** cho Loại tệp / Thời gian / Sắp xếp. Không phải học cú pháp Perkeep.
+  - Bộ lọc đang bật hiện thành chip, bấm ✕ để bỏ từng cái; có nút "Xoá bộ lọc".
+  - Sheet lọc hiện luôn **câu lệnh sẽ gửi tới Perkeep** (để ai muốn học thì thấy), và ghi rõ phần nào lọc ngay trên máy.
+  - Ô "Nâng cao" cho phép nhập thẳng cú pháp Perkeep nếu cần.
+  - Vì sao lọc thời gian/từ khóa làm ở máy: `after:` của Perkeep so mốc khác nhau tuỳ câu truy vấn (thời gian file vs permanode), còn `filename:` là glob **phân biệt hoa/thường**. Lọc ở máy cho kết quả đúng như ngày/tên đang hiển thị.
+- **Xem file trong app**: chạm vào dòng để mở trình xem toàn màn hình — ảnh, video (có điều khiển, tự phát), audio.
+  - Chuyển file bằng nút ‹ › hoặc **vuốt ngang**; **vuốt xuống để đóng**; Esc khi test desktop.
   - PDF và loại khác: WebView Android không render được → nút **Mở bằng ứng dụng khác** (Chrome/ứng dụng PDF) và **Tải về máy**.
   - Server bật auth: ảnh lấy qua endpoint thumbnail; video/audio dùng nút mở ngoài.
-- **Kéo xuống để tải lại** (pull-to-refresh) ở tab Nhà / Ảnh / Tệp.
+- **Kéo xuống để tải lại** (pull-to-refresh) ở tab Nhà / Ảnh / Tệp; **vuốt xuống để đóng** mọi bottom sheet.
 - **Thumbnail**: ảnh do server sinh; video do app tự lấy khung hình.
 - **Upload nền** kiểu Google Drive (WorkManager + notification tiến trình).
 - **Nhiều dịch vụ Perkeep** + song ngữ VI/EN.

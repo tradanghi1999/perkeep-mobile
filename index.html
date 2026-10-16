@@ -36,16 +36,16 @@
       <div class="searchbar">
         <span class="s-ico" id="s-ico"></span>
         <input id="q" type="search" />
-        <button id="btn-search" class="s-go" data-i18n="btn_search">Tìm</button>
+        <button id="btn-filter" class="s-filter" aria-label="filter"></button>
         <span class="avatar" id="av" title="Dịch vụ">P</span>
       </div>
+      <div class="filters" id="filters" hidden></div>
 
       <div class="ptr" id="ptr"><span class="ptr-spin"></span><span data-i18n="ptr">Đang tải lại…</span></div>
 
       <div class="tabs on" id="t-home">
         <h3 data-i18n="home_title">Được đề xuất</h3>
         <div id="uploads" class="uploads" hidden></div>
-        <div class="chips" id="chips"></div>
         <div id="home-list" class="list"></div>
       </div>
 
@@ -113,6 +113,7 @@
       </div>
 
       <div class="sheet" id="sheet" hidden>
+        <div class="sheet-handle"></div>
         <div id="sheet-body"></div>
         <button class="rowbtn" id="close"></button>
       </div>

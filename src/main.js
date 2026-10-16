@@ -63,6 +63,14 @@ const I18N = {
     fa_download: 'Tải về máy', fa_share: 'Sao chép link', fa_open: 'Mở trong Perkeep', fa_detail: 'Chi tiết',
     vw_view: 'Xem trong app', vw_open_ext: 'Mở bằng ứng dụng khác', vw_unsupported: 'Loại file này không xem được trong app. Bạn mở bằng ứng dụng khác nhé.',
     ptr: 'Đang tải lại…',
+    fl_title: 'Bộ lọc', fl_type: 'Loại tệp', fl_time: 'Thời gian', fl_sort: 'Sắp xếp',
+    fl_all: 'Tất cả', fl_image: 'Ảnh', fl_video: 'Video', fl_audio: 'Âm thanh', fl_doc: 'Tài liệu',
+    fl_any_time: 'Bất kỳ', fl_today: 'Hôm nay', fl_week: '7 ngày qua', fl_month: 'Tháng này', fl_year: 'Năm nay',
+    fl_newest: 'Mới nhất', fl_oldest: 'Cũ nhất', fl_name: 'Tên A→Z',
+    fl_clear: 'Xoá bộ lọc', fl_kw: 'Từ khoá', fl_adv_chip: 'Cú pháp riêng',
+    fl_advanced: 'Nâng cao: cú pháp Perkeep (để trống nếu không dùng)',
+    fl_expr: 'Câu lệnh gửi tới Perkeep', fl_apply: 'Áp dụng',
+    fl_local: 'Lọc ngay trên máy',
     fab_title: 'Tạo mới', fab_upload: 'Tải tệp lên (chạy nền)', fab_note: 'Tạo ghi chú', fab_soon: '(sắp có)',
     up_waiting: 'Chờ mạng…', up_preparing: 'Đang chuẩn bị…', up_uploading: 'Đang tải lên',
     up_signing: 'Đang tạo mục…', up_done: 'Đã tải lên', up_failed: 'Lỗi', up_canceled: 'Đã huỷ',
@@ -98,6 +106,14 @@ const I18N = {
     fa_download: 'Download', fa_share: 'Copy link', fa_open: 'Open in Perkeep', fa_detail: 'Details',
     vw_view: 'View in app', vw_open_ext: 'Open with another app', vw_unsupported: 'This file type cannot be previewed in the app. Open it with another app?',
     ptr: 'Reloading…',
+    fl_title: 'Filters', fl_type: 'File type', fl_time: 'Time', fl_sort: 'Sort',
+    fl_all: 'All', fl_image: 'Photos', fl_video: 'Videos', fl_audio: 'Audio', fl_doc: 'Documents',
+    fl_any_time: 'Any time', fl_today: 'Today', fl_week: 'Last 7 days', fl_month: 'This month', fl_year: 'This year',
+    fl_newest: 'Newest', fl_oldest: 'Oldest', fl_name: 'Name A→Z',
+    fl_clear: 'Clear filters', fl_kw: 'Keyword', fl_adv_chip: 'Custom query',
+    fl_advanced: 'Advanced: raw Perkeep query (leave empty to ignore)',
+    fl_expr: 'Query sent to Perkeep', fl_apply: 'Apply',
+    fl_local: 'Filtered on device',
     fab_title: 'Create', fab_upload: 'Upload files (background)', fab_note: 'New note', fab_soon: '(coming soon)',
     up_waiting: 'Waiting for network…', up_preparing: 'Preparing…', up_uploading: 'Uploading',
     up_signing: 'Creating item…', up_done: 'Uploaded', up_failed: 'Failed', up_canceled: 'Canceled',
@@ -129,7 +145,7 @@ function applyLang() {
   $('seg-vi').className = lang === 'vi' ? 'on' : '';
   $('seg-en').className = lang === 'en' ? 'on' : '';
   $('close').innerHTML = icon('close') + `<span>${esc(t('btn_close'))}</span>`;
-  renderChips();
+  renderFilters();
   renderSvcSub();
 }
 
@@ -172,7 +188,7 @@ const listEl = $('home-list');
 const photoEl = $('photo-grid');
 const fileEl = $('file-list');
 const outEl = $('out');
-const chipsEl = $('chips');
+const filtersEl = $('filters');
 const sheetEl = $('sheet');
 const sheetBody = $('sheet-body');
 const snackEl = $('snack');
@@ -200,13 +216,73 @@ function snack(msg) {
 }
 function openSheet(html) {
   sheetBody.innerHTML = html;
+  sheetEl.style.transform = '';
+  sheetEl.style.transition = '';
+  sheetEl.scrollTop = 0;
   sheetEl.hidden = false;
 }
-function closeSheet() { sheetEl.hidden = true; sheetBody.innerHTML = ''; }
+function closeSheet() {
+  sheetEl.hidden = true;
+  sheetEl.style.transform = '';
+  sheetEl.style.transition = '';
+  sheetBody.innerHTML = '';
+}
 $('close').onclick = closeSheet;
+
+// Vuốt xuống để đóng sheet (đỡ phải bấm nút Đóng, nhất là máy màn hình lớn)
+function setupSheetDrag() {
+  let startY = 0;
+  let dy = 0;
+  let dragging = false;
+  const atTop = () => sheetEl.scrollTop <= 0;
+  const reset = () => {
+    sheetEl.classList.remove('dragging');
+    sheetEl.style.transition = '';
+    sheetEl.style.transform = '';
+  };
+
+  sheetEl.addEventListener('touchstart', (e) => {
+    if (e.touches.length !== 1) return;
+    dragging = atTop();
+    startY = e.touches[0].clientY;
+    dy = 0;
+    if (dragging) sheetEl.style.transition = 'none';
+  }, { passive: true });
+
+  sheetEl.addEventListener('touchmove', (e) => {
+    if (!dragging) return;
+    dy = e.touches[0].clientY - startY;
+    if (dy <= 0) {
+      sheetEl.style.transform = '';
+      return;
+    }
+    if (!atTop()) { // nội dung đã cuộn thì không kéo đóng nữa
+      dragging = false;
+      reset();
+      return;
+    }
+    sheetEl.classList.add('dragging');
+    sheetEl.style.transform = `translateY(${dy}px)`;
+  }, { passive: true });
+
+  const end = () => {
+    if (!dragging) return;
+    dragging = false;
+    sheetEl.classList.remove('dragging');
+    const shouldClose = dy > 90;
+    sheetEl.style.transition = 'transform .18s ease-out';
+    sheetEl.style.transform = shouldClose ? 'translateY(100%)' : 'translateY(0)';
+    setTimeout(() => (shouldClose ? closeSheet() : reset()), 170);
+  };
+  sheetEl.addEventListener('touchend', end, { passive: true });
+  sheetEl.addEventListener('touchcancel', end, { passive: true });
+}
+setupSheetDrag();
 
 // ---------- helpers ----------
 const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+// Bỏ dấu tiếng Việt + về chữ thường để tìm tên file dễ hơn
+const norm = (s) => String(s).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/đ/g, 'd');
 const shortBlob = (b) => (b.length > 28 ? b.slice(0, 18) + '…' + b.slice(-8) : b);
 const isImage = (m) => /^image\//i.test(m || '');
 function iconFor(mime) { return icon(iconForMime(mime)); }
@@ -222,16 +298,58 @@ const fmtDate = (iso) => (iso ? new Date(iso).toLocaleDateString(lang === 'vi' ?
 // ============================================================
 // Tìm kiếm Perkeep
 // ============================================================
-// Perkeep không nhận từ khóa trần ("hello" -> lỗi). Chữ thường -> title:...
-function toExpression(input) {
-  return /(^|\s)-?[a-zA-Z]+:/.test(input) ? input : `title:${input}`;
-}
+// Người dùng chọn bộ lọc trực quan; app tự dịch sang expression Perkeep.
+// (Perkeep không nhận từ khóa trần: "hello" -> lỗi, nên phải thành title:hello)
 const DESCRIBE = { rules: [{ attrs: ['*'], rules: [{ attrs: ['*'] }] }] };
 
-async function query(expression, limit = 50) {
+const TYPE_EXPR = {
+  image: '(filename:*.jpg or filename:*.jpeg or filename:*.png or filename:*.gif or filename:*.webp or filename:*.heic)',
+  video: '(filename:*.mp4 or filename:*.mov or filename:*.mkv or filename:*.webm or filename:*.avi)',
+  audio: '(filename:*.mp3 or filename:*.m4a or filename:*.wav or filename:*.flac or filename:*.ogg)',
+  doc: '(filename:*.pdf or filename:*.doc or filename:*.docx or filename:*.xls or filename:*.xlsx or filename:*.ppt or filename:*.pptx or filename:*.txt)'
+};
+
+const iso = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+function timeFrom(kind) {
+  const d = new Date();
+  if (kind === 'today') return iso(d);
+  if (kind === 'week') { d.setDate(d.getDate() - 7); return iso(d); }
+  if (kind === 'month') return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-01`;
+  if (kind === 'year') return `${d.getFullYear()}-01-01`;
+  return '';
+}
+
+// Bộ lọc hiện tại (nhớ cho lần mở sau)
+const filters = Object.assign(
+  { type: 'all', time: 'any', sort: 'newest', keyword: '', advanced: '' },
+  JSON.parse(localStorage.getItem('pk-filters-v1') || '{}')
+);
+const saveFilters = () => localStorage.setItem('pk-filters-v1', JSON.stringify(filters));
+const filterActive = () =>
+  filters.type !== 'all' || filters.time !== 'any' || filters.sort !== 'newest' || !!filters.keyword || !!filters.advanced;
+
+/** Dịch bộ lọc thành expression Perkeep.
+ *  Lọc thời gian + từ khóa làm ngay trên máy (xem fillList) vì:
+ *  - after: của Perkeep so mốc khác nhau tuỳ câu truy vấn (file vs permanode)
+ *  - filename: là glob PHÂN BIỆT hoa/thường, title: chỉ khớp thuộc tính title
+ */
+function buildExpression(forceType) {
+  if (filters.advanced) return filters.advanced.trim();
+  const type = forceType || filters.type;
+  return type !== 'all' && TYPE_EXPR[type] ? TYPE_EXPR[type] : '';
+}
+// Perkeep chỉ nhận sort "-created" / "created" / "map".
+// Có lọc thời gian thì luôn lấy trang mới nhất để không sót mục gần đây.
+function serverSort() {
+  if (filters.time !== 'any') return '-created';
+  return filters.sort === 'oldest' ? 'created' : '-created';
+}
+
+async function query(expression, limit = 50, sort = '') {
   const b = base();
   if (!b) throw new Error('no server');
   const body = { expression, limit, describe: DESCRIBE };
+  if (sort) body.sort = sort;
   log(`POST ${b}/my-search/camli/search/query`, body);
   const r = await http(b + '/my-search/camli/search/query', {
     method: 'POST',
@@ -429,83 +547,176 @@ function photoTile(blob, meta, index = 0) {
 async function fillList(target, expression, render, emptyMsg, limit = 50) {
   target.innerHTML = `<p class="empty">${esc(t('loading'))}</p>`;
   try {
-    const { blobs, description } = await query(expression, limit);
+    const wantKw = !filters.advanced && !!filters.keyword.trim();
+    // Tìm theo tên ở máy -> lấy trang rộng hơn để đỡ sót
+    const { blobs, description } = await query(expression, wantKw ? 150 : limit, serverSort());
     target.innerHTML = '';
     if (!blobs.length) {
       target.innerHTML = `<p class="empty">${esc(emptyMsg)}</p>`;
       if (target === listEl || target === fileEl || target === photoEl) currentItems = [];
       return;
     }
-    const items = blobs.map((b) => ({ blob: b, meta: metaFor(b, description) }));
+    let items = blobs.map((b) => ({ blob: b, meta: metaFor(b, description) }));
+
+    // Từ khóa: khớp tên hiển thị, không phân biệt hoa/thường và dấu tiếng Việt
+    if (wantKw) {
+      const needle = norm(filters.keyword);
+      items = items.filter((it) => norm(it.meta.name || '').includes(needle));
+    }
+    // Thời gian: lọc theo đúng ngày đang hiển thị cho người dùng
+    if (!filters.advanced && filters.time !== 'any') {
+      const from = timeFrom(filters.time);
+      if (from) items = items.filter((it) => (it.meta.date || '').slice(0, 10) >= from);
+    }
+    if (!filters.advanced && filters.sort === 'name' && filters.time !== 'any') {
+      items.sort((a, b) => (a.meta.name || '').localeCompare(b.meta.name || '', lang === 'vi' ? 'vi' : 'en'));
+    }
+
+    if (!items.length) {
+      target.innerHTML = `<p class="empty">${esc(emptyMsg)}</p>`;
+      if (target === listEl || target === fileEl || target === photoEl) currentItems = [];
+      return;
+    }
     // Trình xem cần danh sách của tab đang xem để chuyển qua lại
     if (target === listEl || target === fileEl || target === photoEl) currentItems = items;
     items.forEach((it, i) => target.appendChild(render(it.blob, it.meta, i)));
-    log(`HTTP 200 · ${blobs.length} blobs · expression="${expression}"`);
+    log(`HTTP 200 · ${items.length}/${blobs.length} blobs · expression="${expression || '(trống)'}" · sort=${serverSort()}`);
   } catch (e) {
     target.innerHTML = `<p class="empty">${esc(String(e.message).includes('expression') ? t('search_err') : t('conn_err'))}</p>`;
     log(`FAIL: ${e.message}`);
   }
 }
 
-// Tab Nhà = mọi thứ mới nhất; Ảnh = ảnh; Tệp = tất cả.
-const EXPR_PHOTOS = '(filename:*.jpg or filename:*.jpeg or filename:*.png or filename:*.gif or filename:*.webp or filename:*.heic)';
-const EXPR_VIDEOS = '(filename:*.mp4 or filename:*.mov or filename:*.mkv or filename:*.webm or filename:*.avi)';
-const EXPR_DOCS = '(filename:*.pdf or filename:*.doc or filename:*.docx or filename:*.xls or filename:*.xlsx)';
-
-const loadHome = () => fillList(listEl, '', fileRow, t('empty'));
-const loadPhotos = () => fillList(photoEl, EXPR_PHOTOS, photoTile, t('empty_photo'));
-const loadFiles = () => fillList(fileEl, '', fileRow, t('empty'));
+// Tab Nhà / Tệp dùng bộ lọc; tab Ảnh luôn ép loại = ảnh.
+const loadHome = () => fillList(listEl, buildExpression(), fileRow, t('empty'));
+const loadPhotos = () => fillList(photoEl, buildExpression('image'), photoTile, t('empty_photo'));
+const loadFiles = () => fillList(fileEl, buildExpression(), fileRow, t('empty'));
 function reloadTab(tab) {
   if (tab === 't-home') loadHome();
   else if (tab === 't-photo') loadPhotos();
   else if (tab === 't-files') loadFiles();
 }
 
-// ---------- chips ----------
-function quickChips() {
-  const y = new Date().getFullYear();
-  const m = String(new Date().getMonth() + 1).padStart(2, '0');
-  return lang === 'vi'
-    ? [
-        { label: 'Ảnh', expr: EXPR_PHOTOS },
-        { label: 'Video', expr: EXPR_VIDEOS },
-        { label: 'Giấy tờ', expr: EXPR_DOCS },
-        { label: 'Tháng này', expr: `after:${y}-${m}-01` }
-      ]
-    : [
-        { label: 'Photos', expr: EXPR_PHOTOS },
-        { label: 'Videos', expr: EXPR_VIDEOS },
-        { label: 'Documents', expr: EXPR_DOCS },
-        { label: 'This month', expr: `after:${y}-${m}-01` }
-      ];
-}
-function renderChips() {
-  if (!chipsEl) return;
-  chipsEl.innerHTML = '';
-  let recent = [];
-  try { recent = JSON.parse(localStorage.getItem(LS_RECENT)) || []; } catch {}
-  const quick = quickChips();
-  const seen = new Set(quick.map((q) => q.label));
-  const items = [
-    ...quick,
-    ...recent.filter((r) => r && !seen.has(r.label)).map((r) => ({ label: r.label, expr: r.expr }))
-  ].slice(0, 6);
-  for (const it of items) {
-    const btn = document.createElement('button');
-    btn.className = 'chip';
-    btn.textContent = it.label;
-    btn.onclick = () => doSearch(it.expr, it.label);
-    chipsEl.appendChild(btn);
+// ---------- Bộ lọc trực quan (thay cho việc bắt gõ cú pháp Perkeep) ----------
+const TYPE_OPTS = [
+  { v: 'all', k: 'fl_all', ico: 'folder' },
+  { v: 'image', k: 'fl_image', ico: 'image' },
+  { v: 'video', k: 'fl_video', ico: 'video' },
+  { v: 'audio', k: 'fl_audio', ico: 'audio' },
+  { v: 'doc', k: 'fl_doc', ico: 'doc' }
+];
+const TIME_OPTS = [
+  { v: 'any', k: 'fl_any_time' },
+  { v: 'today', k: 'fl_today' },
+  { v: 'week', k: 'fl_week' },
+  { v: 'month', k: 'fl_month' },
+  { v: 'year', k: 'fl_year' }
+];
+const SORT_OPTS = [
+  { v: 'newest', k: 'fl_newest' },
+  { v: 'oldest', k: 'fl_oldest' },
+  { v: 'name', k: 'fl_name' }
+];
+const optLabel = (list, v) => t((list.find((o) => o.v === v) || list[0]).k);
+
+/** Chip hiển thị bộ lọc đang bật, mỗi chip bỏ được. */
+function renderFilters() {
+  const el = $('filters');
+  if (!el) return;
+  el.innerHTML = '';
+  const chips = [];
+  if (filters.type !== 'all') chips.push({ label: optLabel(TYPE_OPTS, filters.type), clear: () => { filters.type = 'all'; } });
+  if (filters.time !== 'any') chips.push({ label: optLabel(TIME_OPTS, filters.time), clear: () => { filters.time = 'any'; } });
+  if (filters.sort !== 'newest') chips.push({ label: optLabel(SORT_OPTS, filters.sort), clear: () => { filters.sort = 'newest'; } });
+  if (filters.keyword) chips.push({ label: `${t('fl_kw')}: ${filters.keyword}`, clear: () => { filters.keyword = ''; qEl.value = ''; } });
+  if (filters.advanced) chips.push({ label: t('fl_adv_chip'), clear: () => { filters.advanced = ''; } });
+
+  el.hidden = chips.length === 0;
+  $('btn-filter').classList.toggle('on', filterActive());
+  for (const c of chips) {
+    const b = document.createElement('button');
+    b.className = 'fchip';
+    b.innerHTML = `<b>${esc(c.label)}</b><span class="x">✕</span>`;
+    b.onclick = () => { c.clear(); saveFilters(); renderFilters(); reloadTab(currentTab()); };
+    el.appendChild(b);
+  }
+  if (chips.length) {
+    const clr = document.createElement('button');
+    clr.className = 'fchip clear';
+    clr.textContent = t('fl_clear');
+    clr.onclick = () => {
+      Object.assign(filters, { type: 'all', time: 'any', sort: 'newest', keyword: '', advanced: '' });
+      qEl.value = '';
+      saveFilters();
+      renderFilters();
+      reloadTab(currentTab());
+    };
+    el.appendChild(clr);
   }
 }
-// Lịch sử lưu nhãn + expression để chip hiển thị dễ đọc.
-function pushRecent(label, expr) {
-  let r = [];
-  try { r = JSON.parse(localStorage.getItem(LS_RECENT)) || []; } catch {}
-  r = r.filter((x) => x && typeof x === 'object' && x.label !== label);
-  localStorage.setItem(LS_RECENT, JSON.stringify([{ label, expr }, ...r].slice(0, 3)));
-  renderChips();
+
+const optRow = (list, value) => list.map((o) => {
+  const on = o.v === value;
+  return `<button class="opt${on ? ' on' : ''}" data-v="${o.v}">${o.ico ? icon(o.ico, 20) : ''}<span>${esc(t(o.k))}</span>${on ? `<span class="tick">${icon('check', 18)}</span>` : ''}</button>`;
+}).join('');
+
+function openFilterSheet() {
+  openSheet(`<h3>${esc(t('fl_title'))}</h3>
+    <div class="sec">${esc(t('fl_type'))}</div>${optRow(TYPE_OPTS, filters.type)}
+    <div class="sec">${esc(t('fl_time'))}</div>${optRow(TIME_OPTS, filters.time)}
+    <div class="sec">${esc(t('fl_sort'))}</div>${optRow(SORT_OPTS, filters.sort)}
+    <div class="sec">${esc(t('fl_advanced'))}</div>
+    <input class="adv" id="fl-adv" value="${esc(filters.advanced)}" placeholder="vd: tag:phone before:2026" />
+    <div class="sec">${esc(t('fl_expr'))}</div>
+    <div class="expr" id="fl-preview"></div>
+    <p class="meta" id="fl-note"></p>
+    <button class="rowbtn" id="fl-apply">${icon('check')}<span>${esc(t('fl_apply'))}</span></button>
+    <button class="rowbtn" id="fl-reset">${icon('close')}<span>${esc(t('fl_clear'))}</span></button>`);
+
+  const advInput = sheetBody.querySelector('#fl-adv');
+  const preview = () => {
+    const saved = filters.advanced;
+    filters.advanced = advInput.value.trim();
+    const expr = buildExpression();
+    sheetBody.querySelector('#fl-preview').textContent = expr || '(trống)';
+    // Nói rõ phần nào lọc ở máy để người dùng không hiểu nhầm
+    const note = [];
+    if (!filters.advanced && filters.time !== 'any') note.push(`${t('fl_time')}: ${optLabel(TIME_OPTS, filters.time)}`);
+    if (!filters.advanced && filters.keyword.trim()) note.push(`${t('fl_kw')}: ${filters.keyword.trim()}`);
+    if (filters.sort === 'name') note.push(t('fl_name'));
+    sheetBody.querySelector('#fl-note').textContent = note.length ? `${t('fl_local')}: ${note.join(' · ')}` : '';
+    filters.advanced = saved;
+  };
+  advInput.addEventListener('input', preview);
+  preview();
+
+  sheetBody.querySelectorAll('.opt').forEach((b) => {
+    b.onclick = () => {
+      const v = b.dataset.v;
+      if (TYPE_OPTS.some((o) => o.v === v)) { filters.type = v; filters.advanced = ''; }
+      else if (TIME_OPTS.some((o) => o.v === v)) filters.time = v;
+      else filters.sort = v;
+      saveFilters();
+      openFilterSheet(); // vẽ lại để cập nhật dấu tick
+    };
+  });
+  sheetBody.querySelector('#fl-apply').onclick = () => {
+    filters.advanced = advInput.value.trim();
+    saveFilters();
+    closeSheet();
+    renderFilters();
+    reloadTab(currentTab());
+  };
+  sheetBody.querySelector('#fl-reset').onclick = () => {
+    Object.assign(filters, { type: 'all', time: 'any', sort: 'newest', keyword: '', advanced: '' });
+    qEl.value = '';
+    saveFilters();
+    closeSheet();
+    renderFilters();
+    reloadTab(currentTab());
+  };
 }
+$('btn-filter').onclick = openFilterSheet;
 
 // ============================================================
 // Trình xem file trong app (ảnh / video / audio)
@@ -627,15 +838,20 @@ document.addEventListener('keydown', (e) => {
   else if (e.key === 'ArrowLeft') stepViewer(-1);
   else if (e.key === 'ArrowRight') stepViewer(1);
 });
-// Vuốt ngang để chuyển file
+// Vuốt ngang để chuyển file, vuốt xuống để đóng
 let vwTouch = null;
 viewerEl.addEventListener('touchstart', (e) => {
-  vwTouch = e.touches[0].clientX;
+  vwTouch = { x: e.touches[0].clientX, y: e.touches[0].clientY };
 }, { passive: true });
 viewerEl.addEventListener('touchend', (e) => {
-  if (vwTouch == null) return;
-  const dx = e.changedTouches[0].clientX - vwTouch;
+  if (!vwTouch) return;
+  const dx = e.changedTouches[0].clientX - vwTouch.x;
+  const dy = e.changedTouches[0].clientY - vwTouch.y;
   vwTouch = null;
+  if (Math.abs(dy) > Math.abs(dx)) {
+    if (dy > 70) closeViewer(); // vuốt xuống = đóng
+    return;
+  }
   if (Math.abs(dx) < 60) return;
   stepViewer(dx < 0 ? 1 : -1);
 }, { passive: true });
@@ -679,13 +895,13 @@ function setupPullToRefresh(el, onRefresh) {
   setupPullToRefresh($(id), () => reloadTab(id));
 });
 
-// ---------- search từ thanh trên ----------
+// ---------- search từ thanh trên: gõ tự do, không cần cú pháp ----------
 function switchTab(tab) {
   document.querySelectorAll('.tabs').forEach((x) => x.classList.remove('on'));
   $(tab).classList.add('on');
   document.querySelectorAll('.nav button').forEach((b) => b.classList.toggle('on', b.dataset.t === tab));
   $('fab').hidden = tab === 't-set';
-  $('chips').hidden = qEl.value.trim() !== '';
+  renderFilters();
 }
 document.querySelectorAll('.nav button').forEach((b) => {
   b.onclick = () => {
@@ -694,15 +910,25 @@ document.querySelectorAll('.nav button').forEach((b) => {
   };
 });
 
-async function doSearch(raw, label) {
-  const input = (raw ?? qEl.value).trim();
-  if (!input) return;
-  qEl.value = input;
-  const expr = toExpression(input);
-  pushRecent(label || input, expr);
-  switchTab('t-home');
-  await fillList(listEl, expr, fileRow, t('empty'));
+// Gõ từ khóa -> tự tìm sau khi ngừng gõ; Enter để tìm ngay
+let searchTimer = null;
+function runKeywordSearch(immediate) {
+  filters.keyword = qEl.value.trim();
+  filters.advanced = ''; // gõ từ khóa thì bỏ cú pháp nâng cao cũ
+  saveFilters();
+  renderFilters();
+  clearTimeout(searchTimer);
+  if (immediate) reloadTab(currentTab());
+  else searchTimer = setTimeout(() => reloadTab(currentTab()), 400);
 }
+qEl.addEventListener('input', () => runKeywordSearch(false));
+qEl.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') {
+    e.preventDefault();
+    qEl.blur();
+    runKeywordSearch(true);
+  }
+});
 
 // ---------- sheet thao tác file ----------
 function fileActions(blob, meta) {
@@ -771,7 +997,7 @@ function renderUploads() {
   head.className = 'up-head';
   head.innerHTML = `<b>${esc(t('up_title'))}</b>`;
   const clear = document.createElement('button');
-  clear.className = 'chip';
+  clear.className = 'fchip';
   clear.textContent = t('up_clear');
   clear.onclick = async () => {
     await up.clearFinished();
@@ -1040,7 +1266,7 @@ function boot() {
   renderSvcSub();
   renderVidState();
   renderWifiState();
-  renderChips();
+  renderFilters();
   qEl.placeholder = t('ph_q');
   switchTab('t-home');
   loadHome();
@@ -1051,14 +1277,11 @@ function boot() {
     if (job.state === 'done') loadHome();
   }).catch(() => {});
 }
-$('btn-search').onclick = () => doSearch();
-qEl.addEventListener('keydown', (e) => { if (e.key === 'Enter') { qEl.blur(); doSearch(); } });
-qEl.addEventListener('input', () => { $('chips').hidden = qEl.value.trim() !== ''; });
 
 applyLang();
 paintIcons();
 renderSvcSub();
-renderChips();
+renderFilters();
 renderVidState();
 renderWifiState();
 refreshUploads();
