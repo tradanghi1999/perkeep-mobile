@@ -115,7 +115,7 @@ class PkUploadPlugin : Plugin() {
                 tag = srv.getString("tag")
             )
         )
-        if (call.hasOption("wifiOnly")) store.setWifiOnly(call.getBoolean("wifiOnly", true))
+        if (call.hasOption("wifiOnly")) store.setWifiOnly(call.getBoolean("wifiOnly", true) ?: true)
 
         val ids = JSArray()
         val list = ArrayList<UploadJob>()
@@ -199,7 +199,7 @@ class PkUploadPlugin : Plugin() {
 
     @PluginMethod
     fun setWifiOnly(call: PluginCall) {
-        UploadStore(context).setWifiOnly(call.getBoolean("value", true))
+        UploadStore(context).setWifiOnly(call.getBoolean("value", true) ?: true)
         call.resolve()
     }
 

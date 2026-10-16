@@ -53,6 +53,9 @@ repositories {
 dependencies {
     implementation "org.jetbrains.kotlin:kotlin-stdlib:$pkKotlinVersion"
     implementation "androidx.core:core-ktx:1.12.0"
+    // ActivityResult (cho @ActivityCallback / startActivityForResult) không được
+    // kế thừa từ app vì module plugin là library riêng.
+    implementation "androidx.activity:activity:1.8.0"
     implementation "androidx.work:work-runtime-ktx:$androidxWorkVersion"
     implementation project(':capacitor-android')
 }
