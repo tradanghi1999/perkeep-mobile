@@ -84,4 +84,10 @@ Capacitor không có sẵn upload nền, nên có plugin local tự viết (Andr
 **Giới hạn đã biết**
 - Chỉ Android; trên web nút Tải lên báo "chỉ chạy trong app Android".
 - Thumbnail/upload đều cần cleartext HTTP cho LAN (CI đã bật `usesCleartextTraffic`).
-- **Chưa compile được ở máy dev này** (không có Java/Android SDK) → phải verify bằng CI: xem log `cat android/capacitor.settings.gradle` và artifact `pk-app-debug`.
+- **Đã verify bằng CI**: build xanh, APK ~4.7 MB, `include ':pk-upload'` có trong `capacitor.settings.gradle`, manifest merge đủ `FOREGROUND_SERVICE_DATA_SYNC` + `POST_NOTIFICATIONS` + `foregroundServiceType="dataSync"`.
+- Chưa verify trên máy thật: luồng chọn file → chunk → `camli/stat` → upload → tạo permanode cần chạy thử trên thiết bị.
+
+**Cách kiểm tra CI** (workflow `android-apk`):
+1. Tab Actions → run mới nhất → tải artifact `pk-app-debug`.
+2. Log bước “Capacitor sync” in `capacitor.settings.gradle` để biết plugin đã nạp.
+3. Log bước “Kiểm tra manifest merge + APK” in quyền + `foregroundServiceType` + dung lượng APK.
