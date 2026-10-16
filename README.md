@@ -57,6 +57,13 @@ Nếu muốn cài APK local sau này: `adb install app-debug.apk`.
 
 ## Lưu ý kỹ thuật
 - Mỗi server lưu thêm tài khoản/mật khẩu (nếu Perkeep bật `auth userpass`). Request gửi `Authorization: Basic ...`.
+- **Cloudflare Access**: nếu Perkeep nằm sau Cloudflare Tunnel + Zero Trust, điền **Service Token** (`CF-Access-Client-Id` / `CF-Access-Client-Secret`) trong form dịch vụ — app gửi 2 header này trên mọi request (tìm kiếm, thumbnail, upload, proxy media, mở bằng VLC).
+  - Tạo token: Cloudflare Zero Trust → **Access → Service Auth → Create Service Token**, rồi thêm rule **Service Auth** vào policy của ứng dụng.
+  - **Không dùng được luồng OTP email**: Access phát JWT qua cookie `CF_Authorization` sau khi nhập OTP trong trình duyệt; app không nhúng được trang đăng nhập đó và cookie không dùng được cho request native. Service Token là cách Cloudflare khuyến nghị cho máy-với-máy.
+  - App tự nhận diện CF Access (redirect tới trang đăng nhập Cloudflare) và báo rõ, tự mở sẵn mục nhập token.
+- **Proxy media nội bộ**: `<video>` không gửi được header xác thực, nên khi server chặn truy cập ẩn danh app mở một HTTP server nhỏ (`MediaProxyServer`, NanoHTTPD) trên `127.0.0.1` + token ngẫu nhiên, thêm header xác thực rồi chuyển tiếp `Range` → phát và tua được mọi kích thước.
+- **Mở bằng VLC/MX Player**: file được tải về cache rồi chia sẻ qua `FileProvider` (`PkFileProvider`, authority `<package>.pkupload.files`) — cần thiết cho video AV1/HEVC mà WebView không giải mã được.
+- **Phát hiện codec**: chỉ cần 32 byte đầu (`ftyp`) để biết AV1/HEVC; không nhúng ffprobe/ffmpeg (nặng 50–100MB mà không giúp giải mã).
 - Perkeep không hỗ trợ CORS nên app dùng native HTTP của Capacitor (không bị chặn). Test trên Chrome desktop/điện thoại sẽ báo CORS — phải test trên APK thật.
 - Mật khẩu lưu plaintext trong localStorage của máy (chỉ dùng LAN nhà, không dùng qua mạng công cộng không HTTPS).
 
