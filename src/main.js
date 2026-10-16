@@ -605,16 +605,27 @@ function setContainerMode(el, on) {
 }
 const els = () => [listEl, starEl, fileEl].filter(Boolean);
 
+/** Hiện thông báo rỗng/lỗi và căn giữa khoảng trống còn lại. */
+function showEmpty(target, msg) {
+  target.innerHTML = `<p class="empty">${esc(msg)}</p>`;
+  target.classList.add('is-empty');
+}
+function clearEmpty(target) {
+  target.classList.remove('is-empty');
+}
+
 async function fillList(target, expression, render, emptyMsg, limit = 50) {
   target.innerHTML = `<p class="empty">${esc(t('loading'))}</p>`;
+  target.classList.add('is-empty');
   setContainerMode(target, filters.view === 'grid');
   try {
     const wantKw = filters.by === 'name' && !!filters.keyword.trim();
     // Tìm theo tên ở máy -> lấy trang rộng hơn để đỡ sót
     const { blobs, description } = await query(expression, wantKw ? 150 : limit, serverSort());
     target.innerHTML = '';
+    clearEmpty(target);
     if (!blobs.length) {
-      target.innerHTML = `<p class="empty">${esc(emptyMsg)}</p>`;
+      showEmpty(target, emptyMsg);
       if (els().includes(target)) currentItems = [];
       return;
     }
@@ -635,7 +646,7 @@ async function fillList(target, expression, render, emptyMsg, limit = 50) {
     }
 
     if (!items.length) {
-      target.innerHTML = `<p class="empty">${esc(emptyMsg)}</p>`;
+      showEmpty(target, emptyMsg);
       if (els().includes(target)) currentItems = [];
       return;
     }
@@ -644,7 +655,7 @@ async function fillList(target, expression, render, emptyMsg, limit = 50) {
     items.forEach((it, i) => target.appendChild(render(it.blob, it.meta, i)));
     log(`HTTP 200 · ${items.length}/${blobs.length} blobs · expression="${expression || '(trống)'}" · sort=${serverSort()}`);
   } catch (e) {
-    target.innerHTML = `<p class="empty">${esc(String(e.message).includes('expression') ? t('search_err') : t('conn_err'))}</p>`;
+    showEmpty(target, String(e.message).includes('expression') ? t('search_err') : t('conn_err'));
     log(`FAIL: ${e.message}`);
   }
 }

@@ -60,7 +60,12 @@ h3 { margin: 12px 4px; font-size: 1.0625rem; }
 .chev { color: #bbb; flex: none; display: flex; }
 .dot-ico { border: 0; background: none; color: var(--muted); width: 44px; height: 44px; flex: none; border-radius: 50%; display: flex; align-items: center; justify-content: center; }
 .danger-text { color: #c62828; }
-.empty { text-align: center; color: var(--muted); padding: 28px 12px; font-size: 0.875rem; }
+.empty { text-align: center; color: var(--muted); padding: 24px; font-size: 0.875rem; line-height: 1.5; }
+/* Trạng thái rỗng: luôn căn giữa khoảng trống, kể cả khi đang ở kiểu Lưới lớn */
+.list.is-empty, .list.gridmode.is-empty {
+  display: flex; flex-direction: column; grid-template-columns: none;
+  flex: 1; justify-content: center; align-items: center;
+}
 
 /* ---------- Trình xem file ---------- */
 .viewer { position: fixed; inset: 0; z-index: 40; background: #0d0d0d; color: #fff; display: flex; flex-direction: column; }
