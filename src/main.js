@@ -577,7 +577,7 @@ function gridCard(blob, meta, index = 0) {
   const c = document.createElement('button');
   c.className = 'vcard';
   c.innerHTML = `
-    <span class="vthumb">${iconFor(meta.mime)}</span>
+    <span class="vthumb">${icon(iconForMime(meta.mime), 34)}</span>
     <span class="vname">${isStarred(meta) ? '★ ' : ''}${esc(meta.name)}</span>
     <span class="vmeta">${esc(metaLine(meta))}</span>
     <button class="vmore" aria-label="menu">${icon('more', 18)}</button>`;
