@@ -20,6 +20,8 @@ Client Perkeep cho Android: tìm kiếm, thumbnail, upload chạy nền. Web ch�
 - **Thumbnail**: ảnh do server sinh; video do app tự lấy khung hình.
 - **Upload nền** kiểu Google Drive (WorkManager + notification tiến trình).
 - **Nhiều dịch vụ Perkeep** + song ngữ VI/EN.
+- **Tag**: mở file → **Thêm tag** để gắn tag, chip tag hiện trong sheet (bấm ✕ để bỏ); tag cũng hiện luôn trên dòng file (`#tag`). Tìm lại bằng **Tìm theo → Tag**.
+  - Cách làm: app ký claim `add-attribute` / `del-attribute` qua sign handler của Perkeep rồi upload blob claim. Cần SHA-224 trong JS vì WebCrypto không hỗ trợ SHA-224 (`src/sha224.js`, đã test với vector NIST + đối chiếu Node).
 - **Cỡ chữ**: Cài đặt → Cỡ chữ (Nhỏ / Vừa / Lớn / Rất lớn). Mọi cỡ chữ trong app dùng `rem` với biến `--fs`, nên chỉnh một chỗ là đổi toàn bộ. Cỡ mặc định đã theo chuẩn Android (chữ danh sách 16px, phụ chú 13px, nhãn tab 12px).
 
 ## 1. Cài tối thiểu (không cài Android Studio)

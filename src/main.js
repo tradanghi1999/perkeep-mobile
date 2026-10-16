@@ -1,5 +1,6 @@
 import { CapacitorHttp } from '@capacitor/core';
 import { icon, iconForMime } from './icons.js';
+import { blobRefOf } from './sha224.js';
 import * as up from './upload.js';
 
 // ============================================================
@@ -61,6 +62,11 @@ const I18N = {
     empty: 'Không có kết quả.', empty_photo: 'Chưa có ảnh trong kho.', loading: 'Đang tải…',
     found: (n, s) => `${n} kết quả · ${s}`,
     fa_download: 'Tải về máy', fa_share: 'Sao chép link', fa_open: 'Mở trong Perkeep', fa_detail: 'Chi tiết',
+    tag_add: 'Thêm tag', tag_section: 'Tag', tag_ph: 'Nhập tag rồi bấm Thêm', tag_btn: 'Thêm',
+    tag_note: 'Tag giúp bạn tìm lại nhanh: đặt “Tìm theo → Tag” rồi gõ tag.',
+    tag_added: (v) => `Đã thêm tag “${v}”`, tag_removed: (v) => `Đã bỏ tag “${v}”`,
+    tag_fail: 'Không đổi được tag', tag_need_permanode: 'Mục này không phải permanode nên chưa gắn tag được.',
+    tag_remove: 'Bỏ tag này',
     vw_view: 'Xem trong app', vw_open_ext: 'Mở bằng ứng dụng khác', vw_unsupported: 'Loại file này không xem được trong app. Bạn mở bằng ứng dụng khác nhé.',
     ptr: 'Đang tải lại…',
     fl_title: 'Bộ lọc', fl_type: 'Loại tệp', fl_time: 'Thời gian', fl_sort: 'Sắp xếp',
@@ -107,6 +113,11 @@ const I18N = {
     empty: 'No results.', empty_photo: 'No photos in store yet.', loading: 'Loading…',
     found: (n, s) => `${n} results · ${s}`,
     fa_download: 'Download', fa_share: 'Copy link', fa_open: 'Open in Perkeep', fa_detail: 'Details',
+    tag_add: 'Add tag', tag_section: 'Tags', tag_ph: 'Type a tag then Add', tag_btn: 'Add',
+    tag_note: 'Tags make search easy: set “Search by → Tag” and type the tag.',
+    tag_added: (v) => `Added tag “${v}”`, tag_removed: (v) => `Removed tag “${v}”`,
+    tag_fail: 'Could not change tag', tag_need_permanode: 'This item is not a permanode, cannot tag it.',
+    tag_remove: 'Remove this tag',
     vw_view: 'View in app', vw_open_ext: 'Open with another app', vw_unsupported: 'This file type cannot be previewed in the app. Open it with another app?',
     ptr: 'Reloading…',
     fl_title: 'Filters', fl_type: 'File type', fl_time: 'Time', fl_sort: 'Sort',
@@ -375,7 +386,7 @@ async function query(expression, limit = 50, sort = '') {
 // Gộp meta permanode + file đính kèm.
 function metaFor(blob, description) {
   const meta = description?.meta?.[blob];
-  if (!meta) return { name: shortBlob(blob), mime: '', size: 0, date: '', fileRef: '' };
+  if (!meta) return { name: shortBlob(blob), mime: '', size: 0, date: '', fileRef: '', tags: [], raw: null };
   const attr = meta.permanode?.attr || {};
   const fileRef = attr.camliContent?.[0] || '';
   const fm = fileRef ? description.meta?.[fileRef]?.file : null;
@@ -385,6 +396,8 @@ function metaFor(blob, description) {
     size: fm?.size || 0,
     date: meta.permanode?.modtime || fm?.time || '',
     fileRef,
+    tags: attr.tag || [],
+    isPermanode: meta.camliType === 'permanode',
     raw: meta
   };
 }
@@ -534,7 +547,7 @@ function fileRow(blob, meta, index = 0) {
   row.className = 'frow';
   row.innerHTML = `
     <div class="fic">${iconFor(meta.mime)}</div>
-    <div class="fx"><b>${esc(meta.name)}</b><small>${esc([fmtSize(meta.size), fmtDate(meta.date)].filter(Boolean).join(' · '))}</small></div>
+    <div class="fx"><b>${esc(meta.name)}</b><small>${esc([fmtSize(meta.size), fmtDate(meta.date), ...meta.tags.map((x) => '#' + x)].filter(Boolean).join(' · '))}</small></div>
     <button class="dot-ico" aria-label="menu">${icon('more', 20)}</button>`;
   lazyThumb(row, row.querySelector('.fic'), meta);
   row.querySelector('.dot-ico').onclick = (e) => {
@@ -958,9 +971,105 @@ qEl.addEventListener('keydown', (e) => {
 });
 
 // ---------- sheet thao tác file ----------
+// ============================================================
+// Tag: thêm/bỏ tag = ký claim (add/del-attribute) rồi upload blob
+// Dùng chung cho cả app Android (native HTTP) và web (fetch, dev).
+// ============================================================
+let discCache = null;
+async function getDisc(force = false) {
+  if (!discCache || force) discCache = await up.discovery(base(), authHeaders());
+  return discCache;
+}
+const trimSlash = (s) => String(s || '').replace(/\/+$/, '');
+
+async function signUnsigned(unsigned) {
+  const d = await getDisc();
+  const r = await http(`${base()}${trimSlash(d.jsonSignRoot)}/camli/sig/sign`, {
+    method: 'POST',
+    headers: authHeaders({ 'Content-Type': 'application/x-www-form-urlencoded' }),
+    body: 'json=' + encodeURIComponent(unsigned)
+  });
+  const text = (r.text || '').trim();
+  if (!r.ok || !text.startsWith('{')) throw new Error(text.slice(0, 140) || `HTTP ${r.status}`);
+  return text;
+}
+
+async function uploadBlobText(ref, text) {
+  const d = await getDisc();
+  const boundary = '----pk' + Date.now().toString(36);
+  const body =
+    `--${boundary}\r\n` +
+    `Content-Disposition: form-data; name="${ref}"; filename="${ref}"\r\n` +
+    'Content-Type: application/octet-stream\r\n\r\n' +
+    text +
+    `\r\n--${boundary}--\r\n`;
+  const r = await http(`${base()}${trimSlash(d.blobRoot)}/camli/upload`, {
+    method: 'POST',
+    headers: authHeaders({ 'Content-Type': `multipart/form-data; boundary=${boundary}` }),
+    body
+  });
+  if (!r.ok) throw new Error(`HTTP ${r.status} ${(r.text || '').slice(0, 120)}`);
+}
+
+/** Thêm/bỏ 1 tag trên permanode (claimType: add-attribute | del-attribute). */
+async function setTag(permaRef, tag, add) {
+  const d = await getDisc();
+  const unsigned = JSON.stringify({
+    attribute: 'tag',
+    camliSigner: d.signerPubKey,
+    camliType: 'claim',
+    camliVersion: 1,
+    claimDate: new Date().toISOString().replace(/\.\d+Z$/, 'Z'),
+    claimType: add ? 'add-attribute' : 'del-attribute',
+    permaNode: permaRef,
+    value: tag
+  });
+  const signed = await signUnsigned(unsigned);
+  const ref = blobRefOf(signed);
+  log(`claim ${add ? 'add' : 'del'}-attribute tag=${tag} → ${ref}`);
+  await uploadBlobText(ref, signed);
+  return ref;
+}
+
+async function changeTag(blob, meta, tag, add) {
+  const permaRef = meta.isPermanode ? blob : null;
+  if (!permaRef) return snack(t('tag_need_permanode'));
+  try {
+    snack(add ? t('tag_added')(tag) : t('tag_removed')(tag));
+    await setTag(permaRef, tag, add);
+    // index cập nhật async -> chờ chút rồi tải lại
+    setTimeout(() => reloadTab(currentTab()), 900);
+  } catch (e) {
+    snack(t('tag_fail') + ': ' + e.message);
+    log(`tag FAIL: ${e.message}`);
+  }
+}
+
+/** Sheet thêm tag cho 1 file. */
+function openTagSheet(blob, meta) {
+  if (!meta.isPermanode) return snack(t('tag_need_permanode'));
+  openSheet(`<h3>${esc(t('tag_add'))}</h3>
+    <p class="meta">${esc(meta.name)}</p>
+    ${meta.tags.length ? `<div class="tags">${meta.tags.map((x) => `<span class="tagchip">#${esc(x)}</span>`).join('')}</div>` : ''}
+    <input class="adv" id="tag-in" placeholder="${esc(t('tag_ph'))}" autocomplete="off" />
+    <button class="rowbtn" id="tag-go">${icon('plus')}<span>${esc(t('tag_btn'))}</span></button>
+    <p class="meta">${esc(t('tag_note'))}</p>`);
+  const input = sheetBody.querySelector('#tag-in');
+  input.focus();
+  const submit = async () => {
+    const v = input.value.trim().replace(/^#/, '');
+    if (!v) return;
+    closeSheet();
+    await changeTag(blob, meta, v, true);
+  };
+  sheetBody.querySelector('#tag-go').onclick = submit;
+  input.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); submit(); } });
+}
+
 function fileActions(blob, meta) {
   const idx = currentItems.findIndex((x) => x.blob === blob);
   const rows = [
+    { k: 'tag', ico: 'plus', label: t('tag_add') },
     { k: 'view', ico: 'image', label: t('vw_view') },
     { k: 'external', ico: 'external', label: t('vw_open_ext') },
     { k: 'download', ico: 'download', label: t('fa_download') },
@@ -969,11 +1078,18 @@ function fileActions(blob, meta) {
   ];
   openSheet(`<h3>${esc(meta.name)}</h3>
     <p class="meta">${esc([meta.mime, fmtSize(meta.size), fmtDate(meta.date)].filter(Boolean).join(' · '))}</p>
+    ${meta.tags.length ? `<div class="tags">${meta.tags.map((x) => `<span class="tagchip">#${esc(x)}<button data-untag="${esc(x)}" title="${esc(t('tag_remove'))}">✕</button></span>`).join('')}</div>` : ''}
     ${rows.map((r) => `<button class="rowbtn" data-k="${r.k}">${icon(r.ico)}<span>${esc(r.label)}</span></button>`).join('')}`);
+  sheetBody.querySelectorAll('[data-untag]').forEach((x) => {
+    x.onclick = (e) => { e.stopPropagation(); closeSheet(); changeTag(blob, meta, x.dataset.untag, false); };
+  });
   sheetBody.querySelectorAll('[data-k]').forEach((b) => {
     b.onclick = async () => {
       const ref = meta.fileRef || blob;
-      if (b.dataset.k === 'view') {
+      if (b.dataset.k === 'tag') {
+        closeSheet();
+        openTagSheet(blob, meta);
+      } else if (b.dataset.k === 'view') {
         closeSheet();
         openViewer(idx >= 0 ? idx : 0);
       } else if (b.dataset.k === 'external') {
