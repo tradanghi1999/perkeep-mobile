@@ -36,6 +36,7 @@
       <div class="searchbar">
         <span class="s-ico" id="s-ico"></span>
         <input id="q" type="search" />
+        <button id="btn-view" class="s-view" aria-label="view"></button>
         <span class="avatar" id="av" title="Dịch vụ">P</span>
       </div>
       <div class="filters" id="filters"></div>
@@ -48,9 +49,9 @@
         <div id="home-list" class="list"></div>
       </div>
 
-      <div class="tabs" id="t-photo">
-        <h3 data-i18n="photo_title">Ảnh</h3>
-        <div class="grid2" id="photo-grid"></div>
+      <div class="tabs" id="t-star">
+        <h3 data-i18n="star_title">Đã ghim</h3>
+        <div id="star-list" class="list"></div>
       </div>
 
       <div class="tabs" id="t-files">
@@ -125,7 +126,7 @@
 
       <nav class="nav">
         <button class="on" data-t="t-home"><span data-ico="home"></span><em data-i18n="nav_home">Nhà</em></button>
-        <button data-t="t-photo"><span data-ico="image"></span><em data-i18n="nav_photo">Ảnh</em></button>
+        <button data-t="t-star"><span data-ico="star"></span><em data-i18n="nav_star">Ghim</em></button>
         <button data-t="t-files"><span data-ico="folder"></span><em data-i18n="nav_files">Tệp</em></button>
         <button data-t="t-set"><span data-ico="settings"></span><em data-i18n="nav_set">Cài đặt</em></button>
       </nav>

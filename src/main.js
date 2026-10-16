@@ -47,8 +47,13 @@ const I18N = {
     ob_connect: 'Kết nối →', ob_skip: 'Dùng thử không cần server →',
     ob_bad: 'URL phải bắt đầu http(s)://', ob_fail: 'Không kết nối được. Kiểm tra IP / WiFi / firewall 3179.',
     btn_search: 'Tìm', btn_close: 'Đóng', btn_save: 'Lưu', btn_cancel: 'Hủy', btn_edit: 'Sửa', btn_del: 'Xóa',
-    home_title: 'Được đề xuất', photo_title: 'Ảnh', files_title: 'Tệp', set_title: 'Cài đặt',
-    nav_home: 'Nhà', nav_photo: 'Ảnh', nav_files: 'Tệp', nav_set: 'Cài đặt',
+    home_title: 'Được đề xuất', star_title: 'Đã ghim', files_title: 'Tệp', set_title: 'Cài đặt',
+    nav_home: 'Nhà', nav_star: 'Ghim', nav_files: 'Tệp', nav_set: 'Cài đặt',
+    view_list: 'Danh sách', view_grid: 'Lưới lớn',
+    star_add: 'Ghim (đánh dấu)', star_removed: 'Bỏ ghim',
+    star_on: 'Đã ghim', star_off: 'Đã bỏ ghim',
+    empty_star: 'Chưa ghim file nào. Mở ⋮ của file và chọn “Ghim”.',
+    star_is_tag: 'Ghim dùng tag “star” trên Perkeep nên đồng bộ mọi thiết bị.',
     set_svc: 'Dịch vụ Perkeep', set_lang: 'Ngôn ngữ', set_diag: 'Chẩn đoán',
     set_diag_sub: 'Log kỹ thuật, blob, JSON', set_about: 'Giới thiệu Perkeep',
     set_about_sub: 'Lưu trữ dữ liệu suốt đời',
@@ -59,7 +64,7 @@ const I18N = {
     lang_title: 'Ngôn ngữ / Language', diag_title: 'Chẩn đoán',
     about_title: 'Giới thiệu Perkeep',
     about_body: 'Perkeep lưu giữ dữ liệu của bạn suốt đời: mọi thứ được định danh bằng nội dung và không bao giờ bị sửa. Website: perkeep.org',
-    empty: 'Không có kết quả.', empty_photo: 'Chưa có ảnh trong kho.', loading: 'Đang tải…',
+    empty: 'Không có kết quả.', loading: 'Đang tải…',
     found: (n, s) => `${n} kết quả · ${s}`,
     fa_download: 'Tải về máy', fa_share: 'Sao chép link', fa_open: 'Mở trong Perkeep', fa_detail: 'Chi tiết',
     tag_add: 'Thêm tag', tag_section: 'Tag', tag_ph: 'Nhập tag rồi bấm Thêm', tag_btn: 'Thêm',
@@ -98,8 +103,13 @@ const I18N = {
     ob_connect: 'Connect →', ob_skip: 'Try without a server →',
     ob_bad: 'URL must start with http(s)://', ob_fail: 'Cannot connect. Check IP / WiFi / firewall 3179.',
     btn_search: 'Search', btn_close: 'Close', btn_save: 'Save', btn_cancel: 'Cancel', btn_edit: 'Edit', btn_del: 'Delete',
-    home_title: 'Suggested', photo_title: 'Photos', files_title: 'Files', set_title: 'Settings',
-    nav_home: 'Home', nav_photo: 'Photos', nav_files: 'Files', nav_set: 'Settings',
+    home_title: 'Suggested', star_title: 'Starred', files_title: 'Files', set_title: 'Settings',
+    nav_home: 'Home', nav_star: 'Starred', nav_files: 'Files', nav_set: 'Settings',
+    view_list: 'List', view_grid: 'Big icons',
+    star_add: 'Add star', star_removed: 'Remove star',
+    star_on: 'Starred', star_off: 'Removed star',
+    empty_star: 'Nothing starred yet. Open a file’s ⋮ menu and pick “Add star”.',
+    star_is_tag: 'Starring uses the Perkeep tag “star”, so it syncs across devices.',
     set_svc: 'Perkeep services', set_lang: 'Language', set_diag: 'Diagnostics',
     set_diag_sub: 'Technical log, blobs, JSON', set_about: 'About Perkeep',
     set_about_sub: 'Keep your data for life',
@@ -110,7 +120,7 @@ const I18N = {
     lang_title: 'Ngôn ngữ / Language', diag_title: 'Diagnostics',
     about_title: 'About Perkeep',
     about_body: 'Perkeep keeps your stuff for life: everything is content-addressed and never modified. Website: perkeep.org',
-    empty: 'No results.', empty_photo: 'No photos in store yet.', loading: 'Loading…',
+    empty: 'No results.', loading: 'Loading…',
     found: (n, s) => `${n} results · ${s}`,
     fa_download: 'Download', fa_share: 'Copy link', fa_open: 'Open in Perkeep', fa_detail: 'Details',
     tag_add: 'Add tag', tag_section: 'Tags', tag_ph: 'Type a tag then Add', tag_btn: 'Add',
@@ -202,7 +212,7 @@ let editingId = null;
 
 const qEl = $('q');
 const listEl = $('home-list');
-const photoEl = $('photo-grid');
+const starEl = $('star-list');
 const fileEl = $('file-list');
 const outEl = $('out');
 const filtersEl = $('filters');
@@ -338,12 +348,16 @@ function timeFrom(kind) {
 
 // Bộ lọc hiện tại (nhớ cho lần mở sau)
 const filters = Object.assign(
-  { type: 'all', time: 'any', sort: 'newest', by: 'name', keyword: '', advanced: '' },
+  { type: 'all', time: 'any', sort: 'newest', by: 'name', view: 'list', keyword: '', advanced: '' },
   JSON.parse(localStorage.getItem('pk-filters-v1') || '{}')
 );
 const saveFilters = () => localStorage.setItem('pk-filters-v1', JSON.stringify(filters));
 const filterActive = () =>
   filters.type !== 'all' || filters.time !== 'any' || filters.sort !== 'newest' || filters.by !== 'name' || !!filters.keyword || !!filters.advanced;
+
+// "Ghim" = tag "star" trên Perkeep -> đồng bộ mọi thiết bị
+const STAR_TAG = 'star';
+const isStarred = (meta) => (meta.tags || []).includes(STAR_TAG);
 
 /** Dịch bộ lọc thành expression Perkeep.
  *  - Lọc thời gian + từ khoá theo tên làm ở máy (xem fillList)
@@ -541,13 +555,13 @@ function lazyThumb(el, slot, meta) {
   thumbObserver.observe(el);
 }
 
-// ---------- render 1 dòng file ----------
+// ---------- render 1 dòng file (kiểu danh sách) ----------
 function fileRow(blob, meta, index = 0) {
   const row = document.createElement('div');
   row.className = 'frow';
   row.innerHTML = `
     <div class="fic">${iconFor(meta.mime)}</div>
-    <div class="fx"><b>${esc(meta.name)}</b><small>${esc([fmtSize(meta.size), fmtDate(meta.date), ...meta.tags.map((x) => '#' + x)].filter(Boolean).join(' · '))}</small></div>
+    <div class="fx"><b>${esc(meta.name)}</b><small>${esc(metaLine(meta))}</small></div>
     <button class="dot-ico" aria-label="menu">${icon('more', 20)}</button>`;
   lazyThumb(row, row.querySelector('.fic'), meta);
   row.querySelector('.dot-ico').onclick = (e) => {
@@ -557,18 +571,43 @@ function fileRow(blob, meta, index = 0) {
   row.onclick = () => openViewer(index); // chạm vào dòng = mở xem
   return row;
 }
-function photoTile(blob, meta, index = 0) {
-  const b = document.createElement('button');
-  b.className = 'tile';
-  b.innerHTML = `<span class="noimg">${iconFor(meta.mime)}</span><span class="cap">${esc(meta.name)}</span>`;
-  const slot = b.querySelector('.noimg');
-  if (isImage(meta.mime) && meta.fileRef) lazyThumb(b, slot, meta);
-  b.onclick = () => openViewer(index);
-  return b;
+
+// ---------- render 1 ô file (kiểu lưới lớn) ----------
+function gridCard(blob, meta, index = 0) {
+  const c = document.createElement('button');
+  c.className = 'vcard';
+  c.innerHTML = `
+    <span class="vthumb">${iconFor(meta.mime)}</span>
+    <span class="vname">${isStarred(meta) ? '★ ' : ''}${esc(meta.name)}</span>
+    <span class="vmeta">${esc(metaLine(meta))}</span>
+    <button class="vmore" aria-label="menu">${icon('more', 18)}</button>`;
+  lazyThumb(c, c.querySelector('.vthumb'), meta);
+  c.querySelector('.vmore').onclick = (e) => {
+    e.stopPropagation();
+    fileActions(blob, meta);
+  };
+  c.onclick = () => openViewer(index);
+  return c;
 }
+
+const metaLine = (meta) =>
+  [fmtSize(meta.size), fmtDate(meta.date), ...(meta.tags || []).map((x) => '#' + x)].filter(Boolean).join(' · ');
+
+/** Chọn cách render theo "View by". */
+const renderer = () => {
+  if (filters.view !== 'grid') return fileRow;
+  return gridCard;
+};
+/** Container thành danh sách/lưới tuỳ chế độ xem. */
+function setContainerMode(el, on) {
+  els().forEach((x) => x.classList.remove('gridmode'));
+  if (el) el.classList.toggle('gridmode', on);
+}
+const els = () => [listEl, starEl, fileEl].filter(Boolean);
 
 async function fillList(target, expression, render, emptyMsg, limit = 50) {
   target.innerHTML = `<p class="empty">${esc(t('loading'))}</p>`;
+  setContainerMode(target, filters.view === 'grid');
   try {
     const wantKw = filters.by === 'name' && !!filters.keyword.trim();
     // Tìm theo tên ở máy -> lấy trang rộng hơn để đỡ sót
@@ -576,7 +615,7 @@ async function fillList(target, expression, render, emptyMsg, limit = 50) {
     target.innerHTML = '';
     if (!blobs.length) {
       target.innerHTML = `<p class="empty">${esc(emptyMsg)}</p>`;
-      if (target === listEl || target === fileEl || target === photoEl) currentItems = [];
+      if (els().includes(target)) currentItems = [];
       return;
     }
     let items = blobs.map((b) => ({ blob: b, meta: metaFor(b, description) }));
@@ -597,11 +636,11 @@ async function fillList(target, expression, render, emptyMsg, limit = 50) {
 
     if (!items.length) {
       target.innerHTML = `<p class="empty">${esc(emptyMsg)}</p>`;
-      if (target === listEl || target === fileEl || target === photoEl) currentItems = [];
+      if (els().includes(target)) currentItems = [];
       return;
     }
     // Trình xem cần danh sách của tab đang xem để chuyển qua lại
-    if (target === listEl || target === fileEl || target === photoEl) currentItems = items;
+    if (els().includes(target)) currentItems = items;
     items.forEach((it, i) => target.appendChild(render(it.blob, it.meta, i)));
     log(`HTTP 200 · ${items.length}/${blobs.length} blobs · expression="${expression || '(trống)'}" · sort=${serverSort()}`);
   } catch (e) {
@@ -610,13 +649,14 @@ async function fillList(target, expression, render, emptyMsg, limit = 50) {
   }
 }
 
-// Tab Nhà / Tệp dùng bộ lọc; tab Ảnh luôn ép loại = ảnh.
-const loadHome = () => fillList(listEl, buildExpression(), fileRow, t('empty'));
-const loadPhotos = () => fillList(photoEl, buildExpression('image'), photoTile, t('empty_photo'));
-const loadFiles = () => fillList(fileEl, buildExpression(), fileRow, t('empty'));
+// Tab Nhà / Tệp / Ghim dùng bộ lọc; Ghim thêm điều kiện tag:star.
+const loadHome = () => fillList(listEl, buildExpression(), renderer(), t('empty'));
+const loadFiles = () => fillList(fileEl, buildExpression(), renderer(), t('empty'));
+const loadStarred = () =>
+  fillList(starEl, [buildExpression(), `tag:${STAR_TAG}`].filter(Boolean).join(' '), renderer(), t('empty_star'));
 function reloadTab(tab) {
   if (tab === 't-home') loadHome();
-  else if (tab === 't-photo') loadPhotos();
+  else if (tab === 't-star') loadStarred();
   else if (tab === 't-files') loadFiles();
 }
 
@@ -661,8 +701,7 @@ function renderFilters() {
   const el = $('filters');
   if (!el) return;
   el.innerHTML = '';
-  const onPhotos = currentTab() === 't-photo';
-  const groups = FILTER_GROUPS.filter((g) => !(onPhotos && g.key === 'type'));
+  const groups = FILTER_GROUPS;
 
   for (const g of groups) {
     const b = document.createElement('button');
@@ -696,8 +735,19 @@ function renderFilters() {
 
   // Gợi ý placeholder theo kiểu tìm
   qEl.placeholder = filters.by === 'tag' ? t('fl_ph_tag') : filters.by === 'raw' ? t('fl_ph_raw') : t('fl_ph_name');
+  $('btn-view').innerHTML = icon(filters.view === 'grid' ? 'list' : 'grid', 22);
+  $('btn-view').title = t(filters.view === 'grid' ? 'view_list' : 'view_grid');
   el.hidden = false;
 }
+
+// Đổi kiểu xem Danh sách <-> Lưới lớn
+$('btn-view').onclick = () => {
+  filters.view = filters.view === 'grid' ? 'list' : 'grid';
+  saveFilters();
+  snack(t(filters.view === 'grid' ? 'view_grid' : 'view_list'));
+  renderFilters();
+  reloadTab(currentTab());
+};
 
 const optRow = (list, value) => list.map((o) => {
   const on = o.v === value;
@@ -931,7 +981,7 @@ function setupPullToRefresh(el, onRefresh) {
     Promise.resolve(onRefresh()).finally(() => setTimeout(() => ptrEl.classList.remove('on'), 400));
   }, { passive: true });
 }
-['t-home', 't-photo', 't-files'].forEach((id) => {
+['t-home', 't-star', 't-files'].forEach((id) => {
   setupPullToRefresh($(id), () => reloadTab(id));
 });
 
@@ -1031,11 +1081,11 @@ async function setTag(permaRef, tag, add) {
   return ref;
 }
 
-async function changeTag(blob, meta, tag, add) {
+async function changeTag(blob, meta, tag, add, msg) {
   const permaRef = meta.isPermanode ? blob : null;
   if (!permaRef) return snack(t('tag_need_permanode'));
   try {
-    snack(add ? t('tag_added')(tag) : t('tag_removed')(tag));
+    snack(msg || (add ? t('tag_added')(tag) : t('tag_removed')(tag)));
     await setTag(permaRef, tag, add);
     // index cập nhật async -> chờ chút rồi tải lại
     setTimeout(() => reloadTab(currentTab()), 900);
@@ -1053,7 +1103,8 @@ function openTagSheet(blob, meta) {
     ${meta.tags.length ? `<div class="tags">${meta.tags.map((x) => `<span class="tagchip">#${esc(x)}</span>`).join('')}</div>` : ''}
     <input class="adv" id="tag-in" placeholder="${esc(t('tag_ph'))}" autocomplete="off" />
     <button class="rowbtn" id="tag-go">${icon('plus')}<span>${esc(t('tag_btn'))}</span></button>
-    <p class="meta">${esc(t('tag_note'))}</p>`);
+    <p class="meta">${esc(t('tag_note'))}</p>
+    <p class="meta">${esc(t('star_is_tag'))}</p>`);
   const input = sheetBody.querySelector('#tag-in');
   input.focus();
   const submit = async () => {
@@ -1069,6 +1120,7 @@ function openTagSheet(blob, meta) {
 function fileActions(blob, meta) {
   const idx = currentItems.findIndex((x) => x.blob === blob);
   const rows = [
+    { k: 'star', ico: 'star', label: isStarred(meta) ? t('star_removed') : t('star_add') },
     { k: 'tag', ico: 'plus', label: t('tag_add') },
     { k: 'view', ico: 'image', label: t('vw_view') },
     { k: 'external', ico: 'external', label: t('vw_open_ext') },
@@ -1086,7 +1138,11 @@ function fileActions(blob, meta) {
   sheetBody.querySelectorAll('[data-k]').forEach((b) => {
     b.onclick = async () => {
       const ref = meta.fileRef || blob;
-      if (b.dataset.k === 'tag') {
+      if (b.dataset.k === 'star') {
+        closeSheet();
+        const on = !isStarred(meta);
+        await changeTag(blob, meta, STAR_TAG, on, t(on ? 'star_on' : 'star_off'));
+      } else if (b.dataset.k === 'tag') {
         closeSheet();
         openTagSheet(blob, meta);
       } else if (b.dataset.k === 'view') {

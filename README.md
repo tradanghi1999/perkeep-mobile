@@ -16,10 +16,14 @@ Client Perkeep cho Android: tìm kiếm, thumbnail, upload chạy nền. Web ch�
   - Chuyển file bằng nút ‹ › hoặc **vuốt ngang**; **vuốt xuống để đóng**; Esc khi test desktop.
   - PDF và loại khác: WebView Android không render được → nút **Mở bằng ứng dụng khác** (Chrome/ứng dụng PDF) và **Tải về máy**.
   - Server bật auth: ảnh lấy qua endpoint thumbnail; video/audio dùng nút mở ngoài.
+  - Thay cho tab Ảnh cũ: muốn xem riêng ảnh thì dùng `Loại tệp: Ảnh` + `Kiểu xem: Lưới lớn`.
 - **Kéo xuống để tải lại** (pull-to-refresh) ở tab Nhà / Ảnh / Tệp; **vuốt xuống để đóng** mọi bottom sheet.
 - **Thumbnail**: ảnh do server sinh; video do app tự lấy khung hình.
 - **Upload nền** kiểu Google Drive (WorkManager + notification tiến trình).
 - **Nhiều dịch vụ Perkeep** + song ngữ VI/EN.
+- **Ghim (Starred)**: tab **Ghim** liệt kê mọi file đã ghim; trong menu ⋮ của file có **Ghim / Bỏ ghim**.
+  - Ghim = tag `star` trên Perkeep (không phải lưu cục bộ) nên **đồng bộ giữa các thiết bị** và tìm lại được bằng `Tìm theo → Tag`.
+- **Kiểu xem List / Lưới lớn**: nút cạnh ô tìm kiếm đổi giữa **Danh sách** và **Lưới lớn** (2 cột, icon to có thumbnail), nhớ lựa chọn cho lần sau.
 - **Tag**: mở file → **Thêm tag** để gắn tag, chip tag hiện trong sheet (bấm ✕ để bỏ); tag cũng hiện luôn trên dòng file (`#tag`). Tìm lại bằng **Tìm theo → Tag**.
   - Cách làm: app ký claim `add-attribute` / `del-attribute` qua sign handler của Perkeep rồi upload blob claim. Cần SHA-224 trong JS vì WebCrypto không hỗ trợ SHA-224 (`src/sha224.js`, đã test với vector NIST + đối chiếu Node).
 - **Cỡ chữ**: Cài đặt → Cỡ chữ (Nhỏ / Vừa / Lớn / Rất lớn). Mọi cỡ chữ trong app dùng `rem` với biến `--fs`, nên chỉnh một chỗ là đổi toàn bộ. Cỡ mặc định đã theo chuẩn Android (chữ danh sách 16px, phụ chú 13px, nhãn tab 12px).

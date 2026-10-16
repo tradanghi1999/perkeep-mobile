@@ -33,6 +33,9 @@ body {
   margin: 10px 12px; padding: 8px 8px 8px 14px; flex: none;
 }
 .searchbar .s-ico { display: flex; color: #5f6b7a; }
+.s-view { border: 0; background: none; color: #5f6b7a; width: 40px; height: 40px; flex: none;
+  display: flex; align-items: center; justify-content: center; border-radius: 50%; }
+.s-view:active { background: #dde7f5; }
 .searchbar input { flex: 1; border: 0; background: transparent; font-size: 1rem; outline: none; min-width: 0; color: inherit; }
 .avatar {
   width: 38px; height: 38px; flex: none; border-radius: 50%;
@@ -167,6 +170,21 @@ h3 { margin: 12px 4px; font-size: 1.0625rem; }
 .rowbtn:active { background: #f2f2f2; }
 .rowbtn[disabled] { color: #aaa; }
 .sheet .meta { font-size: 0.8125rem; color: var(--muted); margin: 0 10px 10px; word-break: break-all; }
+/* ---------- Kiểu xem: lưới lớn ---------- */
+.list.gridmode { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.vcard { position: relative; display: flex; flex-direction: column; align-items: flex-start; gap: 6px;
+  border: 1px solid var(--line); background: #fff; border-radius: 14px; padding: 12px; text-align: left;
+  font-family: inherit; color: inherit; }
+.vcard:active { background: #f6f8f6; }
+.vthumb { width: 100%; height: 104px; border-radius: 10px; background: #f0f4ee; color: var(--green);
+  display: flex; align-items: center; justify-content: center; overflow: hidden; }
+.vthumb img, .vthumb video { width: 100%; height: 100%; object-fit: cover; display: block; }
+.vname { font-size: 0.875rem; font-weight: 600; width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.vmeta { font-size: 0.75rem; color: var(--muted); width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.vmore { position: absolute; top: 6px; right: 6px; border: 0; background: #ffffffcc; color: #555; width: 34px; height: 34px;
+  border-radius: 50%; display: flex; align-items: center; justify-content: center; }
+.star { color: #e8a33d; }
+
 .tags { display: flex; flex-wrap: wrap; gap: 6px; margin: 0 10px 8px; }
 .tagchip { display: inline-flex; align-items: center; gap: 4px; background: #e8f0ea; color: var(--green-d);
   border-radius: 12px; padding: 4px 8px; font-size: 0.8125rem; }

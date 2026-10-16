@@ -25,8 +25,10 @@ const P = {
   audio: '<circle cx="7" cy="17.2" r="2.6"/><circle cx="18" cy="15.2" r="2.6"/><path d="M9.6 17.2V6.8L20.6 4.8v10.4"/>',
   archive: '<rect x="3" y="4" width="18" height="5" rx="1.8"/><path d="M5 9v10.5h14V9"/><path d="M10 13h4"/>',
   file: '<path d="M14 3.5H7.5A2.5 2.5 0 0 0 5 6v12a2.5 2.5 0 0 0 2.5 2.5h9A2.5 2.5 0 0 0 19 18V8.5z"/><path d="M14 3.5V8.5h5"/>',
+  star: '<path d="M12 3.6l2.6 5.4 5.9.8-4.3 4.1 1.1 5.9-5.3-2.9-5.3 2.9 1.1-5.9L3.5 9.8l5.9-.8z"/>',
+  list: '<path d="M8 6.5h12M8 12h12M8 17.5h12"/><circle cx="4.2" cy="6.5" r="1.1"/><circle cx="4.2" cy="12" r="1.1"/><circle cx="4.2" cy="17.5" r="1.1"/>',
+  grid: '<rect x="3.5" y="3.5" width="7.5" height="7.5" rx="1.8"/><rect x="13" y="3.5" width="7.5" height="7.5" rx="1.8"/><rect x="3.5" y="13" width="7.5" height="7.5" rx="1.8"/><rect x="13" y="13" width="7.5" height="7.5" rx="1.8"/>',
   close: '<path d="M6.5 6.5l11 11M17.5 6.5l-11 11"/>',
-  // phễu gạch chéo = xoá bộ lọc (khác hẳn icon đóng ✕)
   filterOff: '<path d="M3.5 5.5h17l-6.5 7.3v5.7l-4-2v-3.7z"/><path d="M4 4l16 16"/>',
   chevron: '<path d="M9.5 6l6 6-6 6"/>',
   check: '<path d="M5 12.5 9.5 17 19 7.5"/>'
