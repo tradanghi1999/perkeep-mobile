@@ -746,19 +746,30 @@ function renderFilters() {
 
   // Gợi ý placeholder theo kiểu tìm
   qEl.placeholder = filters.by === 'tag' ? t('fl_ph_tag') : filters.by === 'raw' ? t('fl_ph_raw') : t('fl_ph_name');
-  $('btn-view').innerHTML = icon(filters.view === 'grid' ? 'list' : 'grid', 22);
-  $('btn-view').title = t(filters.view === 'grid' ? 'view_list' : 'view_grid');
+  // Nút kiểu xem: 2 ô, ô đang dùng được tô sáng
+  const seg = $('viewseg');
+  if (seg) {
+    $('btn-view-list').innerHTML = icon('list', 20);
+    $('btn-view-grid').innerHTML = icon('grid', 20);
+    $('btn-view-list').classList.toggle('on', filters.view !== 'grid');
+    $('btn-view-grid').classList.toggle('on', filters.view === 'grid');
+    $('btn-view-list').title = t('view_list');
+    $('btn-view-grid').title = t('view_grid');
+  }
   el.hidden = false;
 }
 
 // Đổi kiểu xem Danh sách <-> Lưới lớn
-$('btn-view').onclick = () => {
-  filters.view = filters.view === 'grid' ? 'list' : 'grid';
+function setView(v) {
+  if (filters.view === v) return;
+  filters.view = v;
   saveFilters();
-  snack(t(filters.view === 'grid' ? 'view_grid' : 'view_list'));
+  snack(t(v === 'grid' ? 'view_grid' : 'view_list'));
   renderFilters();
   reloadTab(currentTab());
-};
+}
+$('btn-view-list').onclick = () => setView('list');
+$('btn-view-grid').onclick = () => setView('grid');
 
 const optRow = (list, value) => list.map((o) => {
   const on = o.v === value;

@@ -33,9 +33,6 @@ body {
   margin: 10px 12px; padding: 8px 8px 8px 14px; flex: none;
 }
 .searchbar .s-ico { display: flex; color: #5f6b7a; }
-.s-view { border: 0; background: none; color: #5f6b7a; width: 40px; height: 40px; flex: none;
-  display: flex; align-items: center; justify-content: center; border-radius: 50%; }
-.s-view:active { background: #dde7f5; }
 .searchbar input { flex: 1; border: 0; background: transparent; font-size: 1rem; outline: none; min-width: 0; color: inherit; }
 .avatar {
   width: 38px; height: 38px; flex: none; border-radius: 50%;
@@ -119,10 +116,15 @@ h3 { margin: 12px 4px; font-size: 1.0625rem; }
   background: linear-gradient(transparent, #000a); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .tile .noimg { display: flex; align-items: center; justify-content: center; height: 100%; color: var(--green); }
 
-/* ---------- Thanh bộ lọc luôn hiện (kiểu Google Drive) ---------- */
-.filters { display: flex; gap: 8px; overflow-x: auto; padding: 0 12px 10px; flex: none;
-  scrollbar-width: none; }
+/* ---------- Thanh bộ lọc + nút kiểu xem (cùng hàng, nút ở bên phải) ---------- */
+.filterbar { display: flex; align-items: center; gap: 8px; padding: 0 12px 10px; flex: none; }
+.filters { flex: 1; min-width: 0; display: flex; gap: 8px; overflow-x: auto; scrollbar-width: none; }
 .filters::-webkit-scrollbar { display: none; }
+.viewseg { flex: none; display: flex; align-items: center; gap: 2px; background: #f2f4f6; border: 1px solid #e3e6e9;
+  border-radius: 18px; padding: 2px; }
+.viewseg button { border: 0; background: none; color: #6b7280; width: 34px; height: 32px; border-radius: 15px;
+  display: flex; align-items: center; justify-content: center; }
+.viewseg button.on { background: #fff; color: var(--green); box-shadow: 0 1px 3px #0002; }
 .fchip { flex: none; display: inline-flex; align-items: center; gap: 5px; background: #f2f4f6; color: #333;
   border: 1px solid #e3e6e9; border-radius: 18px; padding: 8px 12px; font-size: 0.8125rem; font-family: inherit; }
 .fchip b { font-weight: 600; color: #111; }

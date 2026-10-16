@@ -36,10 +36,15 @@
       <div class="searchbar">
         <span class="s-ico" id="s-ico"></span>
         <input id="q" type="search" />
-        <button id="btn-view" class="s-view" aria-label="view"></button>
         <span class="avatar" id="av" title="Dịch vụ">P</span>
       </div>
-      <div class="filters" id="filters"></div>
+      <div class="filterbar">
+        <div class="filters" id="filters"></div>
+        <div class="viewseg" id="viewseg" role="group" aria-label="view">
+          <button data-v="list" id="btn-view-list"></button>
+          <button data-v="grid" id="btn-view-grid"></button>
+        </div>
+      </div>
 
       <div class="ptr" id="ptr"><span class="ptr-spin"></span><span data-i18n="ptr">Đang tải lại…</span></div>
 
