@@ -81,6 +81,7 @@ const I18N = {
     vw_view: 'Xem trong app', vw_open_ext: 'Mở bằng ứng dụng khác', vw_unsupported: 'Loại file này không xem được trong app. Bạn mở bằng ứng dụng khác nhé.',
     vw_need_auth: 'Server cần đăng nhập nên app không phát trực tiếp được. Mở bằng ứng dụng khác hoặc tải về máy nhé.',
     vw_too_big: 'File quá lớn để phát trong app khi server cần đăng nhập. Mở bằng ứng dụng khác hoặc tải về máy.',
+    vw_codec: (c) => `Video dùng codec ${c} — máy này không giải mã được. Mở bằng VLC / MX Player, hoặc xem bản đã chuyển sang H.264.`,
     ptr: 'Đang tải lại…',
     fl_title: 'Bộ lọc', fl_type: 'Loại tệp', fl_time: 'Thời gian', fl_sort: 'Sắp xếp',
     fl_all: 'Tất cả', fl_image: 'Ảnh', fl_video: 'Video', fl_audio: 'Âm thanh', fl_doc: 'Tài liệu',
@@ -152,6 +153,7 @@ const I18N = {
     vw_view: 'View in app', vw_open_ext: 'Open with another app', vw_unsupported: 'This file type cannot be previewed in the app. Open it with another app?',
     vw_need_auth: 'The server requires sign-in, so the app cannot stream this. Open with another app or download it.',
     vw_too_big: 'Too large to play in-app while the server requires sign-in. Open with another app or download it.',
+    vw_codec: (c) => `This video uses ${c} — this device cannot decode it. Open with VLC / MX Player, or use an H.264 version.`,
     ptr: 'Reloading…',
     fl_title: 'Filters', fl_type: 'File type', fl_time: 'Time', fl_sort: 'Sort',
     fl_all: 'All', fl_image: 'Photos', fl_video: 'Videos', fl_audio: 'Audio', fl_doc: 'Documents',
@@ -884,6 +886,37 @@ function paintViewer() {
 
 const directUrl = (ref) => `${base()}/ui/download/${encodeURIComponent(ref)}`;
 
+// ============================================================
+// Dò codec video bằng header MP4 (không cần ffprobe):
+//  - 32 byte đầu là box "ftyp": brand chính ở 8..12, các brand phụ ở 16..32
+//    (vd "....ftypisom....isomav01iso2mp41" -> có "av01")
+//  - gửi kèm header Range nên chỉ tải 32 byte
+// ============================================================
+const brandCache = new Map();
+const CODEC_LABEL = {
+  av01: 'AV1', hvc1: 'HEVC (H.265)', hev1: 'HEVC (H.265)', dvh1: 'Dolby Vision',
+  dvhe: 'Dolby Vision', vp09: 'VP9', avc1: 'H.264', avc3: 'H.264'
+};
+// Codec mà WebView Android thường không giải mã được (tuỳ chip)
+const CODEC_RISKY = ['av01', 'hvc1', 'hev1', 'dvhe', 'dvh1'];
+async function sniffMp4Codec(ref) {
+  if (!ref) return null;
+  if (brandCache.has(ref)) return brandCache.get(ref);
+  let codec = null;
+  try {
+    const r = await httpBytes(directUrl(ref), authHeaders({ Range: 'bytes=0-31' }));
+    if (r.ok && r.bytes?.length >= 12) {
+      const head = new TextDecoder('latin1').decode(r.bytes);
+      for (const tag of ['av01', 'hvc1', 'hev1', 'dvhe', 'dvh1', 'vp09', 'avc1', 'avc3']) {
+        if (head.includes(tag)) { codec = tag; break; }
+      }
+    }
+  } catch {}
+  brandCache.set(ref, codec);
+  return codec;
+}
+const codecLabel = (codec) => (codec ? CODEC_LABEL[codec] || codec : '');
+
 // WebView chạy ở origin https://localhost (Capacitor mặc định) nên media http://
 // bị chặn vì mixed content -> đã bật android.allowMixedContent trong capacitor.config.json.
 // Ở đây chỉ cần biết server CÓ thật sự đòi đăng nhập hay không: nhiều người điền
@@ -917,8 +950,12 @@ async function mediaUrl(meta, big = false) {
   return URL.createObjectURL(new Blob([r.bytes], { type: meta.mime || 'video/mp4' }));
 }
 
-function viewerFallback(meta, why) {
-  const hint = why === 'auth' ? t('vw_need_auth') : why === 'big' ? t('vw_too_big') : t('vw_unsupported');
+function viewerFallback(meta, why, codec) {
+  const hint =
+    why === 'codec' ? t('vw_codec')(codec || '?')
+    : why === 'auth' ? t('vw_need_auth')
+    : why === 'big' ? t('vw_too_big')
+    : t('vw_unsupported');
   vwBody.innerHTML = `<div class="vw-note">${esc(hint)}
     <div class="vw-actions">
       <button id="vw-open-ext">${icon('external')}<span>${esc(t('vw_open_ext'))}</span></button>
@@ -969,10 +1006,13 @@ async function renderViewer() {
       el.playsInline = true;
       el.setAttribute('playsinline', '');
     }
-    el.onerror = () => {
+    el.onerror = async () => {
       const c = el.error;
-      log(`media error: code=${c?.code ?? '?'} ${c?.message || ''} src=${String(src).slice(0, 80)}`);
-      viewerFallback(meta, 'unsupported');
+      // code 4 = định dạng không hỗ trợ -> dò codec trong 32 byte đầu để nói rõ lý do
+      const codec = c?.code === 4 ? await sniffMp4Codec(meta.fileRef) : null;
+      const risky = codec && CODEC_RISKY.includes(codec);
+      log(`media error: code=${c?.code ?? '?'} ${c?.message || ''} codec=${codec || '(không rõ)'}`);
+      viewerFallback(meta, risky ? 'codec' : 'unsupported', risky ? codecLabel(codec) : '');
     };
     el.src = src;
     vwBody.innerHTML = '';
