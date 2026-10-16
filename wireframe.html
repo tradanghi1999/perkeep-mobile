@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="vi"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Wireframe - Perkeep Mobile</title>
+<style>body{font-family:system-ui;background:#f4f6f8;color:#111;margin:0;padding:16px}.phones{display:flex;gap:16px;flex-wrap:wrap}.ph{width:300px;background:#fff;border:2px solid #111;border-radius:24px;padding:12px}.bar{height:10px;background:#111;border-radius:5px;margin:4px 40px 12px}.box{border:2px dashed #666;border-radius:8px;padding:10px;margin:8px 0;font-size:13px;text-align:center}.row{display:flex;gap:6px}.row .box{flex:1}.small{font-size:11px;color:#555}h2{font-size:15px;margin:8px 0 2px}.tag{display:inline-block;font-size:10px;background:#111;color:#fff;border-radius:10px;padding:2px 8px;margin-left:6px}.tag.new{background:#0a7d2c}.legend{max-width:960px;background:#fff;border:1px solid #ccc;border-radius:12px;padding:12px;margin-top:16px;font-size:13px}</style>
+</head><body>
+<h1>Wireframe — Perkeep Mobile (xem trước tính năng)</h1>
+<div class="phones">
+<div class="ph"><div class="bar"></div>
+<h2>1. Dịch vụ (Servers)<span class="tag">đã có</span></h2>
+<div class="box">● Header: chấm online + tên server active + [Test]</div>
+<div class="box">▼ Dropdown chọn server (Tên — hostname)</div>
+<div class="box">[Tên gợi nhớ] [URL http://...:3179]</div>
+<div class="row"><div class="box">+ Thêm</div><div class="box">Lưu sửa</div><div class="box">Xóa</div></div>
+<div class="box small">Gợi ý: mở URL này trên Chrome ĐT trước (chung WiFi)</div>
+<h2>Tính năng định thêm<span class="tag new">mới</span></h2>
+<div class="box">☆ Đặt server mặc định + vuốt để xóa</div>
+<div class="box">☆ Quét QR / import-export JSON nhiều server</div>
+<div class="box">☆ Nhớ auth token theo từng server</div>
+</div>
+<div class="ph"><div class="bar"></div>
+<h2>2. Tìm kiếm<span class="tag">đã có</span></h2>
+<div class="box">[ ô search lớn: tag:phone... ] [Tìm]</div>
+<div class="box">chips: tag:phone · recent:20 · + lịch sử gần đây</div>
+<div class="box small">Tìm thấy N kết quả trên &lt;tên server&gt;</div>
+<div class="box">[badge permanode] sha224-3edd…cc8<br>06:34 16/10/2026<br>[Chi tiết] [Mở trong Perkeep]</div>
+<div class="box">[badge permanode] sha224-94e7…1c2<br>...</div>
+<h2>Tính năng định thêm<span class="tag new">mới</span></h2>
+<div class="box">☆ Lọc theo loại: ảnh / file / all + sắp xếp mới-cũ</div>
+<div class="box">☆ Xem thumbnail grid + kéo để tải thêm (paging 30→)</div>
+<div class="box">☆ Lưu search yêu thích</div>
+</div>
+<div class="ph"><div class="bar"></div>
+<h2>3. Chi tiết blob<span class="tag">đã có 1 phần</span></h2>
+<div class="box">blob đầy đủ + JSON describe (camliType, size, attrs)</div>
+<div class="box">[Mở trong Perkeep /ui/?p=...]</div>
+<h2>Tính năng định thêm<span class="tag new">mới</span></h2>
+<div class="box">☆ Xem trước ảnh/file + nút Tải về máy</div>
+<div class="box">☆ Copy blobref + Share sang app khác</div>
+<div class="box">☆ Upload ảnh từ ĐT lên server active</div>
+</div>
+</div>
+<div class="legend"><b>Cách đọc:</b> tag xám = đã build xong trong app hiện tại. Tag xanh <b>mới</b> = tôi đề xuất thêm, chưa code. Bạn chốt giúp: (1) có cần Upload + Thumbnail grid không? (2) có cần auth token theo server không? Tôi chỉ code tiếp sau khi bạn OK wireframe này.</div>
+</body></html>

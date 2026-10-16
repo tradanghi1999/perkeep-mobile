@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="vi"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Wireframe Drive-style - Perkeep Mobile</title>
+<style>body{font-family:system-ui;background:#eef1f4;color:#1f1f1f;margin:0;padding:16px}.phones{display:flex;gap:16px;flex-wrap:wrap}.ph{width:300px;background:#fff;border-radius:28px;padding:12px;box-shadow:0 2px 12px #0002}.search{background:#edf2fc;border-radius:24px;padding:10px 14px;font-size:13px;color:#444}.file{display:flex;gap:10px;align-items:center;padding:10px 4px;border-bottom:1px solid #eee;font-size:13px}.thumb{width:36px;height:36px;border-radius:8px;background:#d2e3fc;display:flex;align-items:center;justify-content:center;font-size:16px}.meta{flex:1}.meta small{color:#666}.nav{display:flex;margin-top:12px;border-top:1px solid #eee;padding-top:8px;font-size:11px;text-align:center}.nav div{flex:1;color:#666}.nav b{color:#0b57d0}.fab{width:56px;height:40px;background:#fff;border-radius:12px;box-shadow:0 2px 8px #0003;display:flex;align-items:center;justify-content:center;font-size:20px;margin:10px 0 0 auto}h2{font-size:14px}.note{background:#fff;border-radius:12px;padding:12px;max-width:980px;margin-top:16px;font-size:13px}li{margin:6px 0}</style>
+</head><body>
+<h1>Wireframe Drive-style — đơn giản như Google Drive</h1>
+<div class="phones">
+<div class="ph">
+<h2>Màn 1: Trang chủ</h2>
+<div class="search">🔍 Tìm trong Perkeep &nbsp;&nbsp;&nbsp;&nbsp; ☰ ⋮ 👤</div>
+<div class="file"><div class="thumb">🖼</div><div class="meta">Ảnh Đà Lạt<br><small>16 thg 10 • PC nhà</small></div>⋮</div>
+<div class="file"><div class="thumb">🎬</div><div class="meta">Video sinh nhật<br><small>12 thg 10 • PC nhà</small></div>⋮</div>
+<div class="file"><div class="thumb">📄</div><div class="meta">Scan CMND.pdf<br><small>2 thg 10 • NAS</small></div>⋮</div>
+<div class="fab">+</div>
+<div class="nav"><div><b>⌂<br>Mới đây</b></div><div>🖼<br>Ảnh</div><div>📁<br>Tệp</div><div>⚙<br>Cài đặt</div></div>
+</div>
+<div class="ph">
+<h2>Màn 2: Chạm avatar → đổi server</h2>
+<div class="search">👤 PC nhà ▾ — chạm để đổi</div>
+<div class="file"><div class="thumb">🖥</div><div class="meta">PC nhà<br><small>192.168.123.9 • ● online</small></div>✓</div>
+<div class="file"><div class="thumb">🗄</div><div class="meta">NAS<br><small>192.168.1.20 • ○ offline</small></div></div>
+<div class="file"><div class="thumb">＋</div><div class="meta">Thêm dịch vụ mới<br><small>Nhập tên + địa chỉ 1 lần</small></div>›</div>
+<div class="nav"><div><b>👤<br>Dịch vụ</b></div><div>❓<br>Trợ giúp</div></div>
+</div>
+<div class="ph">
+<h2>Màn 3: Chạm ⋮ → thao tác</h2>
+<div class="file"><div class="thumb">🖼</div><div class="meta">Ảnh Đà Lạt<br><small>2,1 MB • 16 thg 10</small></div>⋮</div>
+<div style="background:#fff;border-radius:12px;box-shadow:0 4px 16px #0003;padding:8px;font-size:13px;margin-top:8px">
+<div>⬇ Tải về máy</div><div>🔗 Chia sẻ</div><div>⭐ Đánh dấu quan trọng</div><div>ℹ Chi tiết</div>
+</div>
+<div class="note" style="margin:10px 0 0">Ẩn hết: blobref, expression, JSON, log. Chỉ hiện trong Cài đặt → Chẩn đoán.</div>
+</div>
+</div>
+<div class="note">
+<b>Nguyên tắc học từ Drive:</b>
+<ul>
+<li>Thanh tìm kiếm luôn trên cùng, gõ tiếng Việt thường (“ảnh đà lạt”) — app tự dịch sang query Perkeep, không bắt user học <code>tag:</code>.</li>
+<li>Server = tài khoản Google: đổi bằng avatar, mỗi server có tên + chấm online, thêm mới chỉ 2 ô (tên, địa chỉ).</li>
+<li>Danh sách file chỉ hiện: icon, tên, ngày, server. Mọi thứ kỹ thuật (blob, describe, POST log) giấu vào “Chi tiết / Chẩn đoán”.</li>
+<li>1 nút <b>+</b> duy nhất: Tải ảnh lên / Tạo ghi chú. Bottom nav 4 mục, thao tác file gom vào menu ⋮.</li>
+</ul>
+Chốt giúp: (1) Bottom nav 4 mục trên OK chưa? (2) Nút + có cần “Tải ảnh lên” ngay bản đầu không, hay chỉ xem/tìm trước?
+</div>
+</body></html>

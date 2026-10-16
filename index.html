@@ -1,0 +1,114 @@
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="theme-color" content="#3F6B57" />
+    <title>Perkeep Mobile</title>
+    <link rel="icon" href="/favicon.ico" />
+    <link rel="stylesheet" href="/src/style.css" />
+  </head>
+  <body>
+    <!-- ===== Màn đăng nhập dịch vụ (first run) ===== -->
+    <div id="onboarding" class="login" hidden>
+      <img class="logo" src="/keepy.png" alt="Keepy – Perkeep" />
+      <h2 data-i18n="ob_title">Kết nối Perkeep</h2>
+      <p class="sub" data-i18n="ob_sub">Nhập địa chỉ server để bắt đầu</p>
+      <label data-i18n="f_name">Tên gợi nhớ</label>
+      <input id="ob-name" type="text" placeholder="PC nhà" />
+      <label data-i18n="f_url">Địa chỉ server</label>
+      <input id="ob-url" type="url" inputmode="url" placeholder="http://192.168.123.9:3179" />
+      <label data-i18n="f_user">Tài khoản (nếu có)</label>
+      <input id="ob-user" type="text" autocomplete="username" />
+      <label data-i18n="f_pass">Mật khẩu</label>
+      <input id="ob-pass" type="password" autocomplete="current-password" />
+      <p id="ob-err" class="err" hidden></p>
+      <button class="go" id="ob-connect" data-i18n="ob_connect">Kết nối →</button>
+      <div class="seg">
+        <button id="seg-vi" class="on">Tiếng Việt</button>
+        <button id="seg-en">English</button>
+      </div>
+      <button class="skip" id="ob-skip" data-i18n="ob_skip">Dùng thử không cần server →</button>
+    </div>
+
+    <!-- ===== App ===== -->
+    <div id="app" class="screen">
+      <div class="searchbar">
+        <span class="s-ico" id="s-ico"></span>
+        <input id="q" type="search" />
+        <button id="btn-search" class="s-go" data-i18n="btn_search">Tìm</button>
+        <span class="avatar" id="av" title="Dịch vụ">P</span>
+      </div>
+
+      <div class="tabs on" id="t-home">
+        <h3 data-i18n="home_title">Được đề xuất</h3>
+        <div id="uploads" class="uploads" hidden></div>
+        <div class="chips" id="chips"></div>
+        <div id="home-list" class="list"></div>
+      </div>
+
+      <div class="tabs" id="t-photo">
+        <h3 data-i18n="photo_title">Ảnh</h3>
+        <div class="grid2" id="photo-grid"></div>
+      </div>
+
+      <div class="tabs" id="t-files">
+        <h3 data-i18n="files_title">Tệp</h3>
+        <div id="file-list" class="list"></div>
+      </div>
+
+      <div class="tabs" id="t-set">
+        <h3 data-i18n="set_title">Cài đặt</h3>
+        <div class="frow" id="set-svc">
+          <div class="fic" data-ico="server"></div>
+          <div class="fx"><b data-i18n="set_svc">Dịch vụ Perkeep</b><small id="set-svc-sub"></small></div>
+          <span class="chev" data-ico="chevron"></span>
+        </div>
+        <div class="frow" id="set-lang">
+          <div class="fic" data-ico="globe"></div>
+          <div class="fx"><b data-i18n="set_lang">Ngôn ngữ</b><small id="set-lang-sub"></small></div>
+          <span class="chev" data-ico="chevron"></span>
+        </div>
+        <div class="frow" id="set-vid">
+          <div class="fic" data-ico="video"></div>
+          <div class="fx"><b data-i18n="set_vid">Thumbnail video</b><small id="set-vid-sub"></small></div>
+          <span class="chev" id="set-vid-state"></span>
+        </div>
+        <div class="frow" id="set-wifi">
+          <div class="fic" data-ico="upload"></div>
+          <div class="fx"><b data-i18n="set_wifi">Chỉ tải khi dùng Wi-Fi</b><small id="set-wifi-sub"></small></div>
+          <span class="chev" id="set-wifi-state"></span>
+        </div>
+        <div class="frow" id="set-diag">
+          <div class="fic" data-ico="pulse"></div>
+          <div class="fx"><b data-i18n="set_diag">Chẩn đoán</b><small data-i18n="set_diag_sub">Log kỹ thuật, blob, JSON</small></div>
+          <span class="chev" data-ico="chevron"></span>
+        </div>
+        <div class="frow" id="set-about">
+          <div class="fic" data-ico="info"></div>
+          <div class="fx"><b data-i18n="set_about">Giới thiệu Perkeep</b><small data-i18n="set_about_sub">Lưu trữ dữ liệu suốt đời</small></div>
+          <span class="chev" data-ico="chevron"></span>
+        </div>
+        <p class="hint" data-i18n="set_hint">Đổi / sửa / xóa dịch vụ: mở mục “Dịch vụ Perkeep”, hoặc chạm avatar trên thanh tìm kiếm.</p>
+        <pre id="out" hidden></pre>
+      </div>
+
+      <button class="fab" id="fab" aria-label="add"></button>
+
+      <div class="sheet" id="sheet" hidden>
+        <div id="sheet-body"></div>
+        <button class="rowbtn" id="close"></button>
+      </div>
+      <div class="snack" id="snack" hidden></div>
+
+      <nav class="nav">
+        <button class="on" data-t="t-home"><span data-ico="home"></span><em data-i18n="nav_home">Nhà</em></button>
+        <button data-t="t-photo"><span data-ico="image"></span><em data-i18n="nav_photo">Ảnh</em></button>
+        <button data-t="t-files"><span data-ico="folder"></span><em data-i18n="nav_files">Tệp</em></button>
+        <button data-t="t-set"><span data-ico="settings"></span><em data-i18n="nav_set">Cài đặt</em></button>
+      </nav>
+    </div>
+
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>
