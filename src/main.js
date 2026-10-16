@@ -78,6 +78,7 @@ const I18N = {
     up_need_native: 'Tải nền chỉ chạy trong app Android. Hãy build APK rồi thử.',
     up_none: 'Chưa có file nào trong hàng đợi.',
     set_wifi: 'Chỉ tải khi dùng Wi-Fi',
+    set_font: 'Cỡ chữ', fs_s: 'Nhỏ', fs_m: 'Vừa (mặc định)', fs_l: 'Lớn', fs_xl: 'Rất lớn',
     copied: 'Đã sao chép link', prompt_title: 'Tìm kiếm',
     ph_q: 'Tên tệp, hoặc tag:x / after:2026-01-01',
     ph_name: 'Tên gợi nhớ (vd: PC nhà)', ph_url: 'http://192.168.123.9:3179', ph_user: 'Tài khoản', ph_pass: 'Mật khẩu',
@@ -121,6 +122,7 @@ const I18N = {
     up_need_native: 'Background upload runs in the Android app only. Build the APK to try it.',
     up_none: 'Nothing in the queue yet.',
     set_wifi: 'Wi-Fi only',
+    set_font: 'Text size', fs_s: 'Small', fs_m: 'Default', fs_l: 'Large', fs_xl: 'Extra large',
     copied: 'Link copied', prompt_title: 'Search',
     ph_q: 'File name, or tag:x / after:2026-01-01',
     ph_name: 'Name (e.g. Home PC)', ph_url: 'http://192.168.123.9:3179', ph_user: 'Username', ph_pass: 'Password',
@@ -1191,6 +1193,38 @@ $('set-wifi').onclick = async () => {
   snack(t(next ? 'on' : 'off'));
 };
 
+// Cỡ chữ: đổi hệ số --fs cho toàn app (mọi cỡ chữ dùng rem)
+const FONT_STEPS = [
+  { v: 's', k: 'fs_s', scale: 0.9 },
+  { v: 'm', k: 'fs_m', scale: 1 },
+  { v: 'l', k: 'fs_l', scale: 1.12 },
+  { v: 'xl', k: 'fs_xl', scale: 1.25 }
+];
+const fontStep = () => localStorage.getItem('pk-font-v1') || 'm';
+function renderFontState() {
+  const st = FONT_STEPS.find((f) => f.v === fontStep()) || FONT_STEPS[1];
+  $('set-font-sub').textContent = t(st.k);
+}
+function applyFontScale() {
+  const st = FONT_STEPS.find((f) => f.v === fontStep()) || FONT_STEPS[1];
+  document.documentElement.style.setProperty('--fs', String(st.scale));
+}
+$('set-font').onclick = () => {
+  const cur = fontStep();
+  openSheet(`<h3>${esc(t('set_font'))}</h3>` + FONT_STEPS.map((f) =>
+    `<button class="opt${f.v === cur ? ' on' : ''}" data-v="${f.v}"><span>${esc(t(f.k))}</span>${f.v === cur ? `<span class="tick">${icon('check', 18)}</span>` : ''}</button>`
+  ).join(''));
+  sheetBody.querySelectorAll('.opt').forEach((b) => {
+    b.onclick = () => {
+      localStorage.setItem('pk-font-v1', b.dataset.v);
+      applyFontScale();
+      renderFontState();
+      closeSheet();
+      snack(t(FONT_STEPS.find((f) => f.v === b.dataset.v).k));
+    };
+  });
+};
+
 $('set-diag').onclick = () => {  openSheet(`<h3>${esc(t('diag_title'))}</h3><pre>${esc(outEl.textContent || '—')}</pre>`);
 };
 $('set-about').onclick = () => {
@@ -1263,6 +1297,7 @@ $('ob-skip').onclick = () => {
 function boot() {
   paintIcons();
   paintViewer();
+  applyFontScale();
   renderSvcSub();
   renderVidState();
   renderWifiState();
@@ -1284,6 +1319,7 @@ renderSvcSub();
 renderFilters();
 renderVidState();
 renderWifiState();
+renderFontState();
 refreshUploads();
 up.onProgress((job) => {
   uploadJobs.set(job.id, job);

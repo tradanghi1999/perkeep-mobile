@@ -16,6 +16,7 @@ Client Perkeep cho Android: tìm kiếm, thumbnail, upload chạy nền. Web ch�
 - **Thumbnail**: ảnh do server sinh; video do app tự lấy khung hình.
 - **Upload nền** kiểu Google Drive (WorkManager + notification tiến trình).
 - **Nhiều dịch vụ Perkeep** + song ngữ VI/EN.
+- **Cỡ chữ**: Cài đặt → Cỡ chữ (Nhỏ / Vừa / Lớn / Rất lớn). Mọi cỡ chữ trong app dùng `rem` với biến `--fs`, nên chỉnh một chỗ là đổi toàn bộ. Cỡ mặc định đã theo chuẩn Android (chữ danh sách 16px, phụ chú 13px, nhãn tab 12px).
 
 ## 1. Cài tối thiểu (không cài Android Studio)
 - Bun + VS Code
