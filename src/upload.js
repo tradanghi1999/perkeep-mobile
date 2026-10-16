@@ -45,6 +45,17 @@ export async function ensureNotificationPermission() {
   }
 }
 
+/** Trạng thái quyền thông báo: 'granted' | 'prompt' | 'denied' */
+export async function notificationPermission() {
+  if (!uploadSupported()) return 'granted';
+  try {
+    const r = await PkUpload.checkPermissions();
+    return r?.notifications || 'prompt';
+  } catch {
+    return 'prompt';
+  }
+}
+
 /** Chọn file rồi đưa vào hàng đợi upload nền. */
 export async function pickAndUpload(server, { wifiOnly = true, tag = 'mobile' } = {}) {
   const picked = await PkUpload.pickFiles();

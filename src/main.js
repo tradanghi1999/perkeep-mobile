@@ -99,6 +99,13 @@ const I18N = {
     up_need_native: 'Tải nền chỉ chạy trong app Android. Hãy build APK rồi thử.',
     up_none: 'Chưa có file nào trong hàng đợi.',
     set_wifi: 'Chỉ tải khi dùng Wi-Fi',
+    perm_title: 'Cho phép thông báo',
+    perm_body: 'App cần quyền thông báo để hiện tiến trình khi tải file lên chạy nền (giống Google Drive). Nếu không cấp, upload vẫn chạy nhưng bạn không thấy tiến trình và không huỷ được từ thông báo.',
+    perm_allow: 'Cho phép', perm_later: 'Để sau',
+    perm_on: 'Đã cấp', perm_off: 'Chưa cấp — chạm để xin lại',
+    set_perm: 'Quyền thông báo',
+    perm_granted: 'Đã cấp quyền thông báo', perm_denied: 'Chưa được cấp. Bật trong Cài đặt Android → Ứng dụng → pk-app → Thông báo.',
+    perm_android_only: 'Chỉ áp dụng trong app Android',
     set_font: 'Cỡ chữ', fs_s: 'Nhỏ', fs_m: 'Vừa (mặc định)', fs_l: 'Lớn', fs_xl: 'Rất lớn',
     copied: 'Đã sao chép link', prompt_title: 'Tìm kiếm',
     ph_q: 'Tên tệp, hoặc tag:x / after:2026-01-01',
@@ -163,6 +170,13 @@ const I18N = {
     up_need_native: 'Background upload runs in the Android app only. Build the APK to try it.',
     up_none: 'Nothing in the queue yet.',
     set_wifi: 'Wi-Fi only',
+    perm_title: 'Allow notifications',
+    perm_body: 'The app needs notification permission to show background upload progress (like Google Drive). Without it, uploads still run but you cannot see progress or cancel from the notification.',
+    perm_allow: 'Allow', perm_later: 'Later',
+    perm_on: 'Granted', perm_off: 'Not granted — tap to ask again',
+    set_perm: 'Notification permission',
+    perm_granted: 'Notification permission granted', perm_denied: 'Not granted. Enable it in Android Settings → Apps → pk-app → Notifications.',
+    perm_android_only: 'Android app only',
     set_font: 'Text size', fs_s: 'Small', fs_m: 'Default', fs_l: 'Large', fs_xl: 'Extra large',
     copied: 'Link copied', prompt_title: 'Search',
     ph_q: 'File name, or tag:x / after:2026-01-01',
@@ -1021,39 +1035,94 @@ viewerEl.addEventListener('touchend', (e) => {
 }, { passive: true });
 
 // ============================================================
-// Kéo xuống để tải lại (pull-to-refresh)
+// Kéo xuống để tải lại — mô phỏng Google Chrome:
+//  - nội dung trôi xuống có kháng lực (pull 2px thì nội dung đi 1px)
+//  - vòng cung lớn dần theo tay kéo, quay nhẹ
+//  - nhả tay: qua ngưỡng thì vòng xoay tròn + nội dung giữ nguyên cho tới khi xong
+//  - chưa qua ngưỡng thì bật về, vòng thu nhỏ
 // ============================================================
 const ptrEl = $('ptr');
+const ptrArc = $('ptr-arc');
+const contentEl = $('content');
+const ARC_C = 2 * Math.PI * 16; // chu vi vòng r=16
+const PTR_THRESHOLD = 64;       // ngưỡng theo độ trôi của nội dung
+const PTR_MAX = 96;
+
+function setArc(fraction) {
+  const len = ARC_C * Math.min(1, Math.max(0.02, fraction));
+  ptrArc.style.strokeDasharray = `${len} ${ARC_C}`;
+}
+function ptrReset(animate) {
+  contentEl.style.transition = animate ? 'transform .28s cubic-bezier(.2,.8,.2,1)' : 'none';
+  ptrEl.style.transition = animate ? 'opacity .2s, transform .28s' : 'none';
+  contentEl.style.transform = 'translateY(0)';
+  ptrEl.style.opacity = '0';
+  ptrEl.style.transform = 'scale(.6)';
+  ptrEl.classList.remove('refreshing');
+}
+
 function setupPullToRefresh(el, onRefresh) {
   let startY = 0;
-  let dist = 0;
+  let offset = 0;
   let armed = false;
-  const THRESHOLD = 70;
+  let busy = false;
 
   el.addEventListener('touchstart', (e) => {
+    if (busy || e.touches.length !== 1) { armed = false; return; }
     armed = el.scrollTop <= 0;
     startY = e.touches[0].clientY;
-    dist = 0;
+    offset = 0;
+    if (armed) ptrReset(false);
   }, { passive: true });
 
   el.addEventListener('touchmove', (e) => {
-    if (!armed) return;
-    dist = e.touches[0].clientY - startY;
-    if (dist > 0) ptrEl.classList.toggle('on', dist > THRESHOLD * 0.6);
-    else armed = dist > -10 ? armed : false;
-  }, { passive: true });
-
-  el.addEventListener('touchend', () => {
-    const should = armed && dist > THRESHOLD;
-    armed = false;
-    dist = 0;
-    if (!should) {
-      ptrEl.classList.remove('on');
+    if (!armed || busy) return;
+    const raw = e.touches[0].clientY - startY;
+    if (raw <= 0) { // kéo lên -> trả về bình thường
+      offset = 0;
+      contentEl.style.transform = 'translateY(0)';
+      ptrEl.style.opacity = '0';
+      ptrEl.style.transform = 'scale(.6)';
       return;
     }
-    ptrEl.classList.add('on');
-    Promise.resolve(onRefresh()).finally(() => setTimeout(() => ptrEl.classList.remove('on'), 400));
+    if (el.scrollTop > 0) { armed = false; return; }
+    // kháng lực: càng kéo xa càng nặng tay
+    offset = Math.min(PTR_MAX, raw * (raw > PTR_THRESHOLD * 2 ? 0.3 : 0.5));
+    const p = Math.min(1, offset / PTR_THRESHOLD);
+    contentEl.style.transition = 'none';
+    contentEl.style.transform = `translateY(${offset.toFixed(1)}px)`;
+    ptrEl.style.transition = 'none';
+    ptrEl.style.opacity = String(0.25 + 0.75 * p);
+    ptrEl.style.transform = `scale(${(0.6 + 0.4 * p).toFixed(2)}) rotate(${(p * 100).toFixed(0)}deg)`;
+    setArc(0.08 + 0.92 * p);
   }, { passive: true });
+
+  const end = async () => {
+    if (!armed) return;
+    const shouldRefresh = offset >= PTR_THRESHOLD;
+    armed = false;
+    if (!shouldRefresh) {
+      ptrReset(true);
+      return;
+    }
+    // đang tải: giữ nguyên độ trôi + vòng xoay
+    busy = true;
+    contentEl.style.transition = 'transform .2s ease-out';
+    ptrEl.style.transition = 'opacity .15s, transform .15s';
+    contentEl.style.transform = `translateY(${PTR_THRESHOLD}px)`;
+    ptrEl.style.opacity = '1';
+    ptrEl.style.transform = 'scale(1) rotate(0deg)';
+    setArc(0.28);
+    ptrEl.classList.add('refreshing');
+    try {
+      await onRefresh();
+    } catch {}
+    ptrEl.classList.remove('refreshing');
+    ptrReset(true);
+    busy = false;
+  };
+  el.addEventListener('touchend', end, { passive: true });
+  el.addEventListener('touchcancel', end, { passive: true });
 }
 ['t-home', 't-star', 't-files'].forEach((id) => {
   setupPullToRefresh($(id), () => reloadTab(id));
@@ -1102,6 +1171,52 @@ qEl.addEventListener('keydown', (e) => {
 });
 
 // ---------- sheet thao tác file ----------
+// ============================================================
+// Xin quyền trước khi vào app (thông báo cho upload nền)
+// ============================================================
+function renderPermState() {
+  const sub = $('set-perm-sub');
+  if (!sub) return;
+  if (!up.uploadSupported()) {
+    sub.textContent = t('perm_android_only');
+    return;
+  }
+  up.notificationPermission().then((st) => {
+    sub.textContent = t(st === 'granted' ? 'perm_on' : 'perm_off');
+  }).catch(() => {});
+}
+
+/** Hỏi quyền; trả về khi người dùng đã chọn (hoặc đã có quyền). */
+function askNotificationPermission(force = false) {
+  return new Promise((resolve) => {
+    if (!up.uploadSupported()) return resolve(false);
+    up.notificationPermission().then((state) => {
+      if (state === 'granted') return resolve(true);
+      const asked = localStorage.getItem('pk-notif-asked-v1') === '1';
+      if (!force && asked) return resolve(false);
+      openSheet(`<h3>${esc(t('perm_title'))}</h3>
+        <p class="meta">${esc(t('perm_body'))}</p>
+        <button class="rowbtn" id="perm-yes">${icon('check')}<span>${esc(t('perm_allow'))}</span></button>
+        <button class="rowbtn" id="perm-no">${icon('close')}<span>${esc(t('perm_later'))}</span></button>`);
+      sheetBody.querySelector('#perm-no').onclick = () => {
+        localStorage.setItem('pk-notif-asked-v1', '1');
+        closeSheet();
+        resolve(false);
+      };
+      sheetBody.querySelector('#perm-yes').onclick = async () => {
+        localStorage.setItem('pk-notif-asked-v1', '1');
+        closeSheet();
+        const ok = await up.ensureNotificationPermission();
+        renderPermState();
+        snack(t(ok ? 'perm_granted' : 'perm_denied'));
+        resolve(ok);
+      };
+    }).catch(() => resolve(false));
+  });
+}
+
+$('set-perm').onclick = () => askNotificationPermission(true).then(renderPermState);
+
 // ============================================================
 // Tag: thêm/bỏ tag = ký claim (add/del-attribute) rồi upload blob
 // Dùng chung cho cả app Android (native HTTP) và web (fetch, dev).
@@ -1536,6 +1651,18 @@ $('seg-en').onclick = () => setLang('en');
 const onboardingEl = $('onboarding');
 function showOnboard(v) { onboardingEl.hidden = !v; }
 
+// ============================================================
+// Onboarding -> xin quyền -> vào app
+// ============================================================
+async function finishOnboarding() {
+  localStorage.setItem(LS_ONBOARD, '1');
+  // Xin quyền thông báo NGAY LÚC NÀY (trước khi vào app) để upload nền
+  // có tiến trình, thay vì hỏi giữa chừng lúc bấm upload.
+  await askNotificationPermission(true);
+  showOnboard(false);
+  boot();
+}
+
 $('ob-connect').onclick = async () => {
   const errEl = $('ob-err');
   const name = $('ob-name').value.trim() || 'Perkeep';
@@ -1552,10 +1679,8 @@ $('ob-connect').onclick = async () => {
     servers = [{ id: 's' + Date.now(), name, url, user, pass }];
     activeId = servers[0].id;
     save();
-    localStorage.setItem(LS_ONBOARD, '1');
     renderSvcSub();
-    showOnboard(false);
-    boot();
+    await finishOnboarding();
   } catch {
     errEl.textContent = t('ob_fail');
     errEl.hidden = false;
@@ -1563,11 +1688,7 @@ $('ob-connect').onclick = async () => {
     $('ob-connect').disabled = false;
   }
 };
-$('ob-skip').onclick = () => {
-  localStorage.setItem(LS_ONBOARD, '1');
-  showOnboard(false);
-  boot();
-};
+$('ob-skip').onclick = () => finishOnboarding();
 
 // ============================================================
 // boot
@@ -1600,6 +1721,7 @@ renderFilters();
 renderVidState();
 renderWifiState();
 renderFontState();
+renderPermState();
 refreshUploads();
 up.onProgress((job) => {
   uploadJobs.set(job.id, job);

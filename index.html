@@ -50,22 +50,28 @@
         </div>
       </div>
 
-      <div class="ptr" id="ptr"><span class="ptr-spin"></span><span data-i18n="ptr">Đang tải lại…</span></div>
+      <div class="content" id="content">
+        <div class="ptr" id="ptr" aria-hidden="true">
+          <svg viewBox="0 0 40 40" width="40" height="40">
+            <circle class="ptr-track" cx="20" cy="20" r="16" />
+            <circle class="ptr-arc" id="ptr-arc" cx="20" cy="20" r="16" />
+          </svg>
+        </div>
 
-      <div class="tabs on" id="t-home">
-        <div id="uploads" class="uploads" hidden></div>
-        <div id="home-list" class="list"></div>
-      </div>
+        <div class="tabs on" id="t-home">
+          <div id="uploads" class="uploads" hidden></div>
+          <div id="home-list" class="list"></div>
+        </div>
 
-      <div class="tabs" id="t-star">
-        <div id="star-list" class="list"></div>
-      </div>
+        <div class="tabs" id="t-star">
+          <div id="star-list" class="list"></div>
+        </div>
 
-      <div class="tabs" id="t-files">
-        <div id="file-list" class="list"></div>
-      </div>
+        <div class="tabs" id="t-files">
+          <div id="file-list" class="list"></div>
+        </div>
 
-      <div class="tabs" id="t-set">
+        <div class="tabs" id="t-set">
         <div class="frow" id="set-svc">
           <div class="fic" data-ico="server"></div>
           <div class="fx"><b data-i18n="set_svc">Dịch vụ Perkeep</b><small id="set-svc-sub"></small></div>
@@ -91,6 +97,11 @@
           <div class="fx"><b data-i18n="set_wifi">Chỉ tải khi dùng Wi-Fi</b><small id="set-wifi-sub"></small></div>
           <span class="chev" id="set-wifi-state"></span>
         </div>
+        <div class="frow" id="set-perm">
+          <div class="fic" data-ico="pulse"></div>
+          <div class="fx"><b data-i18n="set_perm">Quyền thông báo</b><small id="set-perm-sub"></small></div>
+          <span class="chev" data-ico="chevron"></span>
+        </div>
         <div class="frow" id="set-diag">
           <div class="fic" data-ico="pulse"></div>
           <div class="fx"><b data-i18n="set_diag">Chẩn đoán</b><small data-i18n="set_diag_sub">Log kỹ thuật, blob, JSON</small></div>
@@ -103,6 +114,7 @@
         </div>
         <p class="hint" data-i18n="set_hint">Đổi / sửa / xóa dịch vụ: mở mục “Dịch vụ Perkeep”, hoặc chạm avatar trên thanh tìm kiếm.</p>
         <pre id="out" hidden></pre>
+        </div>
       </div>
 
       <button class="fab" id="fab" aria-label="add"></button>
