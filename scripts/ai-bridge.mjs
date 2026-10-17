@@ -233,19 +233,49 @@ async function generateJson(prompt) {
 function extractAssistant(messages) {
   const texts = [];
   const tools = [];
+  const items = [];
   for (const m of messages || []) {
     if (m.type === 'assistant') {
       if (typeof m.text === 'string' && m.text.trim()) texts.push(m.text.trim());
       const parts = Array.isArray(m.content) ? m.content : [];
       for (const p of parts) {
         if (p?.type === 'text' && p.text) texts.push(p.text);
-        if (p?.type === 'tool' && (p.name || p.tool)) tools.push(p.name || p.tool);
+        if (p?.type === 'tool') {
+          if (p.name || p.tool) tools.push(p.name || p.tool);
+          // lấy items từ output JSON của perkeep_search (ổn định hơn <ui>)
+          const outs = p?.state?.content;
+          if (Array.isArray(outs)) {
+            for (const c of outs) {
+              if (c?.type !== 'text' || !c.text) continue;
+              const s = String(c.text).trim();
+              if (!s.startsWith('{')) continue;
+              try {
+                const j = JSON.parse(s);
+                if (Array.isArray(j.items)) {
+                  for (const it of j.items) {
+                    if (it && it.blobref) items.push({
+                      blobref: String(it.blobref),
+                      fileRef: String(it.fileRef || ''),
+                      name: String(it.name || ''),
+                      mime: String(it.mime || ''),
+                      size: Number(it.size) || 0,
+                      date: String(it.date || ''),
+                      tags: Array.isArray(it.tags) ? it.tags.slice(0, 8).map(String) : []
+                    });
+                  }
+                }
+              } catch {}
+            }
+          }
+        }
       }
       for (const t of m.tools || []) tools.push(t.name || t.tool || String(t));
     }
     if (m.type === 'tool' && (m.name || m.tool)) tools.push(m.name || m.tool);
   }
-  return { text: texts.join('\n').trim(), tools: [...new Set(tools)] };
+  const seen = new Set();
+  const uniq = items.filter((i) => (seen.has(i.blobref) ? false : (seen.add(i.blobref), true))).slice(0, 10);
+  return { text: texts.join('\n').trim(), tools: [...new Set(tools)], items: uniq };
 }
 
 async function askAgent(text) {
@@ -269,7 +299,7 @@ async function askAgent(text) {
     if (!out.text && idle?.error) {
       throw new Error(`AI lỗi: ${idle.error.message || idle.error.type || 'unknown'}`);
     }
-    return { text: out.text, tools: out.tools, sessionID: sid };
+    return { text: out.text, tools: out.tools, items: out.items, sessionID: sid };
   } finally {
     try { await c.session.remove({ sessionID: sid }); } catch {}
   }
@@ -338,7 +368,11 @@ Yêu cầu: ${JSON.stringify(text)}`;
         if (!text || !String(text).trim()) return json({ error: 'empty' }, 400);
         const out = await askAgent(String(text));
         const ui = extractUi(out.text);
-        return json({ text: ui.text, items: ui.items, tools: out.tools });
+        const map = new Map();
+        for (const it of [...(out.items || []), ...(ui.items || [])]) {
+          if (it?.blobref) map.set(it.blobref, { ...map.get(it.blobref), ...it });
+        }
+        return json({ text: ui.text, items: [...map.values()].slice(0, 10), tools: out.tools });
       }
 
       if (url.pathname === '/ai/channel' && req.method === 'POST') {
