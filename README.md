@@ -18,6 +18,10 @@ Client Perkeep cho Android: tìm kiếm, thumbnail, upload chạy nền. Web ch�
   - Server bật auth: ảnh lấy qua endpoint thumbnail; video/audio dùng nút mở ngoài.
   - Thay cho tab Ảnh cũ: muốn xem riêng ảnh thì dùng `Loại tệp: Ảnh` + `Kiểu xem: Lưới lớn`.
 - **Kéo xuống để tải lại** (pull-to-refresh) ở tab Nhà / Ảnh / Tệp; **vuốt xuống để đóng** mọi bottom sheet.
+- **Cuộn vô hạn (infinite scroll)**: danh sách nạp theo **trang 30 mục** bằng token `continue` của Perkeep — cuộn tới đâu tải tới đó, không tải cả kho một lần.
+  - Chân danh sách hiện trạng thái đang tải / **Đã hết**; máy không có `IntersectionObserver` thì hiện nút **Tải thêm**.
+  - Lọc thời gian/từ khoá vẫn làm ở máy **theo từng trang**; nếu cả trang bị lọc hết, app tự nạp tiếp (tối đa 6 trang/lần) hoặc để nút **Tải thêm**, tránh nạp liên tục.
+  - Mục ngoài màn hình dùng `content-visibility: auto` → trình duyệt bỏ qua layout/paint, nhẹ RAM/CPU khi kho có hàng nghìn file.
 - **Thumbnail**: ảnh do server sinh; video do app tự lấy khung hình.
 - **Upload nền** kiểu Google Drive (WorkManager + notification tiến trình).
 - **Nhiều dịch vụ Perkeep** + song ngữ VI/EN.
@@ -76,6 +80,7 @@ Verify trực tiếp trên `perkeepd` local:
 | Kèm metadata | thêm `describe: {rules:[{attrs:["*"],rules:[{attrs:["*"]}]}]}` | trả `description.meta[...]` trong cùng 1 request (bỏ N+1) |
 | Thumbnail | `GET {uiRoot}/thumbnail/<fileBlobref>?mw=&mh=` | server tự sinh **chỉ cho ảnh**; mw/mh ≤ 2000 |
 | Tải file | `GET {uiRoot}/download/<fileBlobref>` | có `Content-Disposition` + tên gốc, hỗ trợ `Range` |
+| Phân trang | thêm `continue: "<token>"` vào body | trả `{blobs, description, continue}`; token chỉ dùng lại với **đúng** expression/limit/sort, hết trang thì `continue` rỗng |
 | Tải blob thô | `GET {blobRoot}<blobref>` | không có tên file |
 | Sống/chết | `GET {base}/` → 301 `/ui/` | auth userpass thì cần Basic |
 | Discovery | `GET {base}/?camli.mode=config` | trả về blobRoot/searchRoot/uiRoot... |
@@ -86,6 +91,27 @@ Phát hiện quan trọng:
 - `is:image` / `is:video` / `recent:` **không dùng được** ở bản này; dùng `format:jpg`, `filename:*.mp4`, `after:YYYY-MM-DD`.
 - Response lỗi vẫn HTTP 200 kèm `{error, errorType}` — app phải check field `error`.
 - Thumbnail tự sinh on-demand rồi cache; **không** sinh cho video/audio/PDF/tài liệu (app hiện icon theo MIME).
+
+## Export file gốc ra đĩa (Jellyfin / phát nhanh hơn)
+
+Perkeep lưu blob **content-addressed** chứ không phải file trên filesystem, và blob có thể nằm trên ổ chậm (USB/HDD). Video gốc 1080p60 (~25–30 Mbps) lại **không được transcode**, nên phát trực tiếp dễ giật. Muốn dùng **Jellyfin** (transcode + HLS) làm "backend phát" thì phải có **file thật** trên đĩa → cần bước export:
+
+```powershell
+# video (mặc định) -> thư mục trên SSD
+bun scripts/export-media.mjs --out C:\pk-export
+
+# mọi loại / ảnh / nhạc / tài liệu
+bun scripts/export-media.mjs --out C:\pk-export --type all
+bun scripts/export-media.mjs --out C:\pk-export --type image
+
+# chỉ 1 file, hoặc xem trước không tải
+bun scripts/export-media.mjs --out C:\pk-export --expression 'filename:bbb_test.mp4'
+bun scripts/export-media.mjs --out C:\pk-export --dry-run
+```
+
+- Giữ **tên file gốc** qua `GET {uiRoot}/download/<ref>`; phân trang bằng `continue`; ghi `.part` rồi mới đổi tên; **bỏ qua file đã có đúng kích thước** nên chạy lại rất nhanh (idempotent).
+- Ghi kèm `manifest.json` (`fileRef`, `name`, `size`, `mime`) để app/Jellyfin đối chiếu.
+- Máy dev này: SSD là `C:` (SATA), blob Perkeep nằm trên `D:` (USB) → export sang `C:\pk-export` để phát mượt hơn.
 
 ## Thumbnail theo loại file
 Server (Perkeep) chỉ tạo thumbnail cho **ảnh**: JPEG, PNG, GIF, WebP, TIFF, HEIC/HEIF, AVIF, CR2/raw Canon (lấy JPEG nhúng). SVG chỉ đọc được kích thước. Video/audio/PDF/epub/json → `500 image: unknown format`.

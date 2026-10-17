@@ -77,7 +77,7 @@ const I18N = {
     lang_title: 'Ngôn ngữ / Language', diag_title: 'Chẩn đoán',
     about_title: 'Giới thiệu Perkeep',
     about_body: 'Perkeep lưu giữ dữ liệu của bạn suốt đời: mọi thứ được định danh bằng nội dung và không bao giờ bị sửa. Website: perkeep.org',
-    empty: 'Không có kết quả.', loading: 'Đang tải…',
+    empty: 'Không có kết quả.', loading: 'Đang tải…', feed_more: 'Tải thêm', feed_end: 'Đã hết',
     found: (n, s) => `${n} kết quả · ${s}`,
     fa_download: 'Tải về máy', fa_share: 'Sao chép link', fa_open: 'Mở trong Perkeep', fa_detail: 'Chi tiết',
     tag_add: 'Thêm tag', tag_section: 'Tag', tag_ph: 'Nhập tag rồi bấm Thêm', tag_btn: 'Thêm',
@@ -162,7 +162,7 @@ const I18N = {
     lang_title: 'Ngôn ngữ / Language', diag_title: 'Diagnostics',
     about_title: 'About Perkeep',
     about_body: 'Perkeep keeps your stuff for life: everything is content-addressed and never modified. Website: perkeep.org',
-    empty: 'No results.', loading: 'Loading…',
+    empty: 'No results.', loading: 'Loading…', feed_more: 'Load more', feed_end: 'End of list',
     found: (n, s) => `${n} results · ${s}`,
     fa_download: 'Download', fa_share: 'Copy link', fa_open: 'Open in Perkeep', fa_detail: 'Details',
     tag_add: 'Add tag', tag_section: 'Tags', tag_ph: 'Type a tag then Add', tag_btn: 'Add',
@@ -445,11 +445,13 @@ function serverSort() {
   return filters.sort === 'oldest' ? 'created' : '-created';
 }
 
-async function query(expression, limit = 50, sort = '') {
+async function query(expression, limit = 50, sort = '', cont = '') {
   const b = base();
   if (!b) throw new Error('no server');
   const body = { expression, limit, describe: DESCRIBE };
   if (sort) body.sort = sort;
+  // Token "continue" của Perkeep: lấy trang kế tiếp của cùng query/limit/sort
+  if (cont) body.continue = cont;
   log(`POST ${b}/my-search/camli/search/query`, body);
   const r = await http(b + '/my-search/camli/search/query', {
     method: 'POST',
@@ -459,7 +461,7 @@ async function query(expression, limit = 50, sort = '') {
   const j = JSON.parse(r.text);
   if (j.error) throw new Error(j.error.split('\n')[0]);
   const blobs = (j.blobs || []).map((x) => x.blob).filter(Boolean);
-  return { blobs, description: j.description };
+  return { blobs, description: j.description, continue: j.continue || '' };
 }
 
 // Gộp meta permanode + file đính kèm.
@@ -679,50 +681,145 @@ function clearEmpty(target) {
   target.classList.remove('is-empty');
 }
 
-async function fillList(target, expression, render, emptyMsg, limit = 50) {
-  target.innerHTML = `<p class="empty">${esc(t('loading'))}</p>`;
-  target.classList.add('is-empty');
-  setContainerMode(target, filters.view === 'grid');
-  try {
-    const wantKw = filters.by === 'name' && !!filters.keyword.trim();
-    // Tìm theo tên ở máy -> lấy trang rộng hơn để đỡ sót
-    const { blobs, description } = await query(expression, wantKw ? 150 : limit, serverSort());
-    target.innerHTML = '';
-    clearEmpty(target);
-    if (!blobs.length) {
-      showEmpty(target, emptyMsg);
-      if (els().includes(target)) currentItems = [];
-      return;
-    }
-    let items = blobs.map((b) => ({ blob: b, meta: metaFor(b, description) }));
+// ============================================================
+// Infinite scroll: nạp theo trang bằng token "continue" của Perkeep.
+// Chỉ dựng DOM cho mục đã cuộn tới (mục ngoài màn hình bị trình duyệt
+// bỏ qua layout/paint nhờ content-visibility) -> tiết kiệm RAM/CPU/dữ liệu.
+// ============================================================
+const PAGE_SIZE = 30;          // số mục mỗi trang
+const MAX_PAGES_PER_TICK = 6;  // gom tối đa bấy nhiêu trang/lần cuộn khi lọc ở máy ra 0 mục
 
-    // Từ khóa: khớp tên hiển thị, không phân biệt hoa/thường và dấu tiếng Việt
-    if (wantKw) {
-      const needle = norm(filters.keyword);
-      items = items.filter((it) => norm(it.meta.name || '').includes(needle));
-    }
-    // Thời gian: lọc theo đúng ngày đang hiển thị cho người dùng
-    if (filters.time !== 'any') {
-      const from = timeFrom(filters.time);
-      if (from) items = items.filter((it) => (it.meta.date || '').slice(0, 10) >= from);
-    }
-    if (filters.sort === 'name' && filters.time !== 'any') {
-      items.sort((a, b) => (a.meta.name || '').localeCompare(b.meta.name || '', lang === 'vi' ? 'vi' : 'en'));
-    }
+const feeds = new Map(); // target -> feed
 
-    if (!items.length) {
-      showEmpty(target, emptyMsg);
-      if (els().includes(target)) currentItems = [];
-      return;
-    }
-    // Trình xem cần danh sách của tab đang xem để chuyển qua lại
-    if (els().includes(target)) currentItems = items;
-    items.forEach((it, i) => target.appendChild(render(it.blob, it.meta, i)));
-    log(`HTTP 200 · ${items.length}/${blobs.length} blobs · expression="${expression || '(trống)'}" · sort=${serverSort()}`);
-  } catch (e) {
-    showEmpty(target, String(e.message).includes('expression') ? t('search_err') : t('conn_err'));
-    log(`FAIL: ${e.message}`);
+function feedFor(target, expression, render, emptyMsg) {
+  const cur = feeds.get(target);
+  if (cur && cur.expression === expression && cur.render === render) return cur;
+  if (cur?.io) cur.io.disconnect();
+  const feed = { target, expression, render, emptyMsg, sort: '', cont: '', done: false, loading: false, gen: 0, items: [], rendered: 0, foot: null, io: null, err: '', visible: false };
+  feeds.set(target, feed);
+  return feed;
+}
+
+/** Lọc ở máy 1 trang kết quả (giữ nguyên quy tắc cũ: từ khoá theo tên, thời gian). */
+function pageItems(blobs, description) {
+  let items = blobs.map((b) => ({ blob: b, meta: metaFor(b, description) }));
+  if (filters.by === 'name' && filters.keyword.trim()) {
+    const needle = norm(filters.keyword);
+    items = items.filter((it) => norm(it.meta.name || '').includes(needle));
   }
+  if (filters.time !== 'any') {
+    const from = timeFrom(filters.time);
+    if (from) items = items.filter((it) => (it.meta.date || '').slice(0, 10) >= from);
+  }
+  if (filters.sort === 'name' && filters.time !== 'any') {
+    items.sort((a, b) => (a.meta.name || '').localeCompare(b.meta.name || '', lang === 'vi' ? 'vi' : 'en'));
+  }
+  return items;
+}
+
+/** Chân danh sách: vừa là "sentinel" cho observer, vừa hiện trạng thái tải/hết. */
+function feedFoot(feed, state) {
+  if (!feed.foot || !feed.foot.isConnected) {
+    feed.foot = document.createElement('div');
+    feed.foot.className = 'feed-foot';
+    feed.target.appendChild(feed.foot);
+  }
+  feed.foot.innerHTML = '';
+  if (state === 'loading') {
+    feed.foot.innerHTML = `<span class="feed-spin"></span><span>${esc(t('loading'))}</span>`;
+  } else if (state === 'end') {
+    feed.foot.innerHTML = `<span>${esc(t('feed_end'))}</span>`;
+  } else if (state === 'more') {
+    const btn = document.createElement('button');
+    btn.className = 'feed-more';
+    btn.textContent = t('feed_more');
+    btn.onclick = () => feedLoad(feed);
+    feed.foot.appendChild(btn);
+  }
+  return feed.foot;
+}
+
+function feedObserve(feed) {
+  // Không có IntersectionObserver (WebView cũ): để nút "Tải thêm" cho người dùng bấm.
+  if (!('IntersectionObserver' in window)) { feedFoot(feed, 'more'); return; }
+  if (feed.io) return;
+  feed.io = new IntersectionObserver((entries) => {
+    for (const e of entries) if (e.target === feed.foot) feed.visible = !!e.isIntersecting;
+    // Sentinel lọt vào tầm nhìn -> nạp trang kế. Nhờ vậy cuộn tới đâu nạp tới đó.
+    if (feed.visible) feedLoad(feed);
+  }, { root: null, rootMargin: '600px 0px' });
+  feed.io.observe(feed.foot);
+}
+
+async function feedLoad(feed) {
+  if (feed.loading || feed.done) return;
+  const gen = feed.gen;
+  feed.loading = true;
+  feed.err = '';
+  feedFoot(feed, 'loading');
+  let appended = 0;
+  try {
+    for (let pages = 0; pages < MAX_PAGES_PER_TICK; pages++) {
+      const { blobs, description, continue: cont } = await query(feed.expression, PAGE_SIZE, feed.sort, feed.cont);
+      if (gen !== feed.gen) return; // bộ lọc/tab đã đổi -> bỏ kết quả cũ
+      feed.cont = cont;
+      feed.done = !cont;
+      for (const it of pageItems(blobs, description)) {
+        feed.items.push(it);
+        // Trình xem cần danh sách của tab đang xem để chuyển qua lại
+        if (els().includes(feed.target)) currentItems.push(it);
+        feed.target.insertBefore(feed.render(it.blob, it.meta, feed.items.length - 1), feed.foot);
+        feed.rendered++; appended++;
+      }
+      if (appended > 0 || feed.done || !blobs.length) break;
+    }
+  } catch (e) {
+    if (gen !== feed.gen) return;
+    feed.done = true;
+    feed.err = String(e.message).includes('expression') ? t('search_err') : t('conn_err');
+    log(`FAIL: ${e.message}`);
+  } finally {
+    if (gen === feed.gen) {
+      feed.loading = false;
+      if (feed.rendered === 0) {
+        showEmpty(feed.target, feed.err || feed.emptyMsg);
+      } else if (feed.done) {
+        feedFoot(feed, 'end');
+      } else if (!feed.io || appended === 0) {
+        // Không có observer, hoặc trang vừa rồi bị lọc hết -> để nút bấm,
+        // tránh tự nạp liên tục khi bộ lọc không khớp mục nào.
+        feedFoot(feed, 'more');
+      } else {
+        feedFoot(feed, '');
+        // Sentinel vẫn trong tầm nhìn (màn hình cao/chưa đầy) -> nạp tiếp cho đầy.
+        if (feed.visible) feedLoad(feed);
+      }
+      log(`feed: +${appended} mục (tổng ${feed.items.length}${feed.done ? ' · hết' : ' · còn'}) · "${feed.expression || '(trống)'}"`);
+    }
+  }
+}
+
+/** Nạp lại danh sách từ đầu (reset feed) — gọi khi đổi tab/bộ lọc/kéo tải lại. */
+async function fillList(target, expression, render, emptyMsg) {
+  const feed = feedFor(target, expression, render, emptyMsg);
+  feed.sort = serverSort();
+  feed.gen++;
+  feed.cont = '';
+  feed.done = false;
+  feed.loading = false;
+  feed.items = [];
+  feed.rendered = 0;
+  feed.foot = null;
+  feed.err = '';
+  feed.visible = false;
+  if (feed.io) { feed.io.disconnect(); feed.io = null; }
+  if (els().includes(target)) currentItems = [];
+  setContainerMode(target, filters.view === 'grid');
+  target.innerHTML = '';
+  target.classList.remove('is-empty');
+  feedFoot(feed, 'loading');
+  feedObserve(feed);
+  await feedLoad(feed);
 }
 
 // Tab Nhà / Tệp / Ghim dùng bộ lọc; Ghim thêm điều kiện tag:star.

@@ -65,6 +65,20 @@ h3 { margin: 12px 4px; font-size: 1.0625rem; }
   flex: 1; justify-content: center; align-items: center;
 }
 
+/* ---------- Infinite scroll: tiết kiệm tài nguyên ---------- */
+/* Trình duyệt bỏ qua layout/paint cho mục ngoài viewport (Chrome/WebView 85+),
+   nên danh sách dài không tốn CPU/RAM dù DOM vẫn giữ đủ mục đã cuộn tới. */
+.frow, .vcard { content-visibility: auto; contain-intrinsic-size: 72px; contain-intrinsic-size: auto 72px; }
+.list.gridmode > .vcard { contain-intrinsic-size: 170px; contain-intrinsic-size: auto 170px; }
+.feed-foot { display: flex; align-items: center; justify-content: center; gap: 8px;
+  padding: 16px 12px; color: var(--muted); font-size: 0.8125rem; }
+.list.gridmode > .feed-foot { grid-column: 1 / -1; }
+.feed-spin { width: 16px; height: 16px; border: 2px solid var(--line); border-top-color: var(--green);
+  border-radius: 50%; animation: feedspin 0.8s linear infinite; }
+@keyframes feedspin { to { transform: rotate(360deg); } }
+.feed-more { border: 1px solid var(--line); background: #fff; color: var(--green-d);
+  border-radius: 12px; padding: 10px 16px; font: inherit; }
+
 /* ---------- Trình xem file ---------- */
 .viewer { position: fixed; inset: 0; z-index: 70; background: #0d0d0d; color: #fff; display: flex; flex-direction: column; }
 .vw-top { display: flex; align-items: center; gap: 8px; padding: 10px 8px; background: #161616; }
