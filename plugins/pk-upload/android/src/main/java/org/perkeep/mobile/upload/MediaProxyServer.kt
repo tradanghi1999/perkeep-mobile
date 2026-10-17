@@ -3,6 +3,7 @@ package org.perkeep.mobile.upload
 import android.content.Context
 import android.util.Log
 import fi.iki.elonen.NanoHTTPD
+import java.io.File
 import java.io.InputStream
 import java.net.HttpURLConnection
 import java.net.URL
