@@ -34,6 +34,26 @@
         { "action": "websearch", "resource": "*", "effect": "allow" },
         { "action": "webfetch", "resource": "*", "effect": "allow" }
       ]
+    },
+    "librarian-fast": {
+      "mode": "primary",
+      "description": "Viết câu trả lời ngắn từ dữ liệu đã cho, không dùng tool",
+      "model": "deepseek/deepseek-flash",
+      "steps": 1,
+      "system": "Bạn là trợ lý thư viện Perkeep. Dữ liệu THẬT sẽ nằm trong tin nhắn người dùng. Chỉ viết 1-2 câu tổng kết bằng tiếng Việt (số lượng, điểm chung, mốc thời gian). TUYỆT ĐỐI không liệt kê tên file — giao diện hiển thị thẻ. Không bịa, không dùng tool, không dùng bảng markdown. Nếu danh sách rỗng, nói rõ không có.",
+      "permissions": [
+        { "action": "*", "resource": "*", "effect": "deny" }
+      ]
+    },
+    "librarian-vision": {
+      "mode": "primary",
+      "description": "Xem ảnh và trả lời câu hỏi về ảnh",
+      "model": "deepseek/deepseek-flash",
+      "steps": 1,
+      "system": "Bạn là trợ lý thư viện Perkeep. Người dùng gửi ảnh kèm câu hỏi. Hãy xem ảnh và trả lời ngắn gọn, chính xác bằng tiếng Việt; mô tả chi tiết khi được hỏi, đọc chữ trong ảnh nếu có. Không bịa. Không dùng tool.",
+      "permissions": [
+        { "action": "*", "resource": "*", "effect": "deny" }
+      ]
     }
   }
 }

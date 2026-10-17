@@ -432,12 +432,26 @@ Yêu cầu: ${JSON.stringify(text)}`;
       }
 
       if (url.pathname === '/ai/ask/stream' && req.method === 'POST') {
-        const { text } = await req.json();
-        if (!text || !String(text).trim()) return json({ error: 'empty' }, 400);
+        const { text, images } = await req.json();
+        const imgs = (Array.isArray(images) ? images : [])
+          .slice(0, 4)
+          .map((im) => {
+            const mime = String(im?.mime || '').toLowerCase();
+            let data = String(im?.data || '');
+            if (data.startsWith('data:')) data = data.split(',').pop() || '';
+            if (!/^image\/(jpeg|png|webp|gif|heic|heif)$/.test(mime)) return null;
+            if (!data || data.length > 12 * 1024 * 1024) return null;
+            return { mime, data, name: String(im?.name || 'image') };
+          })
+          .filter(Boolean);
+        const hasImages = imgs.length > 0;
+        if ((!text || !String(text).trim()) && !hasImages) return json({ error: 'empty' }, 400);
 
-        // Đường nhanh: câu hỏi tra cứu -> 2 lần model, không mở session/tool
+        // Đường nhanh chỉ cho câu hỏi tra cứu bằng chữ; ảnh phải qua agent vision.
         let fast = null;
-        try { fast = await fastLibrary(String(text)); } catch (e) { console.error('fast path:', e.message); }
+        if (!hasImages) {
+          try { fast = await fastLibrary(String(text)); } catch (e) { console.error('fast path:', e.message); }
+        }
         if (fast) {
           const enc = new TextEncoder();
           const stream = new ReadableStream({
@@ -467,15 +481,22 @@ Yêu cầu: ${JSON.stringify(text)}`;
         }
 
         const c = await oc();
+        const agentName = hasImages ? 'librarian-vision' : AGENT;
         const session = await c.session.create({
-          title: String(text).slice(0, 60),
-          agent: AGENT,
+          title: (String(text || '').trim() || (hasImages ? 'Ảnh' : 'Chat')).slice(0, 60),
+          agent: agentName,
           model: MODEL,
           location: { directory: PROJECT }
         });
         const sid = session.id || session.sessionID;
-        await c.session.switchAgent({ sessionID: sid, agent: AGENT });
+        await c.session.switchAgent({ sessionID: sid, agent: agentName });
         await c.session.switchModel({ sessionID: sid, model: MODEL });
+        const files = imgs.map((im) => ({
+          uri: `data:${im.mime};base64,${im.data}`,
+          mime: im.mime,
+          name: im.name
+        }));
+        const promptText = String(text || '').trim() || 'Hãy xem ảnh này và cho tôi biết nội dung.';
 
         const enc = new TextEncoder();
         const ctrl = new AbortController();
@@ -551,7 +572,7 @@ Yêu cầu: ${JSON.stringify(text)}`;
               try { controller.close(); } catch {}
             });
 
-            c.session.prompt({ sessionID: sid, text: String(text) }).catch((e) => {
+            c.session.prompt({ sessionID: sid, text: promptText, ...(files.length ? { files } : {}) }).catch((e) => {
               finish({ text: '', tools: [], items: [], error: String(e?.message || e).slice(0, 200) });
             });
           },

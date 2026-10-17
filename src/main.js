@@ -130,6 +130,10 @@ const I18N = {
     ai_tool_search: 'Tìm trong Perkeep', ai_tool_stats: 'Thống kê thư viện',
     ai_tool_describe: 'Đọc metadata', ai_tool_get_text: 'Đọc nội dung',
     ai_send: 'Gửi', ai_stop: 'Dừng', ai_attach_soon: 'Đính kèm sẽ có ở giai đoạn sau',
+    ai_attach_title: 'Đính kèm ảnh', ai_attach_lib: 'Chọn từ thư viện', ai_attach_cam: 'Chụp ảnh',
+    ai_img_only: 'Chỉ đính kèm được ảnh.', ai_img_max: 'Tối đa 4 ảnh mỗi tin nhắn.',
+    ai_img_fail: 'Không đọc được ảnh này.', ai_img_remove: 'Xoá ảnh', ai_image: 'Ảnh',
+    ai_thinking_img: 'Đang xem ảnh…', ai_working: 'Đang xử lý…',
     ai_tags: 'Gợi ý tag bằng AI', ai_tags_ok: 'Đã điền tag gợi ý', ai_tags_fail: 'Không gợi ý được tag',
     fab_channel: 'Thêm video từ kênh (YouTube)',
     ch_title: 'Thêm video từ kênh', ch_url: 'Link kênh (youtube.com/@ten)', ch_count: 'Số video mới nhất',
@@ -285,6 +289,10 @@ const I18N = {
     ai_tool_search: 'Search Perkeep', ai_tool_stats: 'Library stats',
     ai_tool_describe: 'Read metadata', ai_tool_get_text: 'Read content',
     ai_send: 'Send', ai_stop: 'Stop', ai_attach_soon: 'Attachments come in a later phase',
+    ai_attach_title: 'Attach an image', ai_attach_lib: 'Choose from library', ai_attach_cam: 'Take a photo',
+    ai_img_only: 'Only images can be attached.', ai_img_max: 'Up to 4 images per message.',
+    ai_img_fail: 'Could not read this image.', ai_img_remove: 'Remove image', ai_image: 'Image',
+    ai_thinking_img: 'Looking at the image…', ai_working: 'Working…',
     ai_tags: 'Suggest tags with AI', ai_tags_ok: 'Suggested tags applied', ai_tags_fail: 'Could not suggest tags',
     fab_channel: 'Add videos from a channel (YouTube)',
     ch_title: 'Add videos from a channel', ch_url: 'Channel link (youtube.com/@name)', ch_count: 'Latest videos',
@@ -802,6 +810,46 @@ function lazyThumb(el, slot, meta) {
   thumbObserver.observe(el);
 }
 
+// ---------- long-press: mở menu thay vì mở file ----------
+function attachLongPress(el, handler, ms = 500) {
+  let timer = null;
+  let start = null;
+  const clear = () => {
+    if (timer) { clearTimeout(timer); timer = null; }
+    start = null;
+  };
+  el.addEventListener('pointerdown', (e) => {
+    if (!e.isPrimary || (e.pointerType === 'mouse' && e.button !== 0)) return;
+    if (e.target.closest('.dot-ico, .vmore')) return;
+    start = { x: e.clientX, y: e.clientY };
+    clearTimeout(timer);
+    timer = setTimeout(() => {
+      timer = null;
+      el._suppressClick = true;
+      try { navigator.vibrate?.(12); } catch {}
+      el.classList.add('lp');
+      setTimeout(() => el.classList.remove('lp'), 200);
+      handler();
+      // Nếu ngón tay nhả ra ngoài dòng (sheet vừa mở), đừng nuốt cú chạm kế tiếp.
+      setTimeout(() => { el._suppressClick = false; }, 900);
+    }, ms);
+  });
+  el.addEventListener('pointermove', (e) => {
+    if (!start) return;
+    if (Math.abs(e.clientX - start.x) > 10 || Math.abs(e.clientY - start.y) > 10) clear();
+  });
+  el.addEventListener('pointerup', clear);
+  el.addEventListener('pointercancel', clear);
+  el.addEventListener('pointerleave', clear);
+  el.addEventListener('contextmenu', (e) => e.preventDefault());
+  el.addEventListener('click', (e) => {
+    if (!el._suppressClick) return;
+    el._suppressClick = false;
+    e.preventDefault();
+    e.stopPropagation();
+  }, true);
+}
+
 // ---------- render 1 dòng file (kiểu danh sách) ----------
 function fileRow(blob, meta, index = 0) {
   const row = document.createElement('div');
@@ -816,6 +864,7 @@ function fileRow(blob, meta, index = 0) {
     fileActions(blob, meta);
   };
   row.onclick = () => openViewer(index); // chạm vào dòng = mở xem
+  attachLongPress(row, () => fileActions(blob, meta)); // chạm giữ = menu
   return row;
 }
 
@@ -834,6 +883,7 @@ function gridCard(blob, meta, index = 0) {
     fileActions(blob, meta);
   };
   c.onclick = () => openViewer(index);
+  attachLongPress(c, () => fileActions(blob, meta)); // chạm giữ = menu
   return c;
 }
 
@@ -2814,13 +2864,13 @@ async function aiFetch(path, { method = 'POST', body, signal, timeout = 180000 }
 }
 
 /** Gọi bridge ở chế độ stream (SSE). Trả payload của event "done". */
-async function aiStream(text, { onDelta, onTool, signal } = {}) {
+async function aiStream(text, { onDelta, onTool, signal, images } = {}) {
   const base = aiBase();
   if (!base) throw new Error(t('ai_need_config'));
   const res = await fetch(base + '/ai/ask/stream', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', 'x-pk-token': aiToken() },
-    body: JSON.stringify({ text }),
+    body: JSON.stringify({ text, ...(images?.length ? { images } : {}) }),
     signal
   });
   if (!res.ok || !res.body) {
@@ -2966,6 +3016,7 @@ let aiSessions = [];
 try { aiSessions = JSON.parse(localStorage.getItem(AI_SESS_KEY) || '[]') || []; } catch { aiSessions = []; }
 let aiActiveId = localStorage.getItem(AI_ACTIVE_KEY) || '';
 let aiMsgs = [];
+let aiAttach = [];
 let aiViewerReturn = null;
 
 // migrate hội thoại cũ (1 danh sách) thành 1 phiên
@@ -3003,7 +3054,7 @@ function aiPersist() {
   s.at = Date.now();
   if (!s.title) {
     const first = aiMsgs.find((m) => m.role === 'me');
-    if (first) s.title = first.text.slice(0, 40);
+    if (first) s.title = (first.text || (first.images?.length ? t('ai_image') : '')).slice(0, 40);
   }
   try {
     localStorage.setItem(AI_SESS_KEY, JSON.stringify(aiSessions.slice(-30)));
@@ -3018,9 +3069,96 @@ function aiEnsureSession(text) {
   try { localStorage.setItem(AI_ACTIVE_KEY, aiActiveId); } catch {}
 }
 
+// ---------- đính kèm ảnh trong chat ----------
+function renderAiAttach() {
+  const bar = $('ai-attach');
+  if (!bar) return;
+  bar.hidden = aiAttach.length === 0;
+  bar.innerHTML = aiAttach.map((a) =>
+    `<div class="ai-thumb"><img src="${esc(a.thumb)}" alt=""><button data-rm="${esc(a.id)}" aria-label="${esc(t('ai_img_remove'))}">✕</button></div>`
+  ).join('');
+  bar.querySelectorAll('[data-rm]').forEach((b) => {
+    b.onclick = () => {
+      aiAttach = aiAttach.filter((x) => x.id !== b.dataset.rm);
+      renderAiAttach();
+      aiComposerState();
+    };
+  });
+}
+
+function imageToJpeg(file, max, quality) {
+  return new Promise((resolve, reject) => {
+    const url = URL.createObjectURL(file);
+    const img = new Image();
+    img.onload = () => {
+      try {
+        const iw = img.naturalWidth || img.width;
+        const ih = img.naturalHeight || img.height;
+        const scale = Math.min(1, max / Math.max(iw, ih));
+        const w = Math.max(1, Math.round(iw * scale));
+        const h = Math.max(1, Math.round(ih * scale));
+        const cv = document.createElement('canvas');
+        cv.width = w;
+        cv.height = h;
+        const ctx = cv.getContext('2d');
+        ctx.fillStyle = '#fff';
+        ctx.fillRect(0, 0, w, h);
+        ctx.drawImage(img, 0, 0, w, h);
+        resolve(cv.toDataURL('image/jpeg', quality));
+      } catch (e) {
+        reject(e);
+      } finally {
+        URL.revokeObjectURL(url);
+      }
+    };
+    img.onerror = () => { URL.revokeObjectURL(url); reject(new Error('image')); };
+    img.src = url;
+  });
+}
+
+async function addAiAttachment(file) {
+  if (!file) return;
+  if (!/^image\//i.test(file.type || '')) return snack(t('ai_img_only'));
+  if (aiAttach.length >= 4) return snack(t('ai_img_max'));
+  try {
+    const [send, thumb] = await Promise.all([
+      imageToJpeg(file, 1280, 0.84),
+      imageToJpeg(file, 360, 0.7)
+    ]);
+    aiAttach.push({
+      id: 'a' + Math.random().toString(36).slice(2),
+      send,
+      thumb,
+      mime: 'image/jpeg',
+      name: file.name || 'photo.jpg'
+    });
+    renderAiAttach();
+    aiComposerState();
+  } catch {
+    snack(t('ai_img_fail'));
+  }
+}
+
+function openAiAttachSheet() {
+  openSheet(`<h3>${esc(t('ai_attach_title'))}</h3>
+    <button class="rowbtn" data-pick>${icon('image')}<span>${esc(t('ai_attach_lib'))}</span></button>
+    <button class="rowbtn" data-cam>${icon('camera')}<span>${esc(t('ai_attach_cam'))}</span></button>`);
+  sheetBody.querySelector('[data-pick]').onclick = () => { closeSheet(); $('ai-file').click(); };
+  sheetBody.querySelector('[data-cam]').onclick = () => { closeSheet(); $('ai-cam').click(); };
+}
+
+async function onAiFiles(e) {
+  const files = [...(e.target.files || [])];
+  e.target.value = '';
+  for (const f of files) await addAiAttachment(f);
+}
+
 function aiNewChat() {
   aiActiveId = '';
   aiMsgs = [];
+  aiAttach = [];
+  renderAiAttach();
+  aiComposerState();
   try { localStorage.removeItem(AI_ACTIVE_KEY); } catch {}
   updateAiTitle();
   aiRender();
@@ -3047,6 +3185,8 @@ function openAiHistory() {
       if (!s) return;
       aiActiveId = s.id;
       aiMsgs = [...s.messages];
+      aiAttach = [];
+      renderAiAttach();
       try { localStorage.setItem(AI_ACTIVE_KEY, aiActiveId); } catch {}
       closeSheet();
       updateAiTitle();
@@ -3136,7 +3276,12 @@ function aiRender() {
     return;
   }
   box.innerHTML = aiMsgs.map((m, mi) => {
-    if (m.role === 'me') return `<div class="ai-msg me">${mdLite(m.text)}</div>`;
+    if (m.role === 'me') {
+      const imgs = (m.images || []).length
+        ? `<div class="ai-msg-imgs">${m.images.map((u) => `<img src="${esc(u)}" alt="">`).join('')}</div>`
+        : '';
+      return `<div class="ai-msg me">${imgs}${mdLite(m.text || '')}</div>`;
+    }
     if (m.role === 'tool') return `<div class="ai-tool"><span>${esc(m.text)}</span><span class="st">···</span></div>`;
     const cls = m.role === 'err' ? 'ai-msg err' : 'ai-msg bot';
     const tools = (m.tools || []).length
@@ -3145,8 +3290,11 @@ function aiRender() {
     const files = (m.items || []).length
       ? `<div class="ai-files">${m.items.map((it, ii) => aiFileCard(it, `${mi}:${ii}`)).join('')}</div>`
       : '';
-    const cursor = m.streaming ? '<span class="ai-cursor"></span>' : '';
-    return `<div class="${cls}">${mdLite(m.text)}${cursor}${tools}</div>${files}`;
+    const status = m.streaming && !m.text
+      ? `<span class="ai-status">${esc(m.status || t('ai_working'))}</span>`
+      : '';
+    const cursor = m.streaming && m.text ? '<span class="ai-cursor"></span>' : '';
+    return `<div class="${cls}">${status}${mdLite(m.text)}${cursor}${tools}</div>${files}`;
   }).join('');
   box.querySelectorAll('[data-ai-file]').forEach((b) => {
     const [mi, ii] = b.dataset.aiFile.split(':').map(Number);
@@ -3167,7 +3315,7 @@ function aiComposerState() {
   } else {
     send.classList.remove('stop');
     send.innerHTML = icon('send', 18);
-    send.disabled = !input.value.trim();
+    send.disabled = !input.value.trim() && !aiAttach.length;
     send.setAttribute('aria-label', t('ai_send'));
   }
 }
@@ -3175,11 +3323,15 @@ function aiComposerState() {
 async function aiSend(text) {
   if (!aiReady()) { openAiSheet(); return; }
   if (aiBusy) return;
+  const imagesForSend = aiAttach.map((a) => ({ mime: a.mime, data: a.send.split(',')[1], name: a.name }));
+  const thumbs = aiAttach.map((a) => a.thumb);
+  aiAttach = [];
+  renderAiAttach();
   aiBusy = true;
   aiAbort = new AbortController();
-  aiEnsureSession(text);
-  aiMsgs.push({ role: 'me', text });
-  const bot = { role: 'bot', text: '', tools: [], items: [], streaming: true };
+  aiEnsureSession(text || (thumbs.length ? t('ai_image') : ''));
+  aiMsgs.push({ role: 'me', text, images: thumbs });
+  const bot = { role: 'bot', text: '', tools: [], items: [], streaming: true, status: thumbs.length ? t('ai_thinking_img') : t('ai_working') };
   aiMsgs.push(bot);
   aiPersist();
   updateAiTitle();
@@ -3194,13 +3346,15 @@ async function aiSend(text) {
 
   try {
     const done = await aiStream(text, {
+      images: imagesForSend,
       signal: aiAbort.signal,
-      onDelta: (d) => { bot.text += d; schedule(); },
+      onDelta: (d) => { bot.status = ''; bot.text += d; schedule(); },
       onTool: (e) => {
         if (e.name && !bot.tools.includes(e.name)) { bot.tools.push(e.name); schedule(); }
       }
     });
     bot.streaming = false;
+    bot.status = '';
     if (done) {
       if (typeof done.text === 'string' && done.text.trim()) bot.text = done.text;
       if (Array.isArray(done.items)) bot.items = done.items;
@@ -3211,6 +3365,7 @@ async function aiSend(text) {
     aiPersist();
   } catch (e) {
     bot.streaming = false;
+    bot.status = '';
     const aborted = e.name === 'AbortError' || /abort/i.test(e.message || '');
     if (aborted) {
       bot.text = (bot.text ? bot.text + '\n\n' : '') + t('ai_stopped');
@@ -3693,11 +3848,13 @@ $('set-backup').onclick = openBackupSheet;
 $('set-watch').onclick = openWatchSheet;
 $('ai-new').onclick = aiNewChat;
 $('ai-history').onclick = openAiHistory;
-$('ai-plus').onclick = () => snack(t('ai_attach_soon'));
+$('ai-plus').onclick = openAiAttachSheet;
+$('ai-file').onchange = onAiFiles;
+$('ai-cam').onchange = onAiFiles;
 $('ai-send').onclick = () => {
   if (aiBusy) { aiAbort?.abort(); return; }
   const v = $('ai-input').value.trim();
-  if (!v) return;
+  if (!v && !aiAttach.length) return;
   $('ai-input').value = '';
   aiComposerState();
   aiSend(v);

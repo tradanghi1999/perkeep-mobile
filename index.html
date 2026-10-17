@@ -93,11 +93,14 @@
             </div>
           </div>
           <div class="ai-chat" id="ai-chat"></div>
+          <div class="ai-attachbar" id="ai-attach" hidden></div>
           <div class="ai-composer">
             <button class="ai-plus" id="ai-plus" aria-label="attach"></button>
             <input id="ai-input" enterkeyhint="send" />
             <button class="ai-send" id="ai-send" aria-label="send"></button>
           </div>
+          <input type="file" id="ai-file" accept="image/*" multiple hidden />
+          <input type="file" id="ai-cam" accept="image/*" capture="environment" hidden />
         </div>
 
         <div class="tabs" id="t-set">
