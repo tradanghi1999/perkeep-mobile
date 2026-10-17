@@ -1,0 +1,427 @@
+<!doctype html>
+<html lang="vi"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Wireframe — Trợ lý AI trong Perkeep Mobile</title>
+<style>
+*{box-sizing:border-box}
+:root{--green:#3F6B57;--green-d:#2E5546;--green-l:#e3f0e8;--blue:#375EAB;--muted:#666;--line:#ececec;--ink:#1f1f1f}
+body{margin:0;font-family:system-ui,-apple-system,'Segoe UI',Helvetica,Arial,sans-serif;background:#0b0f14;color:#fff;display:flex;gap:22px;padding:22px;flex-wrap:wrap;align-items:flex-start}
+.legend{width:330px;color:#c9d6e2;font-size:13.5px;line-height:1.55}
+.legend h1{font-size:20px;margin:0 0 6px;color:#fff}
+.legend h2{font-size:14px;margin:18px 0 6px;color:#fff}
+.legend p{margin:0 0 8px}
+.legend b{color:#fff}
+.legend .k{display:inline-block;min-width:18px;height:18px;line-height:18px;text-align:center;border-radius:50%;background:var(--green);color:#fff;font-size:11px;font-weight:700;margin-right:6px}
+.legend code{background:#16202a;border-radius:5px;padding:1px 5px;font-size:12px}
+
+.phone{width:366px;height:758px;background:#f6f2fb;color:var(--ink);border-radius:44px;padding:13px;box-shadow:0 20px 60px #0008;position:relative;flex:none}
+.screen{background:#fff;border-radius:33px;height:100%;display:flex;flex-direction:column;overflow:hidden;position:relative}
+.cap{margin:10px 4px 0;font-size:12px;color:#9fb0c0;text-align:center}
+svg{display:block}
+
+/* ---- thanh trên ---- */
+.top{display:flex;align-items:center;gap:10px;padding:12px 12px 6px;flex:none}
+.top .ttl{flex:1;min-width:0}
+.top .ttl b{display:block;font-size:16px}
+.top .ttl small{color:var(--muted);font-size:11.5px}
+.iconbtn{width:38px;height:38px;flex:none;border:0;border-radius:50%;background:#f1f5f3;color:var(--green);display:flex;align-items:center;justify-content:center}
+.avatar{width:34px;height:34px;flex:none;border-radius:50%;background:var(--green);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px}
+
+/* ---- chat ---- */
+.chat{flex:1;overflow:auto;padding:6px 12px 8px;display:flex;flex-direction:column;gap:10px}
+.msg{max-width:86%;font-size:13.5px;line-height:1.5;padding:10px 12px;border-radius:16px;white-space:pre-wrap}
+.me{align-self:flex-end;background:var(--green);color:#fff;border-bottom-right-radius:5px}
+.bot{align-self:flex-start;background:#f2f4f3;color:#20261f;border-bottom-left-radius:5px}
+.meta{font-size:11px;color:var(--muted);margin:2px 4px 0}
+
+.tool{align-self:flex-start;display:flex;align-items:center;gap:8px;background:#fff;border:1px solid #e3e8e5;border-radius:12px;padding:7px 10px;font-size:12px;color:#3d4a43;box-shadow:0 1px 2px #0000000a;max-width:92%}
+.tool .ic{width:18px;height:18px;flex:none;color:var(--green)}
+.tool .st{margin-left:auto;font-size:11px;color:#8a978f}
+.tool .ok{color:#2f7d52}
+.tool .run{color:#c98a12}
+.tool .name{font-family:ui-monospace,SFMono-Regular,Consolas,monospace;font-size:11px;color:#6c7a72}
+
+/* thẻ kết quả video */
+.vlist{display:flex;flex-direction:column;gap:8px;margin-top:2px}
+.vitem{display:flex;gap:9px;align-items:center;background:#fff;border:1px solid #e6ebe8;border-radius:12px;padding:7px}
+.vthumb{width:74px;height:42px;flex:none;border-radius:8px;background:linear-gradient(135deg,#c9d8cf,#9fbcab);position:relative}
+.vthumb::after{content:'';position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);border:7px solid transparent;border-left:11px solid #ffffffdd;margin-left:2px}
+.vthumb .dur{position:absolute;right:3px;bottom:3px;background:#000a;color:#fff;font-size:9px;padding:1px 4px;border-radius:4px}
+.vt{flex:1;min-width:0}
+.vt b{display:block;font-size:12.5px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.vt small{color:var(--muted);font-size:11px}
+.chk{width:22px;height:22px;flex:none;border-radius:7px;border:2px solid #b9c6be;display:flex;align-items:center;justify-content:center;color:#fff;font-size:12px}
+.chk.on{background:var(--green);border-color:var(--green)}
+.pickbar{display:flex;gap:8px;margin-top:8px}
+.pickbar button{flex:1;border:0;border-radius:12px;padding:11px;font-size:13px;font-family:inherit;font-weight:700;background:var(--green);color:#fff}
+.pickbar button.ghost{background:#eef1ef;color:#39433d;font-weight:500}
+
+/* quyền */
+.perm{background:#fffaf0;border:1px solid #f2e2bd;border-radius:12px;padding:9px 11px;font-size:11.5px;color:#7a5a12;line-height:1.45;margin-top:2px}
+.perm b{color:#5f4408}
+
+/* composer */
+.composer{flex:none;border-top:1px solid var(--line);padding:8px 10px 10px;display:flex;gap:8px;align-items:center;background:#fff}
+.composer .box{flex:1;display:flex;align-items:center;gap:8px;background:#f1f4f2;border-radius:22px;padding:9px 12px;font-size:13px;color:#7d8a82}
+.composer .send{width:40px;height:40px;flex:none;border:0;border-radius:50%;background:var(--green);color:#fff;display:flex;align-items:center;justify-content:center}
+
+.chips{display:flex;gap:8px;overflow-x:auto;padding:2px 2px 8px;flex:none}
+.chip{flex:none;background:var(--green-l);border:0;border-radius:16px;padding:8px 12px;font-size:12px;color:var(--green-d);font-family:inherit;font-weight:600}
+
+/* nav 5 tab */
+.nav{position:absolute;bottom:0;left:10px;right:10px;margin-bottom:10px;background:#f3edf7;border-radius:24px;display:flex;box-shadow:0 2px 10px #0001}
+.nav button{flex:1;border:0;background:none;padding:7px 2px;font-size:10px;color:#49454f;font-family:inherit;display:flex;flex-direction:column;align-items:center;gap:3px;border-radius:24px}
+.nav button.on{color:var(--green);font-weight:700}
+.nav svg{width:22px;height:22px}
+
+/* cài đặt */
+.set{flex:1;overflow:auto;padding:0 12px 96px}
+.grp{font-size:11.5px;color:var(--muted);margin:14px 4px 6px;text-transform:uppercase;letter-spacing:.4px}
+.row{display:flex;align-items:center;gap:10px;padding:11px 4px;border-bottom:1px solid var(--line)}
+.row .ic{width:36px;height:36px;flex:none;border-radius:10px;background:#f0f4ee;color:var(--green);display:flex;align-items:center;justify-content:center}
+.row .tx{flex:1;min-width:0}
+.row .tx b{display:block;font-size:13.5px}
+.row .tx small{color:var(--muted);font-size:11px}
+.sw{width:40px;height:23px;flex:none;border-radius:99px;background:#d6ddd9;position:relative}
+.sw::after{content:'';position:absolute;width:19px;height:19px;border-radius:50%;background:#fff;top:2px;left:2px;box-shadow:0 1px 3px #0003}
+.sw.on{background:var(--green)}
+.sw.on::after{left:19px}
+.danger{color:#b3261e}
+.danger .ic{background:#fdecea;color:#b3261e}
+.badge{font-size:10px;padding:2px 6px;border-radius:6px;background:#fdecea;color:#b3261e;font-weight:700}
+</style></head><body>
+
+<div class="legend">
+  <h1>Wireframe — Trợ lý AI</h1>
+  <p>Đặt AI thành <b>tab thứ 4</b> (giữa “Tệp” và “Cài đặt”) để luôn thấy, không giấu trong menu.</p>
+
+  <h2><span class="k">1</span> Trợ lý — màn bắt đầu</h2>
+  <p>Nói rõ AI <b>làm được gì</b> ngay trên màn hình trống: 3 gợi ý bấm được + dải quyền hiện tại (đọc thư viện, tìm web, thêm link có xác nhận).</p>
+
+  <h2><span class="k">2</span> Đang chạy tool</h2>
+  <p>Mỗi bước tool hiện thành một “chip” riêng: <code>Đang tìm trên web…</code> → <code>Đang kiểm tra Perkeep…</code>. Người dùng thấy AI đang làm gì, không phải màn hình chờ vô nghĩa.</p>
+  <p>Kết quả là <b>danh sách chọn được</b> + nút <b>Lưu 3 link</b>. Ghi vào Perkeep luôn cần xác nhận.</p>
+
+  <h2><span class="k">3</span> Đã lưu</h2>
+  <p>Xác nhận gọn + chip gợi ý bước tiếp theo (gắn tag, mở trong Tệp, tìm video tương tự).</p>
+
+  <h2><span class="k">4</span> Cài đặt → Trợ lý AI</h2>
+  <p>Quyền tách theo <b>hành động</b>, có nhãn rủi ro. Mặc định: đọc + tìm web bật; <b>ghi cần xác nhận</b>; <b>shell tắt</b>. Kèm giới hạn bước/ngày và model.</p>
+
+  <h2><span class="k">5</span> AI trong form thêm link</h2>
+  <p>Một chip nhỏ “Gợi ý tag” — AI chỉ điền, bạn vẫn là người bấm Lưu.</p>
+
+  <h2>Ghi chú kỹ thuật (để duyệt)</h2>
+  <p>• Tool dùng qua MCP <code>perkeep</code> + <code>websearch</code>/<code>webfetch</code>; agent bị giới hạn quyền.<br>
+     • Mọi thao tác ghi (thêm link, tag) → <b>luôn hỏi</b>, kể cả khi đã bật quyền.<br>
+     • Điện thoại chỉ gọi bridge trên PC; không mở API OpenCode ra LAN.</p>
+</div>
+
+<!-- ============ 1. TRỢ LÝ — MÀN BẮT ĐẦU ============ -->
+<div>
+<div class="phone"><div class="screen">
+  <div class="top">
+    <div class="ttl"><b>Trợ lý</b><small>deepseek-v4-flash · 8 bước tối đa</small></div>
+    <button class="iconbtn" title="Cài đặt trợ lý">
+      <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 3v3M12 18v3M3 12h3M18 12h3M5.6 5.6l2.1 2.1M16.3 16.3l2.1 2.1M18.4 5.6l-2.1 2.1M7.7 16.3l-2.1 2.1"/></svg>
+    </button>
+  </div>
+
+  <div class="chat">
+    <div class="bot">Chào bạn 👋 Mình tìm được trong thư viện, tìm trên web và thêm video link giúp bạn. Bạn muốn làm gì?</div>
+
+    <div class="chips" style="padding:0">
+      <button class="chip">Tìm video về mèo tháng 9</button>
+      <button class="chip">Thêm 3 video mới của kênh FPT Shop</button>
+      <button class="chip">Gợi ý tag cho 5 link mới</button>
+    </div>
+
+    <div class="perm">
+      <b>Quyền hiện tại:</b> đọc thư viện · tìm web · thêm link (có xác nhận).<br>
+      Không được chạy lệnh trên máy. <span style="color:var(--blue)">Đổi quyền</span>
+    </div>
+
+    <div class="meta">Gõ câu hỏi bên dưới, ví dụ “tìm trong Perkeep video nào có tag youtube”.</div>
+  </div>
+
+  <div class="composer">
+    <div class="box">
+      <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 5v14M5 12h14"/></svg>
+      Hỏi hoặc yêu cầu…
+    </div>
+    <button class="send"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h13M12 5l7 7-7 7"/></svg></button>
+  </div>
+
+  <div class="nav">
+    <button><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M3 10.5 12 3l9 7.5"/><path d="M5.5 9.8V21h13V9.8"/></svg>Nhà</button>
+    <button><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M12 3.6l2.6 5.4 5.9.8-4.3 4.1 1.1 5.9-5.3-2.9-5.3 2.9 1.1-5.9L3.5 9.8l5.9-.8z"/></svg>Ghim</button>
+    <button><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M3 7.5A2.5 2.5 0 0 1 5.5 5h3.2l2 2.2h7.8A2.5 2.5 0 0 1 21 9.7v7.8A2.5 2.5 0 0 1 18.5 20h-13A2.5 2.5 0 0 1 3 17.5z"/></svg>Tệp</button>
+    <button class="on"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3.5l1.9 4.6 4.6 1.9-4.6 1.9L12 16.5l-1.9-4.6L5.5 10l4.6-1.9z"/><path d="M18.5 15.5l.9 2.1 2.1.9-2.1.9-.9 2.1-.9-2.1-2.1-.9 2.1-.9z"/></svg>Trợ lý</button>
+    <button><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="12" cy="12" r="3"/><path d="M12 3v3M12 18v3M3 12h3M18 12h3M5.6 5.6l2.1 2.1M16.3 16.3l2.1 2.1M18.4 5.6l-2.1 2.1M7.7 16.3l-2.1 2.1"/></svg>Cài đặt</button>
+  </div>
+</div></div>
+<div class="cap">1 · Tab “Trợ lý” — màn bắt đầu</div>
+</div>
+
+<!-- ============ 2. ĐANG CHẠY TOOL + KẾT QUẢ ============ -->
+<div>
+<div class="phone"><div class="screen">
+  <div class="top">
+    <div class="ttl"><b>Trợ lý</b><small>đang làm việc…</small></div>
+    <button class="iconbtn" title="Dừng">
+      <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><rect x="7" y="7" width="10" height="10" rx="2"/></svg>
+    </button>
+  </div>
+
+  <div class="chat">
+    <div class="msg me">Thêm 3 video mới nhất của kênh FPT Shop vào Perkeep</div>
+
+    <div class="tool">
+      <span class="ic"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c3 3.5 3 14 0 18M12 3c-3 3.5-3 14 0 18"/></svg></span>
+      <span>Tìm trên web <span class="name">web_search</span></span>
+      <span class="st ok">✓ 12 kết quả</span>
+    </div>
+
+    <div class="tool">
+      <span class="ic"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.6-3.6"/></svg></span>
+      <span>Kiểm tra trùng trong Perkeep <span class="name">perkeep_search</span></span>
+      <span class="st ok">✓ 1 đã có</span>
+    </div>
+
+    <div class="bot" style="max-width:92%">Tìm thấy 3 video mới (1 video đã có trong thư viện nên bỏ qua):</div>
+
+    <div class="vlist">
+      <div class="vitem">
+        <div class="vthumb"><span class="dur">12:04</span></div>
+        <div class="vt"><b>Review máy lọc nước mới nhất 2026</b><small>FPT Shop · 2 ngày trước</small></div>
+        <div class="chk on">✓</div>
+      </div>
+      <div class="vitem">
+        <div class="vthumb"><span class="dur">08:31</span></div>
+        <div class="vt"><b>Hướng dẫn chọn robot hút bụi</b><small>FPT Shop · 4 ngày trước</small></div>
+        <div class="chk on">✓</div>
+      </div>
+      <div class="vitem">
+        <div class="vthumb"><span class="dur">15:47</span></div>
+        <div class="vt"><b>So sánh 3 dòng tai nghe dưới 1 triệu</b><small>FPT Shop · 6 ngày trước</small></div>
+        <div class="chk on">✓</div>
+      </div>
+    </div>
+
+    <div class="pickbar">
+      <button>Lưu 3 link</button>
+      <button class="ghost">Bỏ chọn</button>
+    </div>
+
+    <div class="meta">Ghi vào Perkeep luôn cần bạn bấm xác nhận.</div>
+  </div>
+
+  <div class="composer">
+    <div class="box">Nhắn thêm cho trợ lý…</div>
+    <button class="send"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h13M12 5l7 7-7 7"/></svg></button>
+  </div>
+
+  <div class="nav">
+    <button><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M3 10.5 12 3l9 7.5"/><path d="M5.5 9.8V21h13V9.8"/></svg>Nhà</button>
+    <button><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M12 3.6l2.6 5.4 5.9.8-4.3 4.1 1.1 5.9-5.3-2.9-5.3 2.9 1.1-5.9L3.5 9.8l5.9-.8z"/></svg>Ghim</button>
+    <button><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M3 7.5A2.5 2.5 0 0 1 5.5 5h3.2l2 2.2h7.8A2.5 2.5 0 0 1 21 9.7v7.8A2.5 2.5 0 0 1 18.5 20h-13A2.5 2.5 0 0 1 3 17.5z"/></svg>Tệp</button>
+    <button class="on"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3.5l1.9 4.6 4.6 1.9-4.6 1.9L12 16.5l-1.9-4.6L5.5 10l4.6-1.9z"/><path d="M18.5 15.5l.9 2.1 2.1.9-2.1.9-.9 2.1-.9-2.1-2.1-.9 2.1-.9z"/></svg>Trợ lý</button>
+    <button><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="12" cy="12" r="3"/><path d="M12 3v3M12 18v3M3 12h3M18 12h3M5.6 5.6l2.1 2.1M16.3 16.3l2.1 2.1M18.4 5.6l-2.1 2.1M7.7 16.3l-2.1 2.1"/></svg>Cài đặt</button>
+  </div>
+</div></div>
+<div class="cap">2 · Tool đang chạy + kết quả chọn được</div>
+</div>
+
+<!-- ============ 3. ĐÃ LƯU ============ -->
+<div>
+<div class="phone"><div class="screen">
+  <div class="top">
+    <div class="ttl"><b>Trợ lý</b><small>deepseek-v4-flash</small></div>
+    <button class="iconbtn"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="3"/><path d="M12 3v3M12 18v3M3 12h3M18 12h3M5.6 5.6l2.1 2.1M16.3 16.3l2.1 2.1M18.4 5.6l-2.1 2.1M7.7 16.3l-2.1 2.1"/></svg></button>
+  </div>
+
+  <div class="chat">
+    <div class="msg me">Thêm 3 video mới nhất của kênh FPT Shop vào Perkeep</div>
+
+    <div class="tool">
+      <span class="ic"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M3 12h18"/></svg></span>
+      <span>Tìm trên web</span><span class="st ok">✓</span>
+    </div>
+    <div class="tool">
+      <span class="ic"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M20 6 9 17l-5-5"/></svg></span>
+      <span>Lưu 3 video link <span class="name">perkeep_add_link</span></span>
+      <span class="st ok">✓ xong</span>
+    </div>
+
+    <div class="bot">Đã lưu <b>3 video</b> vào Perkeep, gắn tag <b>youtube</b> + <b>fptshop</b>. Có thể tìm lại bằng từ khoá trong tên video.</div>
+
+    <div class="vlist">
+      <div class="vitem">
+        <div class="vthumb"><span class="dur">12:04</span></div>
+        <div class="vt"><b>Review máy lọc nước mới nhất 2026</b><small>YouTube · đã lưu</small></div>
+        <div class="chk on">✓</div>
+      </div>
+      <div class="vitem">
+        <div class="vthumb"><span class="dur">08:31</span></div>
+        <div class="vt"><b>Hướng dẫn chọn robot hút bụi</b><small>YouTube · đã lưu</small></div>
+        <div class="chk on">✓</div>
+      </div>
+    </div>
+
+    <div class="chips" style="padding:0">
+      <button class="chip">Gắn thêm tag</button>
+      <button class="chip">Mở trong Tệp</button>
+      <button class="chip">Tìm video tương tự</button>
+    </div>
+  </div>
+
+  <div class="composer">
+    <div class="box">Hỏi hoặc yêu cầu…</div>
+    <button class="send"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h13M12 5l7 7-7 7"/></svg></button>
+  </div>
+
+  <div class="nav">
+    <button><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M3 10.5 12 3l9 7.5"/><path d="M5.5 9.8V21h13V9.8"/></svg>Nhà</button>
+    <button><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M12 3.6l2.6 5.4 5.9.8-4.3 4.1 1.1 5.9-5.3-2.9-5.3 2.9 1.1-5.9L3.5 9.8l5.9-.8z"/></svg>Ghim</button>
+    <button><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M3 7.5A2.5 2.5 0 0 1 5.5 5h3.2l2 2.2h7.8A2.5 2.5 0 0 1 21 9.7v7.8A2.5 2.5 0 0 1 18.5 20h-13A2.5 2.5 0 0 1 3 17.5z"/></svg>Tệp</button>
+    <button class="on"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3.5l1.9 4.6 4.6 1.9-4.6 1.9L12 16.5l-1.9-4.6L5.5 10l4.6-1.9z"/><path d="M18.5 15.5l.9 2.1 2.1.9-2.1.9-.9 2.1-.9-2.1-2.1-.9 2.1-.9z"/></svg>Trợ lý</button>
+    <button><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="12" cy="12" r="3"/><path d="M12 3v3M12 18v3M3 12h3M18 12h3M5.6 5.6l2.1 2.1M16.3 16.3l2.1 2.1M18.4 5.6l-2.1 2.1M7.7 16.3l-2.1 2.1"/></svg>Cài đặt</button>
+  </div>
+</div></div>
+<div class="cap">3 · Đã lưu + gợi ý bước tiếp</div>
+</div>
+
+<!-- ============ 4. CÀI ĐẶT AI ============ -->
+<div>
+<div class="phone"><div class="screen">
+  <div class="top">
+    <div class="ttl"><b>Trợ lý AI</b><small>Cài đặt · quyền &amp; giới hạn</small></div>
+  </div>
+
+  <div class="set">
+    <div class="grp">Quyền được dùng</div>
+
+    <div class="row">
+      <span class="ic"><svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.6-3.6"/></svg></span>
+      <div class="tx"><b>Tìm trong Perkeep</b><small>Chỉ đọc: tên, tag, metadata, nội dung text</small></div>
+      <span class="sw on"></span>
+    </div>
+
+    <div class="row">
+      <span class="ic"><svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c3 3.5 3 14 0 18M12 3c-3 3.5-3 14 0 18"/></svg></span>
+      <div class="tx"><b>Tìm &amp; đọc web</b><small>Từ khoá được gửi ra ngoài (Google/YouTube)</small></div>
+      <span class="sw on"></span>
+    </div>
+
+    <div class="row">
+      <span class="ic"><svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 5v14M5 12h14"/></svg></span>
+      <div class="tx"><b>Thêm link / gắn tag</b><small>Ghi vào Perkeep — <b>luôn hỏi xác nhận</b></small></div>
+      <span class="sw on"></span>
+    </div>
+
+    <div class="row danger">
+      <span class="ic"><svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M7 9l3 3-3 3M13 15h4"/></svg></span>
+      <div class="tx"><b>Chạy lệnh trên máy</b><small>Shell, xoá file, cài đặt — <b>nguy hiểm</b></small></div>
+      <span class="badge">TẮT</span>
+    </div>
+
+    <div class="row danger">
+      <span class="ic"><svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 7h16M9.5 7V4.5h5V7"/><path d="M6.5 7 7.6 20h8.8L17.5 7"/></svg></span>
+      <div class="tx"><b>Xoá dữ liệu</b><small>Không cho phép</small></div>
+      <span class="badge">TẮT</span>
+    </div>
+
+    <div class="grp">Giới hạn</div>
+
+    <div class="row">
+      <span class="ic"><svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 18V9M10 18V5M16 18v-6M22 18H2"/></svg></span>
+      <div class="tx"><b>Số bước tối đa</b><small>Mỗi câu trả lời</small></div>
+      <b style="font-size:13px">8</b>
+    </div>
+
+    <div class="row">
+      <span class="ic"><svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></span>
+      <div class="tx"><b>Giới hạn mỗi ngày</b><small>Tránh tốn token ngoài ý muốn</small></div>
+      <b style="font-size:13px">30 lượt</b>
+    </div>
+
+    <div class="row">
+      <span class="ic"><svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3.5l1.9 4.6 4.6 1.9-4.6 1.9L12 16.5l-1.9-4.6L5.5 10l4.6-1.9z"/></svg></span>
+      <div class="tx"><b>Model</b><small>DeepSeek V4.1 Flash · nhanh, rẻ</small></div>
+      <span style="color:#bbb">›</span>
+    </div>
+
+    <div class="row">
+      <span class="ic"><svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 7h16M9.5 7V4.5h5V7"/><path d="M6.5 7 7.6 20h8.8L17.5 7"/></svg></span>
+      <div class="tx"><b>Xoá hội thoại</b><small>Xoá lịch sử chat trên máy</small></div>
+      <span style="color:#bbb">›</span>
+    </div>
+
+    <div class="grp">Kết nối</div>
+    <div class="row">
+      <span class="ic"><svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="4" width="18" height="7" rx="2"/><rect x="3" y="13" width="18" height="7" rx="2"/></svg></span>
+      <div class="tx"><b>Bridge trên PC</b><small>192.168.123.9:4180 · đã kết nối</small></div>
+      <span style="color:#2f7d52;font-size:12px;font-weight:700">OK</span>
+    </div>
+  </div>
+
+  <div class="nav">
+    <button><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M3 10.5 12 3l9 7.5"/><path d="M5.5 9.8V21h13V9.8"/></svg>Nhà</button>
+    <button><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M12 3.6l2.6 5.4 5.9.8-4.3 4.1 1.1 5.9-5.3-2.9-5.3 2.9 1.1-5.9L3.5 9.8l5.9-.8z"/></svg>Ghim</button>
+    <button><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M3 7.5A2.5 2.5 0 0 1 5.5 5h3.2l2 2.2h7.8A2.5 2.5 0 0 1 21 9.7v7.8A2.5 2.5 0 0 1 18.5 20h-13A2.5 2.5 0 0 1 3 17.5z"/></svg>Tệp</button>
+    <button><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3.5l1.9 4.6 4.6 1.9-4.6 1.9L12 16.5l-1.9-4.6L5.5 10l4.6-1.9z"/><path d="M18.5 15.5l.9 2.1 2.1.9-2.1.9-.9 2.1-.9-2.1-2.1-.9 2.1-.9z"/></svg>Trợ lý</button>
+    <button class="on"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="12" cy="12" r="3"/><path d="M12 3v3M12 18v3M3 12h3M18 12h3M5.6 5.6l2.1 2.1M16.3 16.3l2.1 2.1M18.4 5.6l-2.1 2.1M7.7 16.3l-2.1 2.1"/></svg>Cài đặt</button>
+  </div>
+</div></div>
+<div class="cap">4 · Cài đặt quyền &amp; giới hạn</div>
+</div>
+
+<!-- ============ 5. AI TRONG FORM THÊM LINK ============ -->
+<div>
+<div class="phone"><div class="screen">
+  <div class="top">
+    <div class="ttl"><b>Thêm link video</b><small>YouTube · đã lấy thông tin</small></div>
+    <button class="iconbtn">×</button>
+  </div>
+
+  <div class="set" style="padding-top:4px">
+    <div style="border:1px solid #e3e8e5;border-radius:14px;overflow:hidden;margin:6px 0 10px">
+      <div style="height:150px;background:linear-gradient(135deg,#c9d8cf,#8fb3a0);position:relative">
+        <div style="position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:48px;height:48px;border-radius:50%;background:#00000075;display:flex;align-items:center;justify-content:center">
+          <div style="border:10px solid transparent;border-left:15px solid #fff;margin-left:4px"></div>
+        </div>
+        <span style="position:absolute;right:8px;bottom:8px;background:#000a;color:#fff;font-size:11px;padding:2px 6px;border-radius:5px">13:16</span>
+      </div>
+      <div style="padding:10px 12px">
+        <b style="font-size:13.5px;display:block;line-height:1.35">Thompson Sampling : Data Science Concepts</b>
+        <small style="color:var(--muted);font-size:11.5px">YouTube · ritvikmath · 13:16</small>
+      </div>
+    </div>
+
+    <label style="display:block;font-size:12px;color:var(--muted);margin:6px 2px 6px">Tag</label>
+    <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px">
+      <span style="background:var(--green-l);color:var(--green-d);border-radius:14px;padding:6px 10px;font-size:12px">youtube</span>
+      <span style="background:var(--green-l);color:var(--green-d);border-radius:14px;padding:6px 10px;font-size:12px">data-science</span>
+      <button style="border:1.5px dashed #b9c6be;background:none;border-radius:14px;padding:6px 10px;font-size:12px;color:var(--green-d);font-family:inherit;font-weight:600">＋ Gợi ý tag bằng AI</button>
+    </div>
+
+    <div style="background:#f2f6ff;border:1px solid #d6e2fb;border-radius:12px;padding:10px 11px;font-size:12px;color:#27406e;line-height:1.5">
+      <b>AI gợi ý:</b> thêm tag <b>thống kê</b>, <b>machine-learning</b> và đổi tên thành
+      “Thompson Sampling — Data Science Concepts”.<br>
+      <span style="display:inline-block;margin-top:6px;color:var(--blue);font-weight:600">Áp dụng</span>
+      <span style="margin-left:14px;color:var(--muted)">Bỏ qua</span>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:18px">
+      <button style="border:0;border-radius:12px;padding:14px;background:var(--green);color:#fff;font-weight:700;font-family:inherit;font-size:14px">Lưu</button>
+      <button style="border:0;border-radius:12px;padding:14px;background:#eee;color:#333;font-family:inherit;font-size:14px">Huỷ</button>
+    </div>
+
+    <p style="font-size:11px;color:var(--muted);margin-top:12px;line-height:1.5">
+      AI chỉ <b>điền gợi ý</b>. Bạn vẫn là người bấm Lưu.
+    </p>
+  </div>
+</div></div>
+<div class="cap">5 · AI gợi ý tag trong form (không tự lưu)</div>
+</div>
+
+</body></html>

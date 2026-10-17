@@ -76,6 +76,17 @@ const server = Bun.serve({
       }
     }
 
+    // ---------- /docs/* (wireframe, tai lieu tinh) ----------
+    if (url.pathname.startsWith('/docs/')) {
+      const name = url.pathname.replace(/^\/docs\//, '');
+      const full = normalize(join(ROOT, 'docs', name));
+      if (!full.startsWith(normalize(join(ROOT, 'docs')))) return new Response('bad path', { status: 400 });
+      const f = Bun.file(full);
+      if (!(await f.exists())) return new Response('not found', { status: 404 });
+      const ext = extname(name).slice(1).toLowerCase();
+      return new Response(f, { headers: { 'Content-Type': MIME[ext] || 'application/octet-stream' } });
+    }
+
     // ---------- trang QR (giu ngoai dist de khong bi `bun run build` xoa) ----------
     if (url.pathname === '/qr' || url.pathname === '/qr.html' || url.pathname.startsWith('/qr/')) {
       const name = url.pathname === '/qr' || url.pathname === '/qr.html'
