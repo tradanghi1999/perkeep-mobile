@@ -131,4 +131,19 @@ if (Test-Port 4173) {
     }
 }
 
+# ---------- 5. AI bridge (:4180) ----------
+if (Test-Port 4180) {
+    Write-Log 'ai-bridge: already running'
+} else {
+    $bun2 = (Get-Command bun -ErrorAction SilentlyContinue).Source
+    if (-not $bun2) { $bun2 = Join-Path $env:USERPROFILE '.bun\bin\bun.exe' }
+    $bridge = Join-Path $root 'scripts\ai-bridge.mjs'
+    if ((Test-Path $bun2) -and (Test-Path $bridge)) {
+        Start-Process -FilePath $bun2 -ArgumentList 'run', $bridge -WorkingDirectory $root -WindowStyle Hidden
+        Write-Log 'ai-bridge: started'
+    } else {
+        Write-Log 'ai-bridge: missing bun or script'
+    }
+}
+
 Write-Log '=== done ==='

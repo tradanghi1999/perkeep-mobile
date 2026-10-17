@@ -45,11 +45,13 @@
       <div class="searchbar">
         <span class="s-ico" id="s-ico"></span>
         <input id="q" type="search" />
+        <button class="s-ai" id="s-ai" aria-label="AI"></button>
         <span class="avatar" id="av" title="Dịch vụ">P</span>
       </div>
       <div class="filterbar">
         <div class="filters" id="filters"></div>
       </div>
+      <div class="aibar" id="aibar" hidden></div>
 
       <div class="tabhead">
         <h3 id="tab-title"></h3>
@@ -69,6 +71,7 @@
 
         <div class="tabs on" id="t-home">
           <div id="uploads" class="uploads" hidden></div>
+          <div id="home-colls" class="colls"></div>
           <div id="home-list" class="list"></div>
         </div>
 
@@ -78,6 +81,15 @@
 
         <div class="tabs" id="t-files">
           <div id="file-list" class="list"></div>
+        </div>
+
+        <div class="tabs ai-tab" id="t-ai">
+          <div class="ai-chat" id="ai-chat"></div>
+          <div class="ai-composer">
+            <button class="ai-plus" id="ai-plus" aria-label="attach"></button>
+            <input id="ai-input" enterkeyhint="send" />
+            <button class="ai-send" id="ai-send" aria-label="send"></button>
+          </div>
         </div>
 
         <div class="tabs" id="t-set">
@@ -119,6 +131,16 @@
         <div class="frow" id="set-perm">
           <div class="fic" data-ico="pulse"></div>
           <div class="fx"><b data-i18n="set_perm">Quyền thông báo</b><small id="set-perm-sub"></small></div>
+          <span class="chev" data-ico="chevron"></span>
+        </div>
+        <div class="frow" id="set-ai">
+          <div class="fic" data-ico="sparkle"></div>
+          <div class="fx"><b data-i18n="set_ai">Trợ lý AI</b><small id="set-ai-sub"></small></div>
+          <span class="chev" id="set-ai-state"></span>
+        </div>
+        <div class="frow" id="set-watch">
+          <div class="fic" data-ico="video"></div>
+          <div class="fx"><b data-i18n="set_watch">Theo dõi kênh</b><small id="set-watch-sub"></small></div>
           <span class="chev" data-ico="chevron"></span>
         </div>
         <div class="frow" id="set-diag">
@@ -164,6 +186,7 @@
         <button class="on" data-t="t-home"><span data-ico="home"></span><em data-i18n="nav_home">Nhà</em></button>
         <button data-t="t-star"><span data-ico="star"></span><em data-i18n="nav_star">Ghim</em></button>
         <button data-t="t-files"><span data-ico="folder"></span><em data-i18n="nav_files">Tệp</em></button>
+        <button data-t="t-ai"><span data-ico="sparkle"></span><em data-i18n="nav_ai">Trợ lý</em></button>
         <button data-t="t-set"><span data-ico="settings"></span><em data-i18n="nav_set">Cài đặt</em></button>
       </nav>
     </div>

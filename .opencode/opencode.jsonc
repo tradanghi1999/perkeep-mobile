@@ -1,0 +1,39 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "mcp": {
+    "servers": {
+      "perkeep": {
+        "type": "local",
+        "command": [
+          "C:/Users/dfsg/.bun/bin/bun.exe",
+          "run",
+          "C:/Users/dfsg/Documents/perkeep-mobile/scripts/perkeep-mcp.mjs"
+        ],
+        "cwd": "C:/Users/dfsg/Documents/perkeep-mobile",
+        "codemode": false,
+        "environment": {
+          "PK_BASE": "http://127.0.0.1:3179"
+        }
+      }
+    }
+  },
+  "agents": {
+    "librarian": {
+      "mode": "primary",
+      "description": "Tra cứu thư viện Perkeep của người dùng (chỉ đọc + tìm web)",
+      "model": "deepseek/deepseek-flash",
+      "steps": 10,
+      "system": "Bạn là trợ lý thư viện Perkeep của người dùng. Trả lời ngắn gọn bằng tiếng Việt, dùng gạch đầu dòng, KHÔNG dùng bảng markdown. Luôn dùng tool perkeep_* để lấy dữ liệu thật; không bịa tên file, số lượng hay ngày. Nếu không tìm thấy thì nói rõ là không có. Khi liệt kê, nêu tên + ngày + tag; tối đa 10 mục, nếu nhiều hơn thì nói tổng số. Không đề xuất xoá dữ liệu. Chỉ thêm/sửa/xoá khi người dùng yêu cầu rõ ràng và sau khi đã xác nhận.",
+      "permissions": [
+        { "action": "*", "resource": "*", "effect": "deny" },
+        { "action": "perkeep_search", "resource": "*", "effect": "allow" },
+        { "action": "perkeep_describe", "resource": "*", "effect": "allow" },
+        { "action": "perkeep_get_text", "resource": "*", "effect": "allow" },
+        { "action": "perkeep_stats", "resource": "*", "effect": "allow" },
+        { "action": "perkeep_dupes", "resource": "*", "effect": "allow" },
+        { "action": "websearch", "resource": "*", "effect": "allow" },
+        { "action": "webfetch", "resource": "*", "effect": "allow" }
+      ]
+    }
+  }
+}

@@ -11,8 +11,11 @@
   "dependencies": {
     "@capacitor/android": "^6.1.0",
     "@capacitor/core": "^6.1.0",
+    "@modelcontextprotocol/sdk": "^1.32.1",
+    "@opencode/client": "^2.0.32",
     "hls.js": "^1.7.3",
-    "pk-upload": "file:./plugins/pk-upload"
+    "pk-upload": "file:./plugins/pk-upload",
+    "zod": "^4.6.7"
   },
   "devDependencies": {
     "@capacitor/cli": "^6.1.0",

@@ -97,8 +97,60 @@ h3 { margin: 12px 4px; font-size: 1.0625rem; }
 .vw-note button { border: 0; border-radius: 12px; padding: 15px; font-size: 1rem; font-family: inherit;
   background: var(--green); color: #fff; font-weight: 700; display: flex; gap: 10px; align-items: center; justify-content: center; }
 .vw-note button.alt { background: #2a2a2a; font-weight: 400; }
-/* ---------- Video link (YouTube) ---------- */
-.lk { width: 100%; max-width: 760px; padding-bottom: 14px; }
+/* ---------- AI: nút ✨ trên ô tìm ---------- */
+.s-ai{width:34px;height:34px;flex:none;border:0;border-radius:50%;background:var(--green);color:#fff;
+  display:flex;align-items:center;justify-content:center}
+.s-ai:active{transform:scale(.96)}
+.s-ai[disabled]{opacity:.55}
+
+/* thanh "AI hiểu là" dưới bộ lọc */
+.aibar{display:none;align-items:center;gap:8px;margin:0 12px 8px;padding:9px 11px;background:#eef6f1;
+  border:1px solid #d8e8de;border-radius:12px;font-size:12px;color:#33503f;line-height:1.45}
+.aibar.on{display:flex}
+.aibar b{font-weight:600}
+.aibar .q{font-family:ui-monospace,Consolas,monospace;font-size:11px;color:#4b5f53;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:100%}
+.aibar .x{margin-left:auto;flex:none;border:0;background:none;color:#5c6a61;font:inherit;font-size:16px}
+
+/* tab Trợ lý */
+.tabs.ai-tab{display:none;flex-direction:column;padding:0 0 72px}
+.tabs.ai-tab.on{display:flex}
+.ai-chat{flex:1;min-height:0;overflow:auto;padding:10px 12px 6px;display:flex;flex-direction:column;gap:9px}
+.ai-msg{max-width:88%;padding:10px 12px;border-radius:16px;font-size:14px;line-height:1.5;white-space:pre-wrap;
+  word-break:break-word}
+.ai-msg.me{align-self:flex-end;background:var(--green);color:#fff;border-bottom-right-radius:5px}
+.ai-msg.bot{align-self:flex-start;background:#f2f4f3;color:#20261f;border-bottom-left-radius:5px}
+.ai-msg.err{align-self:flex-start;background:#fdecea;color:#a3312a;border-bottom-left-radius:5px}
+.ai-tool{align-self:flex-start;display:flex;align-items:center;gap:8px;font-size:12px;color:#3d4a43;
+  background:#fff;border:1px solid #e3e8e5;border-radius:12px;padding:7px 10px;max-width:92%}
+.ai-tool .st{margin-left:auto;color:#2f7d52;font-size:11px;white-space:nowrap}
+.ai-chips{display:flex;gap:8px;flex-wrap:wrap;padding:2px}
+.ai-chips button{flex:none;background:var(--green-l);border:0;border-radius:16px;padding:8px 12px;
+  font-size:12.5px;color:var(--green-d);font-family:inherit;font-weight:600}
+.ai-composer{flex:none;display:flex;gap:8px;align-items:center;padding:8px 10px 10px;
+  background:#fff;border-top:1px solid #eee}
+.ai-plus{width:38px;height:38px;flex:none;border:0;border-radius:50%;background:#f1f4f2;color:#5b6a61;
+  display:flex;align-items:center;justify-content:center}
+.ai-composer input{flex:1;min-width:0;border:0;outline:none;background:#f1f4f2;border-radius:20px;
+  padding:11px 14px;font:inherit;font-size:14px;color:#1f1f1f}
+.ai-send{width:38px;height:38px;flex:none;border:0;border-radius:50%;background:var(--green);color:#fff;
+  display:flex;align-items:center;justify-content:center}
+.ai-send.stop{background:#1f1f1f}
+.ai-send[disabled]{background:#cfd8d2}
+.ai-empty{color:var(--muted);font-size:13px;line-height:1.55;padding:6px 4px}
+
+/* ---------- Bộ sưu tập (Home) ---------- */
+.colls{padding:8px 12px 2px;flex:none}
+.colls:empty{display:none}
+.collhead{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+.collhead b{font-size:14px}
+.collhead span{font-size:12px;color:var(--blue);font-weight:600}
+.collrow{display:flex;gap:8px;overflow-x:auto;padding-bottom:6px}
+.coll{flex:none;border:0;border-radius:14px;padding:9px 13px;background:var(--green-l);color:var(--green-d);
+  font:inherit;font-size:12.5px;font-weight:600}
+.coll.add{background:none;border:1.5px dashed #b9c6be;color:#5c6a61;font-weight:500}
+
+/* ---------- Video link (YouTube) ---------- */.lk { width: 100%; max-width: 760px; padding-bottom: 14px; }
 .lk-top { position: relative; width: 100%; aspect-ratio: 16 / 9; background: #000;
   display: flex; align-items: center; justify-content: center; overflow: hidden; }
 .lk-top.emb { aspect-ratio: auto; height: 54vh; min-height: 220px; }

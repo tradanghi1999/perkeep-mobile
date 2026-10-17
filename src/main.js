@@ -114,6 +114,39 @@ const I18N = {
     link_saving: 'Đang lưu…', link_ok: 'Đã lưu link video', link_fail: 'Không lưu được link',
     link_play: 'Xem', link_open: 'Mở YouTube', link_unreadable: 'Không đọc được dữ liệu link này.',
     share_no_url: 'Nội dung chia sẻ không có link hợp lệ.',
+    nav_ai: 'Trợ lý', set_ai: 'Trợ lý AI',
+    ai_off: 'Chưa kết nối bridge',
+    ai_title: 'Trợ lý AI — kết nối bridge',
+    ai_hint: 'Bridge chạy trên PC (scripts/ai-bridge.mjs). Điện thoại chỉ gửi câu hỏi; tool chạy trên PC cạnh Perkeep.',
+    ai_base: 'Địa chỉ bridge', ai_token: 'Token', ai_test: 'Kiểm tra',
+    ai_ok: 'Kết nối được', ai_fail: 'Lỗi', ai_saved: 'Đã lưu cấu hình trợ lý',
+    ai_need_config: 'Chưa cấu hình trợ lý AI', ai_need_text: 'Nhập câu hỏi trước',
+    ai_thinking: 'Đang tìm trong thư viện…', ai_stopped: 'Đã dừng.',
+    ai_empty_answer: '(Trợ lý không trả lời)',
+    ai_start: 'Hỏi trợ lý về thư viện của bạn', ai_start_hint: 'Ví dụ:',
+    ai_chip1: 'Tuần này tôi lưu gì?', ai_chip2: 'Tìm video về mèo tháng 9', ai_chip3: 'Video nào chưa gắn tag?',
+    ai_explain: 'AI hiểu', ai_used: 'Đã dùng',
+    ai_tool_search: 'Tìm trong Perkeep', ai_tool_stats: 'Thống kê thư viện',
+    ai_tool_describe: 'Đọc metadata', ai_tool_get_text: 'Đọc nội dung',
+    ai_send: 'Gửi', ai_stop: 'Dừng', ai_attach_soon: 'Đính kèm sẽ có ở giai đoạn sau',
+    ai_tags: 'Gợi ý tag bằng AI', ai_tags_ok: 'Đã điền tag gợi ý', ai_tags_fail: 'Không gợi ý được tag',
+    fab_channel: 'Thêm video từ kênh (YouTube)',
+    ch_title: 'Thêm video từ kênh', ch_url: 'Link kênh (youtube.com/@ten)', ch_count: 'Số video mới nhất',
+    ch_fetch: 'Lấy video', ch_pick: 'Chọn video để lưu', ch_back: 'Quay lại',
+    ch_none: 'Kênh không có video.', ch_fail: 'Không lấy được video', ch_need_url: 'Dán link kênh trước',
+    ch_pick_none: 'Chọn ít nhất 1 video', ch_save: (n) => `Lưu ${n} link`, ch_saved: (n) => `Đã lưu ${n} video`,
+    ai_bulk_tag: 'Gắn tag', ai_bulk_tag_ph: 'Nhập tag cho các kết quả này', ai_bulk_tag_ok: (n) => `Đã gắn tag cho ${n} mục`,
+    summary_btn: 'Tóm tắt bằng AI', summary_title: 'Tóm tắt video', summary_fail: 'Không tóm tắt được',
+    summary_src: 'Nguồn: phụ đề', summary_src_desc: 'YouTube chặn phụ đề — tóm tắt chỉ dựa trên mô tả video.',
+    coll_title: 'Bộ sưu tập', coll_add: 'Thêm bộ sưu tập', coll_ph: 'Tên tag (vd: du-lich)',
+    coll_manage: 'Quản lý', coll_empty: 'Chưa có bộ sưu tập. Bộ sưu tập là một tag.', coll_tap: 'Chạm để mở',
+    set_watch: 'Theo dõi kênh', watch_title: 'Theo dõi kênh', watch_add: 'Thêm kênh', watch_edit: 'Sửa kênh',
+    watch_empty: 'Chưa theo dõi kênh nào.', watch_on: 'đang bật', watch_paused: 'tạm dừng',
+    watch_at: 'Giờ chạy (HH:MM)', watch_tags: 'Tag tự gắn (cách nhau phẩy)',
+    watch_queue: (n) => `Hàng chờ (${n})`, watch_run: 'Chạy thử tất cả', watch_saved: 'Đã lưu kênh',
+    watch_need_url: 'Dán link kênh', watch_queue_empty: 'Hàng chờ trống',
+    watch_save: (n) => `Lưu ${n} link`, watch_skip: (n) => `Bỏ qua ${n}`, watch_done: (n) => `Đã lưu ${n} video`,
+    watch_fail: 'Lỗi theo dõi kênh',
     up_waiting: 'Chờ mạng…', up_preparing: 'Đang chuẩn bị…', up_uploading: 'Đang tải lên',
     up_signing: 'Đang tạo mục…', up_done: 'Đã tải lên', up_failed: 'Lỗi', up_canceled: 'Đã huỷ',
     up_title: 'Đang tải lên', up_retry: 'Thử lại', up_cancel: 'Huỷ', up_clear: 'Xoá mục xong',
@@ -227,6 +260,39 @@ const I18N = {
     link_saving: 'Saving…', link_ok: 'Video link saved', link_fail: 'Could not save the link',
     link_play: 'Play', link_open: 'Open YouTube', link_unreadable: 'Could not read this link item.',
     share_no_url: 'The shared text has no valid link.',
+    nav_ai: 'Assistant', set_ai: 'AI assistant',
+    ai_off: 'Bridge not connected',
+    ai_title: 'AI assistant — bridge connection',
+    ai_hint: 'The bridge runs on the PC (scripts/ai-bridge.mjs). The phone only sends questions; tools run on the PC next to Perkeep.',
+    ai_base: 'Bridge address', ai_token: 'Token', ai_test: 'Test',
+    ai_ok: 'Connected', ai_fail: 'Error', ai_saved: 'AI settings saved',
+    ai_need_config: 'AI assistant is not configured', ai_need_text: 'Type a question first',
+    ai_thinking: 'Searching the library…', ai_stopped: 'Stopped.',
+    ai_empty_answer: '(No answer)',
+    ai_start: 'Ask about your library', ai_start_hint: 'Examples:',
+    ai_chip1: 'What did I save this week?', ai_chip2: 'Find videos about cats in September', ai_chip3: 'Which videos have no tags?',
+    ai_explain: 'AI understood', ai_used: 'Used',
+    ai_tool_search: 'Search Perkeep', ai_tool_stats: 'Library stats',
+    ai_tool_describe: 'Read metadata', ai_tool_get_text: 'Read content',
+    ai_send: 'Send', ai_stop: 'Stop', ai_attach_soon: 'Attachments come in a later phase',
+    ai_tags: 'Suggest tags with AI', ai_tags_ok: 'Suggested tags applied', ai_tags_fail: 'Could not suggest tags',
+    fab_channel: 'Add videos from a channel (YouTube)',
+    ch_title: 'Add videos from a channel', ch_url: 'Channel link (youtube.com/@name)', ch_count: 'Latest videos',
+    ch_fetch: 'Fetch videos', ch_pick: 'Pick videos to save', ch_back: 'Back',
+    ch_none: 'This channel has no videos.', ch_fail: 'Could not fetch videos', ch_need_url: 'Paste a channel link first',
+    ch_pick_none: 'Pick at least 1 video', ch_save: (n) => `Save ${n} links`, ch_saved: (n) => `Saved ${n} videos`,
+    ai_bulk_tag: 'Tag them', ai_bulk_tag_ph: 'Tag for these results', ai_bulk_tag_ok: (n) => `Tagged ${n} items`,
+    summary_btn: 'Summarize with AI', summary_title: 'Video summary', summary_fail: 'Could not summarize',
+    summary_src: 'Source: captions', summary_src_desc: 'YouTube blocks captions — this summary uses the video description only.',
+    coll_title: 'Collections', coll_add: 'Add collection', coll_ph: 'Tag name (e.g. travel)',
+    coll_manage: 'Manage', coll_empty: 'No collections yet. A collection is just a tag.', coll_tap: 'Tap to open',
+    set_watch: 'Channel watch', watch_title: 'Channel watch', watch_add: 'Add channel', watch_edit: 'Edit channel',
+    watch_empty: 'No channels yet.', watch_on: 'active', watch_paused: 'paused',
+    watch_at: 'Run at (HH:MM)', watch_tags: 'Auto tags (comma separated)',
+    watch_queue: (n) => `Pending (${n})`, watch_run: 'Test run all', watch_saved: 'Channel saved',
+    watch_need_url: 'Paste a channel link', watch_queue_empty: 'Nothing pending',
+    watch_save: (n) => `Save ${n} links`, watch_skip: (n) => `Skip ${n}`, watch_done: (n) => `Saved ${n} videos`,
+    watch_fail: 'Channel watch error',
     up_waiting: 'Waiting for network…', up_preparing: 'Preparing…', up_uploading: 'Uploading',
     up_signing: 'Creating item…', up_done: 'Uploaded', up_failed: 'Failed', up_canceled: 'Canceled',
     up_title: 'Uploads', up_retry: 'Retry', up_cancel: 'Cancel', up_clear: 'Clear finished',
@@ -290,6 +356,8 @@ function applyLang() {
   renderFilters();
   renderSvcSub();
   renderJfState();
+  renderAiState();
+  aiRender();
 }
 
 // Gắn icon SVG cho các chỗ đánh dấu data-ico (nav, cài đặt, search).
@@ -299,6 +367,9 @@ function paintIcons() {
   });
   $('s-ico').innerHTML = icon('search', 18);
   $('fab').innerHTML = icon('plus', 26);
+  $('s-ai').innerHTML = icon('sparkle', 18);
+  $('ai-plus').innerHTML = icon('plus', 20);
+  aiComposerState();
 }
 function setLang(l) {
   lang = l;
@@ -1374,9 +1445,24 @@ async function renderLinkViewer(meta) {
     </div>
     <div class="vw-actions">
       <button id="lk-open">${icon('external')}<span>${esc(t('link_open'))}</span></button>
+      ${d.site === 'youtube' && aiReady() ? `<button class="alt" id="lk-sum">${icon('sparkle')}<span>${esc(t('summary_btn'))}</span></button>` : ''}
       <button class="alt" id="lk-copy">${icon('link')}<span>${esc(t('fa_share'))}</span></button>
     </div>
   </div>`;
+
+  const sumBtn = vwBody.querySelector('#lk-sum');
+  if (sumBtn) sumBtn.onclick = async () => {
+    openSheet(`<h3>${esc(t('summary_title'))}</h3><p class="meta">${esc(t('ai_thinking'))}</p>`);
+    try {
+      const r = await aiFetch('/ai/summary', { body: { url: d.url }, timeout: 150000 });
+      const note = r.source === 'description' ? t('summary_src_desc') : `${t('summary_src')} (${r.lang || ''})`;
+      openSheet(`<h3>${esc(t('summary_title'))}</h3>
+        <div style="font-size:14px;line-height:1.6">${mdLite(r.text || '')}</div>
+        <p class="meta" style="margin-top:10px">${esc(note)}</p>`);
+    } catch (e) {
+      openSheet(`<h3>${esc(t('summary_title'))}</h3><p class="err" style="color:#c62828">${esc(t('summary_fail'))}: ${esc(e.message)}</p>`);
+    }
+  };
 
   const openBtn = vwBody.querySelector('#lk-open');
   if (openBtn) openBtn.onclick = () => window.open(d.url, '_blank');
@@ -1641,13 +1727,18 @@ function switchTab(tab) {
   document.querySelectorAll('.tabs').forEach((x) => x.classList.remove('on'));
   $(tab).classList.add('on');
   document.querySelectorAll('.nav button').forEach((b) => b.classList.toggle('on', b.dataset.t === tab));
-  $('fab').hidden = tab === 't-set';
-  $('viewseg').hidden = tab === 't-set'; // tab Cài đặt không cần đổi kiểu xem
+  const chat = tab === 't-ai';
+  $('fab').hidden = tab === 't-set' || chat;
+  $('viewseg').hidden = tab === 't-set' || chat;
+  const fb = document.querySelector('.filterbar');
+  if (fb) fb.style.display = chat ? 'none' : '';
+  if (chat) { const ab = $('aibar'); if (ab) { ab.hidden = true; ab.classList.remove('on'); } }
+  if (tab === 't-home') renderColls();
   updateTabTitle();
   renderFilters();
 }
 
-const TAB_TITLES = { 't-home': 'home_title', 't-star': 'star_title', 't-files': 'files_title', 't-set': 'set_title' };
+const TAB_TITLES = { 't-home': 'home_title', 't-star': 'star_title', 't-files': 'files_title', 't-ai': 'nav_ai', 't-set': 'set_title' };
 function updateTabTitle() {
   $('tab-title').textContent = t(TAB_TITLES[currentTab()] || 'home_title');
 }
@@ -2009,6 +2100,7 @@ function openAddLinkSheet(prefill) {
       <label>${esc(t('link_title'))}</label><input id="lk-title" autocomplete="off" />
       <label>${esc(t('link_dur'))}</label><input id="lk-dur" inputmode="numeric" placeholder="12:34" autocomplete="off" />
       <label>${esc(t('link_tags'))}</label><input id="lk-tags" autocomplete="off" />
+      <button id="lk-ai" style="margin-top:8px;width:100%;border:1.5px dashed #b9c6be;background:none;border-radius:12px;padding:10px;font:inherit;font-size:12.5px;color:var(--green-d);font-weight:600">${esc(t('ai_tags'))}</button>
       <div class="btns"><button data-save>${esc(t('btn_save'))}</button><button class="cx" data-cx>${esc(t('btn_cancel'))}</button></div>
     </div>
     <p class="err" id="lk-err" hidden></p>
@@ -2085,6 +2177,35 @@ function openAddLinkSheet(prefill) {
       errEl.textContent = `${t('link_fail')}: ${e.message}`;
       errEl.hidden = false;
       log(`link FAIL: ${e.message} :: ${(e.stack || '').split('\n').slice(0, 3).join(' | ')}`);
+    }
+  };
+
+  // Gợi ý tag bằng AI (bridge)
+  const aiBtn = sheetBody.querySelector('#lk-ai');
+  if (aiBtn) aiBtn.onclick = async () => {
+    if (!aiReady()) { closeSheet(); openAiSheet(); return; }
+    aiBtn.disabled = true;
+    const label = aiBtn.textContent;
+    aiBtn.textContent = t('ai_thinking');
+    try {
+      const r = await aiSuggestTags({
+        title: titleEl.value.trim() || (meta && meta.title) || '',
+        url: urlEl.value.trim(),
+        name: '',
+        mime: 'application/json'
+      });
+      if (r?.tags?.length) {
+        const cur = tagsEl.value.split(',').map((s) => s.trim()).filter(Boolean);
+        tagsEl.value = [...new Set([...cur, ...r.tags])].join(', ');
+      }
+      if (r?.title && !titleEl.value.trim()) titleEl.value = r.title;
+      snack(t('ai_tags_ok'));
+      log(`ai tags: ${(r?.tags || []).join(', ')}`);
+    } catch (e) {
+      snack(`${t('ai_tags_fail')}: ${e.message}`);
+    } finally {
+      aiBtn.disabled = false;
+      aiBtn.textContent = label;
     }
   };
 
@@ -2253,8 +2374,13 @@ $('fab').onclick = () => {
   openSheet(`<h3>${esc(t('fab_title'))}</h3>
     <button class="rowbtn" data-k="upload">${icon('upload')}<span>${esc(t('fab_upload'))}</span></button>
     <button class="rowbtn" data-k="link">${icon('video')}<span>${esc(t('fab_link'))}</span></button>
+    <button class="rowbtn" data-k="channel">${icon('sparkle')}<span>${esc(t('fab_channel'))}</span></button>
     <button class="rowbtn" disabled>${icon('doc')}<span>${esc(t('fab_note'))} ${esc(t('fab_soon'))}</span></button>
     ${native ? '' : `<p class="meta">${esc(t('up_need_native'))}</p>`}`);
+  sheetBody.querySelector('[data-k="channel"]').onclick = () => {
+    closeSheet();
+    openChannelSheet();
+  };
   sheetBody.querySelector('[data-k="link"]').onclick = () => {
     closeSheet();
     openAddLinkSheet();
@@ -2623,8 +2749,657 @@ function boot() {
   }).catch(() => {});
 }
 
+// ============================================================
+// Trợ lý AI (GĐ1): tìm bằng lời nói · hỏi đáp thư viện · gợi ý tag
+// Bridge chạy trên PC: scripts/ai-bridge.mjs
+// ============================================================
+const AI_KEY = 'pk-ai-v1';
+const AI_CHAT_KEY = 'pk-ai-chat-v1';
+const aiCfg = () => { try { return JSON.parse(localStorage.getItem(AI_KEY) || '{}') || {}; } catch { return {}; } };
+const aiSaveCfg = (o) => localStorage.setItem(AI_KEY, JSON.stringify({ ...aiCfg(), ...o }));
+const aiBase = () => String(aiCfg().base || '').replace(/\/+$/, '');
+const aiToken = () => aiCfg().token || '';
+const aiReady = () => !!(aiBase() && aiToken());
+
+async function aiFetch(path, { method = 'POST', body, signal, timeout = 180000 } = {}) {
+  const base = aiBase();
+  if (!base) throw new Error(t('ai_need_config'));
+  const ctrl = new AbortController();
+  const tm = setTimeout(() => ctrl.abort(), timeout);
+  const onAbort = () => { try { ctrl.abort(); } catch {} };
+  if (signal) signal.addEventListener('abort', onAbort, { once: true });
+  try {
+    const r = await fetch(base + path, {
+      method,
+      headers: { 'Content-Type': 'application/json', 'x-pk-token': aiToken() },
+      body: body ? JSON.stringify(body) : undefined,
+      signal: ctrl.signal
+    });
+    const j = await r.json().catch(() => ({}));
+    if (!r.ok) throw new Error(j.error || `HTTP ${r.status}`);
+    return j;
+  } finally {
+    clearTimeout(tm);
+    if (signal) signal.removeEventListener('abort', onAbort);
+  }
+}
+
+function renderAiState() {
+  const sub = $('set-ai-sub');
+  if (!sub) return;
+  sub.textContent = aiReady() ? aiBase().replace(/^https?:\/\//, '') : t('ai_off');
+  const st = $('set-ai-state');
+  if (st) {
+    st.textContent = aiReady() ? '✓' : '';
+    st.style.color = aiReady() ? 'var(--green)' : '#bbb';
+  }
+}
+
+function openAiSheet() {
+  const c = aiCfg();
+  openSheet(`<h3>${esc(t('ai_title'))}</h3>
+    <p class="meta">${esc(t('ai_hint'))}</p>
+    <div class="edt">
+      <label>${esc(t('ai_base'))}</label>
+      <input id="ai-b" value="${esc(c.base || 'http://192.168.123.9:4180')}" inputmode="url" autocomplete="off" />
+      <label>${esc(t('ai_token'))}</label>
+      <input id="ai-t" value="${esc(c.token || '')}" autocomplete="off" />
+      <div class="btns"><button data-save>${esc(t('btn_save'))}</button><button class="cx" data-test>${esc(t('ai_test'))}</button></div>
+    </div>
+    <p class="err" id="ai-err" hidden></p>`);
+  const errEl = sheetBody.querySelector('#ai-err');
+  sheetBody.querySelector('[data-save]').onclick = () => {
+    const base = sheetBody.querySelector('#ai-b').value.trim().replace(/\/+$/, '');
+    const token = sheetBody.querySelector('#ai-t').value.trim();
+    if (!/^https?:\/\//i.test(base)) { errEl.textContent = t('jf_bad_url'); errEl.hidden = false; return; }
+    aiSaveCfg({ base, token });
+    renderAiState();
+    closeSheet();
+    snack(t('ai_saved'));
+  };
+  sheetBody.querySelector('[data-test]').onclick = async () => {
+    errEl.hidden = true;
+    const base = sheetBody.querySelector('#ai-b').value.trim().replace(/\/+$/, '');
+    const token = sheetBody.querySelector('#ai-t').value.trim();
+    const old = aiCfg();
+    aiSaveCfg({ base, token });
+    try {
+      const h = await aiFetch('/ai/health', { method: 'GET', timeout: 8000 });
+      errEl.textContent = `${t('ai_ok')} · ${h.agent || ''} · ${h.model?.providerID || ''}/${h.model?.id || ''}`;
+      errEl.style.color = 'var(--green)';
+      errEl.hidden = false;
+      renderAiState();
+    } catch (e) {
+      aiSaveCfg(old);
+      errEl.textContent = `${t('ai_fail')}: ${e.message}`;
+      errEl.style.color = '#c62828';
+      errEl.hidden = false;
+    }
+  };
+}
+
+// ---------- tìm bằng lời nói ----------
+async function aiSearchFromInput() {
+  const text = qEl.value.trim();
+  if (!text) return snack(t('ai_need_text'));
+  if (!aiReady()) return openAiSheet();
+  const bar = $('aibar');
+  const btn = $('s-ai');
+  btn.disabled = true;
+  bar.hidden = false;
+  bar.classList.add('on');
+  bar.innerHTML = `<b>${esc(t('ai_thinking'))}</b>`;
+  try {
+    const r = await aiFetch('/ai/search', { body: { text }, timeout: 120000 });
+    if (r.error) throw new Error(r.error);
+    filters.by = 'raw';
+    filters.advanced = r.expression || '';
+    filters.keyword = '';
+    saveFilters();
+    renderFilters();
+    switchTab('t-files');
+    bar.innerHTML = `<div style="min-width:0">
+        <div><b>${esc(t('ai_explain'))}:</b> ${esc(r.explain || '')}</div>
+        <div class="q">${esc(r.expression || '')}</div>
+      </div>
+      <button class="x" id="aibar-tag" aria-label="tag">${icon('plus', 16)}</button>
+      <button class="x" id="aibar-x" aria-label="close">✕</button>`;
+    bar.querySelector('#aibar-tag').onclick = () => openBulkTagSheet();
+    bar.querySelector('#aibar-x').onclick = () => {
+      bar.hidden = true;
+      bar.classList.remove('on');
+      filters.by = 'name';
+      filters.advanced = '';
+      saveFilters();
+      renderFilters();
+      reloadTab(currentTab());
+    };
+    log(`ai search: ${r.expression} · count=${r.count}`);
+    reloadTab('t-files');
+  } catch (e) {
+    bar.innerHTML = `<div style="min-width:0"><b>${esc(t('ai_fail'))}:</b> ${esc(e.message)}</div>
+      <button class="x" id="aibar-x">✕</button>`;
+    bar.querySelector('#aibar-x').onclick = () => { bar.hidden = true; bar.classList.remove('on'); };
+    log(`ai search FAIL: ${e.message}`);
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+// ---------- chat ----------
+let aiMsgs = [];
+try { aiMsgs = JSON.parse(localStorage.getItem(AI_CHAT_KEY) || '[]') || []; } catch { aiMsgs = []; }
+const aiSaveChat = () => { try { localStorage.setItem(AI_CHAT_KEY, JSON.stringify(aiMsgs.slice(-40))); } catch {} };
+
+let aiBusy = false;
+let aiAbort = null;
+
+function prettyTool(name) {
+  let s = String(name || '');
+  s = s.replace(/^perkeep_/, '').replace(/^perkeep_/, '');
+  const map = {
+    search: t('ai_tool_search'),
+    stats: t('ai_tool_stats'),
+    describe: t('ai_tool_describe'),
+    get_text: t('ai_tool_get_text')
+  };
+  return map[s] || s;
+}
+
+function mdLite(s) {
+  return esc(s)
+    .replace(/\*\*(.+?)\*\*/g, '<b>$1</b>')
+    .replace(/`([^`]+)`/g, '<code>$1</code>')
+    .replace(/\n/g, '<br>');
+}
+
+function aiRender() {
+  const box = $('ai-chat');
+  if (!box) return;
+  if (!aiMsgs.length) {
+    box.innerHTML = `<div class="ai-empty">
+      <b>${esc(t('ai_start'))}</b><br>${esc(t('ai_start_hint'))}
+      <div class="ai-chips" style="margin-top:10px">
+        <button data-ai-chip="${esc(t('ai_chip1'))}">${esc(t('ai_chip1'))}</button>
+        <button data-ai-chip="${esc(t('ai_chip2'))}">${esc(t('ai_chip2'))}</button>
+        <button data-ai-chip="${esc(t('ai_chip3'))}">${esc(t('ai_chip3'))}</button>
+      </div></div>`;
+    box.querySelectorAll('[data-ai-chip]').forEach((b) => {
+      b.onclick = () => { if (!aiBusy) aiSend(b.dataset.aiChip); };
+    });
+    return;
+  }
+  box.innerHTML = aiMsgs.map((m) => {
+    if (m.role === 'me') return `<div class="ai-msg me">${mdLite(m.text)}</div>`;
+    if (m.role === 'tool') return `<div class="ai-tool"><span>${esc(m.text)}</span><span class="st">···</span></div>`;
+    const cls = m.role === 'err' ? 'ai-msg err' : 'ai-msg bot';
+    const tools = (m.tools || []).length
+      ? `<div class="ai-tools-line">${esc(t('ai_used'))}: ${m.tools.map((x) => esc(prettyTool(x))).join(' · ')}</div>`
+      : '';
+    return `<div class="${cls}">${mdLite(m.text)}${tools}</div>`;
+  }).join('');
+  box.scrollTop = box.scrollHeight;
+}
+
+function aiComposerState() {
+  const input = $('ai-input');
+  const send = $('ai-send');
+  if (!input || !send) return;
+  if (aiBusy) {
+    send.disabled = false;
+    send.classList.add('stop');
+    send.innerHTML = icon('stop', 16);
+    send.setAttribute('aria-label', t('ai_stop'));
+  } else {
+    send.classList.remove('stop');
+    send.innerHTML = icon('send', 18);
+    send.disabled = !input.value.trim();
+    send.setAttribute('aria-label', t('ai_send'));
+  }
+}
+
+async function aiSend(text) {
+  if (!aiReady()) { openAiSheet(); return; }
+  if (aiBusy) return;
+  aiBusy = true;
+  aiAbort = new AbortController();
+  aiMsgs.push({ role: 'me', text });
+  aiMsgs.push({ role: 'tool', text: t('ai_thinking') });
+  aiRender();
+  aiComposerState();
+  try {
+    const r = await aiFetch('/ai/ask', { body: { text }, signal: aiAbort.signal });
+    aiMsgs.pop();
+    aiMsgs.push({ role: 'bot', text: r.text || t('ai_empty_answer'), tools: r.tools || [] });
+    aiSaveChat();
+  } catch (e) {
+    aiMsgs.pop();
+    const aborted = e.name === 'AbortError' || /abort/i.test(e.message || '');
+    aiMsgs.push({ role: 'err', text: aborted ? t('ai_stopped') : `${t('ai_fail')}: ${e.message}` });
+    aiSaveChat();
+  } finally {
+    aiBusy = false;
+    aiAbort = null;
+    aiRender();
+    aiComposerState();
+  }
+}
+
+// ---------- gợi ý tag cho link ----------
+async function aiSuggestTags({ title, url, name, mime }) {
+  if (!aiReady()) { openAiSheet(); return null; }
+  return aiFetch('/ai/tags', { body: { title, url, name, mime }, timeout: 60000 });
+}
+
+// ---------- lấy video từ kênh ----------
+function channelSlug(url) {
+  const m = String(url || '').match(/@([\w.-]+)/);
+  return m ? m[1].toLowerCase().replace(/[^a-z0-9_-]/g, '') : 'youtube';
+}
+
+function openChannelSheet() {
+  if (!aiReady()) return openAiSheet();
+  let limit = 3;
+  openSheet(`<h3>${esc(t('ch_title'))}</h3>
+    <div class="edt">
+      <label>${esc(t('ch_url'))}</label>
+      <input id="ch-url" placeholder="https://www.youtube.com/@ten" inputmode="url" autocomplete="off" />
+      <label>${esc(t('ch_count'))}</label>
+      <div class="seg" id="ch-count">
+        <button data-n="3" class="on">3</button><button data-n="5">5</button><button data-n="10">10</button>
+      </div>
+      <div class="btns"><button data-go>${esc(t('ch_fetch'))}</button><button class="cx" data-cx>${esc(t('btn_cancel'))}</button></div>
+    </div>
+    <p class="err" id="ch-err" hidden></p>`);
+
+  const errEl = sheetBody.querySelector('#ch-err');
+  sheetBody.querySelectorAll('#ch-count button').forEach((b) => {
+    b.onclick = () => {
+      limit = Number(b.dataset.n) || 3;
+      sheetBody.querySelectorAll('#ch-count button').forEach((x) => x.classList.toggle('on', x === b));
+    };
+  });
+  sheetBody.querySelector('[data-cx]').onclick = closeSheet;
+  const go = async () => {
+    const url = sheetBody.querySelector('#ch-url').value.trim();
+    errEl.hidden = true;
+    if (!url) { errEl.textContent = t('ch_need_url'); errEl.hidden = false; return; }
+    const btn = sheetBody.querySelector('[data-go]');
+    btn.disabled = true;
+    btn.textContent = t('ai_thinking');
+    try {
+      const r = await aiFetch('/ai/channel', { body: { url, limit }, timeout: 90000 });
+      if (!r.items?.length) throw new Error(t('ch_none'));
+      renderChannelPicker(r.items, url);
+    } catch (e) {
+      btn.disabled = false;
+      btn.textContent = t('ch_fetch');
+      errEl.textContent = `${t('ch_fail')}: ${e.message}`;
+      errEl.hidden = false;
+    }
+  };
+  sheetBody.querySelector('[data-go]').onclick = go;
+  sheetBody.querySelector('#ch-url').addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); go(); } });
+}
+
+function renderChannelPicker(items, channelUrl) {
+  const selected = new Set(items.map((i) => i.url));
+  const slug = channelSlug(channelUrl);
+  const rowHtml = items.map((it, idx) => `
+    <div class="pickrow" data-i="${idx}" style="display:flex;gap:10px;align-items:center;padding:8px 2px;border-bottom:1px solid var(--line);cursor:pointer">
+      <img src="${esc(it.thumbnail || '')}" alt="" style="width:74px;height:42px;object-fit:cover;border-radius:8px;flex:none;background:#e7ece9" />
+      <div style="flex:1;min-width:0">
+        <b style="display:block;font-size:12.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(it.title)}</b>
+        <small style="color:#666;font-size:11px">${esc((it.published || '').slice(0, 10))}${it.author ? ' · ' + esc(it.author) : ''}</small>
+      </div>
+      <span class="chk" style="width:22px;height:22px;flex:none;border-radius:7px;border:2px solid ${selected.has(it.url) ? 'var(--green)' : '#b9c6be'};background:${selected.has(it.url) ? 'var(--green)' : 'transparent'};color:#fff;display:flex;align-items:center;justify-content:center;font-size:12px">${selected.has(it.url) ? '✓' : ''}</span>
+    </div>`).join('');
+
+  openSheet(`<h3>${esc(t('ch_pick'))}</h3>
+    <p class="meta">${items.length} video · ${esc(channelUrl)}</p>
+    <div id="ch-list">${rowHtml}</div>
+    <div class="btns" style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px">
+      <button id="ch-save">${esc(t('ch_save')(selected.size))}</button>
+      <button class="cx" id="ch-back">${esc(t('ch_back'))}</button>
+    </div>`);
+
+  const list = sheetBody.querySelector('#ch-list');
+  let n = selected.size;
+  list.querySelectorAll('.pickrow').forEach((row) => {
+    row.onclick = () => {
+      const it = items[Number(row.dataset.i)];
+      const chk = row.querySelector('.chk');
+      if (selected.has(it.url)) { selected.delete(it.url); chk.style.background = 'transparent'; chk.style.borderColor = '#b9c6be'; chk.textContent = ''; }
+      else { selected.add(it.url); chk.style.background = 'var(--green)'; chk.style.borderColor = 'var(--green)'; chk.textContent = '✓'; }
+      n = selected.size;
+      sheetBody.querySelector('#ch-save').textContent = t('ch_save')(n);
+    };
+  });
+  sheetBody.querySelector('#ch-back').onclick = () => openChannelSheet();
+  sheetBody.querySelector('#ch-save').onclick = async (ev) => {
+    const btn = ev.currentTarget;
+    if (!n) return snack(t('ch_pick_none'));
+    btn.disabled = true;
+    btn.textContent = t('link_saving');
+    const links = items.filter((i) => selected.has(i.url)).map((i) => ({
+      url: i.url, title: i.title, site: 'youtube', author: i.author || '', thumbnail: i.thumbnail || ''
+    }));
+    try {
+      const r = await aiFetch('/ai/save_links', { body: { links, tags: ['youtube', slug] }, timeout: 180000 });
+      closeSheet();
+      snack(t('ch_saved')(r.saved || 0));
+      log(`channel save: ${r.saved}/${r.requested}`);
+      reloadTab(currentTab());
+    } catch (e) {
+      btn.disabled = false;
+      btn.textContent = t('ch_save')(n);
+      snack(`${t('ch_fail')}: ${e.message}`);
+    }
+  };
+}
+
+// ---------- bộ sưu tập (tag) ----------
+const COLL_KEY = 'pk-colls-v1';
+const getColls = () => { try { return JSON.parse(localStorage.getItem(COLL_KEY) || '[]') || []; } catch { return []; } };
+const saveColls = (a) => localStorage.setItem(COLL_KEY, JSON.stringify([...new Set(a.map((x) => String(x).trim()).filter(Boolean))]));
+
+function openCollTag(tag) {
+  filters.by = 'tag';
+  filters.keyword = tag;
+  filters.advanced = '';
+  qEl.value = tag;
+  saveFilters();
+  switchTab('t-files');
+  renderFilters();
+  reloadTab('t-files');
+}
+
+function renderColls() {
+  const box = $('home-colls');
+  if (!box) return;
+  const arr = getColls();
+  box.innerHTML = `<div class="collhead"><b>${esc(t('coll_title'))}</b><span id="coll-manage">${esc(t('coll_manage'))} ›</span></div>
+    <div class="collrow">
+      ${arr.map((x) => `<button class="coll" data-c="${esc(x)}">${esc(x)}</button>`).join('')}
+      <button class="coll add" id="coll-add">＋ ${esc(t('coll_add'))}</button>
+    </div>`;
+  box.querySelectorAll('[data-c]').forEach((b) => { b.onclick = () => openCollTag(b.dataset.c); });
+  box.querySelector('#coll-add').onclick = openCollSheet;
+  box.querySelector('#coll-manage').onclick = openCollSheet;
+}
+
+function openCollSheet() {
+  const arr = getColls();
+  openSheet(`<h3>${esc(t('coll_title'))}</h3>
+    ${arr.length
+      ? arr.map((x) => `<div style="display:flex;align-items:center;justify-content:space-between;padding:10px 2px;border-bottom:1px solid var(--line)">
+          <b style="font-size:13.5px">#${esc(x)}</b>
+          <button data-rm="${esc(x)}" style="border:0;background:none;color:#b3261e;font:inherit;font-size:12.5px;font-weight:600">${esc(t('btn_del'))}</button>
+        </div>`).join('')
+      : `<p class="meta">${esc(t('coll_empty'))}</p>`}
+    <div class="edt">
+      <label>${esc(t('coll_add'))}</label>
+      <input id="coll-in" placeholder="${esc(t('coll_ph'))}" autocomplete="off" />
+      <div class="btns"><button data-add>${esc(t('btn_save'))}</button><button class="cx" data-cx>${esc(t('btn_cancel'))}</button></div>
+    </div>`);
+  sheetBody.querySelector('[data-cx]').onclick = closeSheet;
+  sheetBody.querySelectorAll('[data-rm]').forEach((b) => {
+    b.onclick = () => { saveColls(getColls().filter((x) => x !== b.dataset.rm)); renderColls(); openCollSheet(); };
+  });
+  sheetBody.querySelector('[data-add]').onclick = () => {
+    const v = sheetBody.querySelector('#coll-in').value.trim().replace(/^#/, '').toLowerCase().replace(/\s+/g, '-');
+    if (!v) return;
+    saveColls([...getColls(), v]);
+    renderColls();
+    closeSheet();
+    snack(`#${v}`);
+  };
+}
+
+// ---------- gắn tag hàng loạt ----------
+function openBulkTagSheet() {
+  const refs = (currentItems || []).map((i) => i.blob).filter(Boolean);
+  if (!refs.length) return snack(t('empty'));
+  openSheet(`<h3>${esc(t('ai_bulk_tag'))}</h3>
+    <p class="meta">${refs.length} · ${esc(t('files_title'))}</p>
+    <div class="edt">
+      <label>${esc(t('tag_section'))}</label>
+      <input id="bt-tag" placeholder="${esc(t('ai_bulk_tag_ph'))}" autocomplete="off" />
+      <div class="btns"><button data-go>${esc(t('btn_save'))}</button><button class="cx" data-cx>${esc(t('btn_cancel'))}</button></div>
+    </div>
+    <p class="err" id="bt-err" hidden></p>`);
+  const errEl = sheetBody.querySelector('#bt-err');
+  sheetBody.querySelector('[data-cx]').onclick = closeSheet;
+  sheetBody.querySelector('[data-go]').onclick = async (ev) => {
+    const tag = sheetBody.querySelector('#bt-tag').value.trim().replace(/^#/, '');
+    if (!tag) return;
+    const btn = ev.currentTarget;
+    btn.disabled = true;
+    btn.textContent = t('link_saving');
+    try {
+      const r = await aiFetch('/ai/tag', { body: { refs, tag, add: true }, timeout: 120000 });
+      closeSheet();
+      snack(t('ai_bulk_tag_ok')(r.ok || 0));
+      log(`bulk tag #${tag}: ${r.ok}/${r.requested}`);
+      reloadTab(currentTab());
+    } catch (e) {
+      btn.disabled = false;
+      btn.textContent = t('btn_save');
+      errEl.textContent = e.message;
+      errEl.hidden = false;
+    }
+  };
+}
+
+
+// ---------- theo dõi kênh (bridge + Task Scheduler trên PC) ----------
+function renderWatchSub(txt) {
+  const el = $('set-watch-sub');
+  if (el) el.textContent = txt || '';
+}
+
+async function refreshWatchSub() {
+  if (!aiReady()) return renderWatchSub(t('ai_off'));
+  try {
+    const r = await aiFetch('/ai/watch', { body: { action: 'list' }, timeout: 15000 });
+    renderWatchSub(`${r.channels.length} kênh · ${r.queue} chờ`);
+  } catch { renderWatchSub(''); }
+}
+
+async function openWatchSheet() {
+  if (!aiReady()) return openAiSheet();
+  openSheet(`<h3>${esc(t('watch_title'))}</h3><p class="meta">${esc(t('ai_thinking'))}</p>`);
+  try {
+    const r = await aiFetch('/ai/watch', { body: { action: 'list' }, timeout: 20000 });
+    renderWatchList(r);
+  } catch (e) {
+    openSheet(`<h3>${esc(t('watch_title'))}</h3><p class="err" style="color:#c62828">${esc(t('watch_fail'))}: ${esc(e.message)}</p>`);
+  }
+}
+
+function renderWatchList({ channels = [], queue = 0 }) {
+  const rows = channels.map((c) => `
+    <div style="display:flex;align-items:center;gap:8px;padding:10px 2px;border-bottom:1px solid var(--line)">
+      <div style="flex:1;min-width:0">
+        <b style="font-size:13.5px;display:block">${esc(c.name)}</b>
+        <small style="color:#666;font-size:11px">${esc(c.at)} · ${c.paused ? esc(t('watch_paused')) : esc(t('watch_on'))} · ${c.seenCount || 0} video</small>
+      </div>
+      <button data-pause="${esc(c.id)}" data-v="${c.paused ? '0' : '1'}" style="border:0;background:#eef1ef;border-radius:8px;padding:6px 8px;font:inherit;font-size:11px">${c.paused ? 'Bật' : 'Dừng'}</button>
+      <button data-edit="${esc(c.id)}" style="border:0;background:none;font:inherit;font-size:16px;color:#999">›</button>
+      <button data-del="${esc(c.id)}" style="border:0;background:none;font:inherit;font-size:11px;color:#b3261e">${esc(t('btn_del'))}</button>
+    </div>`).join('');
+
+  openSheet(`<h3>${esc(t('watch_title'))}</h3>
+    ${queue ? `<button class="rowbtn" id="w-queue" style="font-weight:600">${esc(t('watch_queue')(queue))}</button>` : ''}
+    ${rows || `<p class="meta">${esc(t('watch_empty'))}</p>`}
+    <button class="rowbtn" id="w-add">＋ ${esc(t('watch_add'))}</button>
+    <button class="rowbtn" id="w-run">${esc(t('watch_run'))}</button>
+    <p class="meta">Chạy trên PC bằng Task Scheduler. Video mới chỉ vào hàng chờ, không tự thêm.</p>`);
+
+  sheetBody.querySelector('#w-add').onclick = () => openWatchEdit(null);
+  if (queue) sheetBody.querySelector('#w-queue').onclick = openWatchQueue;
+  sheetBody.querySelectorAll('[data-edit]').forEach((b) => {
+    b.onclick = () => openWatchEdit(channels.find((c) => c.id === b.dataset.edit));
+  });
+  sheetBody.querySelectorAll('[data-pause]').forEach((b) => {
+    b.onclick = async () => {
+      b.disabled = true;
+      try {
+        await aiFetch('/ai/watch', { body: { action: 'pause', id: b.dataset.pause, paused: b.dataset.v === '1' } });
+        openWatchSheet();
+      } catch (e) { snack(e.message); b.disabled = false; }
+    };
+  });
+  sheetBody.querySelectorAll('[data-del]').forEach((b) => {
+    b.onclick = async () => {
+      const name = channels.find((c) => c.id === b.dataset.del)?.name || '';
+      if (!confirm(`${t('btn_del')} "${name}"?`)) return;
+      try { await aiFetch('/ai/watch', { body: { action: 'remove', id: b.dataset.del } }); openWatchSheet(); }
+      catch (e) { snack(e.message); }
+    };
+  });
+  sheetBody.querySelector('#w-run').onclick = async () => {
+    const btn = sheetBody.querySelector('#w-run');
+    btn.disabled = true;
+    btn.textContent = t('ai_thinking');
+    try {
+      for (const c of channels) await aiFetch('/ai/watch', { body: { action: 'run', id: c.id }, timeout: 120000 });
+      openWatchSheet();
+    } catch (e) {
+      snack(e.message);
+      btn.disabled = false;
+      btn.textContent = t('watch_run');
+    }
+  };
+  refreshWatchSub();
+}
+
+function openWatchEdit(ch) {
+  openSheet(`<h3>${esc(ch ? t('watch_edit') : t('watch_add'))}</h3>
+    <div class="edt">
+      <label>${esc(t('ch_url'))}</label><input id="w-url" value="${esc(ch?.url || '')}" placeholder="https://www.youtube.com/@ten" />
+      <label>${esc(t('watch_at'))}</label><input id="w-at" value="${esc(ch?.at || '08:00')}" placeholder="08:00" />
+      <label>${esc(t('ch_count'))}</label><input id="w-limit" type="number" min="1" max="20" value="${ch?.limit || 10}" />
+      <label>${esc(t('watch_tags'))}</label><input id="w-tags" value="${esc((ch?.tags || ['youtube']).join(', '))}" />
+      <div class="btns"><button data-save>${esc(t('btn_save'))}</button><button class="cx" data-cx>${esc(t('btn_close'))}</button></div>
+    </div>
+    <p class="err" id="w-err" hidden></p>`);
+  const errEl = sheetBody.querySelector('#w-err');
+  sheetBody.querySelector('[data-cx]').onclick = openWatchSheet;
+  sheetBody.querySelector('[data-save]').onclick = async (ev) => {
+    const btn = ev.currentTarget;
+    const url = sheetBody.querySelector('#w-url').value.trim();
+    if (!url) { errEl.textContent = t('watch_need_url'); errEl.hidden = false; return; }
+    const tags = sheetBody.querySelector('#w-tags').value.split(',').map((s) => s.trim()).filter(Boolean);
+    btn.disabled = true;
+    try {
+      await aiFetch('/ai/watch', {
+        body: {
+          action: ch ? 'update' : 'add',
+          id: ch?.id,
+          url,
+          at: sheetBody.querySelector('#w-at').value.trim() || '08:00',
+          limit: Number(sheetBody.querySelector('#w-limit').value) || 10,
+          tags
+        },
+        timeout: 60000
+      });
+      snack(t('watch_saved'));
+      openWatchSheet();
+    } catch (e) {
+      btn.disabled = false;
+      errEl.textContent = `${t('watch_fail')}: ${e.message}`;
+      errEl.hidden = false;
+    }
+  };
+}
+
+async function openWatchQueue() {
+  openSheet(`<h3>${esc(t('watch_title'))}</h3><p class="meta">${esc(t('ai_thinking'))}</p>`);
+  let items = [];
+  try {
+    const r = await aiFetch('/ai/watch', { body: { action: 'queue' }, timeout: 20000 });
+    items = r.items || [];
+  } catch (e) {
+    return openSheet(`<h3>${esc(t('watch_title'))}</h3><p class="err">${esc(e.message)}</p>`);
+  }
+  if (!items.length) {
+    openSheet(`<h3>${esc(t('watch_title'))}</h3><p class="meta">${esc(t('watch_queue_empty'))}</p>`);
+    return;
+  }
+  const sel = new Set(items.map((i) => i.id));
+  openSheet(`<h3>${esc(t('watch_queue')(items.length))}</h3>
+    <div id="wq-list">${items.map((i, idx) => `
+      <div class="pickrow" data-i="${idx}" style="display:flex;gap:9px;align-items:center;padding:8px 2px;border-bottom:1px solid var(--line)">
+        <img src="${esc(i.thumbnail || '')}" style="width:64px;height:36px;object-fit:cover;border-radius:7px;flex:none;background:#e7ece9" />
+        <div style="flex:1;min-width:0"><b style="font-size:12px;display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(i.title)}</b><small style="color:#666;font-size:10.5px">${esc(i.channel || '')}</small></div>
+        <span class="chk" style="width:20px;height:20px;border-radius:6px;border:2px solid var(--green);background:var(--green);color:#fff;display:flex;align-items:center;justify-content:center;font-size:11px">✓</span>
+      </div>`).join('')}</div>
+    <div class="btns" style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px">
+      <button id="wq-save">${esc(t('watch_save')(sel.size))}</button>
+      <button class="cx" id="wq-skip">${esc(t('watch_skip')(items.length))}</button>
+    </div>`);
+  const list = sheetBody.querySelector('#wq-list');
+  list.querySelectorAll('.pickrow').forEach((row) => {
+    row.onclick = () => {
+      const it = items[Number(row.dataset.i)];
+      const chk = row.querySelector('.chk');
+      if (sel.has(it.id)) { sel.delete(it.id); chk.style.background = 'transparent'; chk.textContent = ''; }
+      else { sel.add(it.id); chk.style.background = 'var(--green)'; chk.textContent = '✓'; }
+      sheetBody.querySelector('#wq-save').textContent = t('watch_save')(sel.size);
+    };
+  });
+  sheetBody.querySelector('#wq-skip').onclick = async () => {
+    try {
+      await aiFetch('/ai/watch', { body: { action: 'dismiss', ids: items.map((i) => i.id) } });
+      openWatchSheet();
+    } catch (e) { snack(e.message); }
+  };
+  sheetBody.querySelector('#wq-save').onclick = async (ev) => {
+    const btn = ev.currentTarget;
+    if (!sel.size) return;
+    btn.disabled = true;
+    const links = items.filter((i) => sel.has(i.id)).map((i) => ({
+      url: i.url, title: i.title, site: 'youtube', author: i.author || '', thumbnail: i.thumbnail || ''
+    }));
+    try {
+      const r = await aiFetch('/ai/save_links', { body: { links, tags: ['youtube'] }, timeout: 180000 });
+      await aiFetch('/ai/watch', { body: { action: 'dismiss', ids: [...sel] } });
+      snack(t('watch_done')(r.saved || 0));
+      openWatchSheet();
+    } catch (e) {
+      btn.disabled = false;
+      snack(e.message);
+    }
+  };
+}
+
+// ---------- wiring ----------
+$('s-ai').onclick = aiSearchFromInput;
+$('set-ai').onclick = openAiSheet;
+$('set-watch').onclick = openWatchSheet;
+$('ai-plus').onclick = () => snack(t('ai_attach_soon'));
+$('ai-send').onclick = () => {
+  if (aiBusy) { aiAbort?.abort(); return; }
+  const v = $('ai-input').value.trim();
+  if (!v) return;
+  $('ai-input').value = '';
+  aiComposerState();
+  aiSend(v);
+};
+$('ai-input').addEventListener('input', aiComposerState);
+$('ai-input').addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') { e.preventDefault(); $('ai-send').click(); }
+});
+
 applyLang();
 paintIcons();
+renderAiState();
+aiComposerState();
+aiRender();
+renderColls();
+refreshWatchSub();
+
 renderSvcSub();
 renderFilters();
 renderVidState();
