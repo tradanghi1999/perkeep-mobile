@@ -121,6 +121,10 @@ svg{display:block}
 .composer .box{flex:1;min-height:38px;display:flex;align-items:center;gap:8px;background:#f1f4f2;border-radius:20px;padding:9px 13px;font-size:13px;color:#7d8a82}
 .composer .send{width:38px;height:38px;flex:none;border:0;border-radius:50%;background:var(--green);color:#fff;display:flex;align-items:center;justify-content:center}
 .composer .send.off{background:#cfd8d2}
+.composer .send.stop{background:#1f1f1f}
+.dots{display:inline-flex;gap:3px;align-items:center;margin-left:2px}
+.dots i{width:4px;height:4px;border-radius:50%;background:#9aa79f;display:block}
+.typing{align-self:flex-start;display:flex;align-items:center;gap:8px;font-size:11.5px;color:#6c7a72;padding:2px 4px}
 
 .chips{display:flex;gap:8px;overflow-x:auto;padding:2px 2px 4px;flex:none}
 .chip{flex:none;background:var(--green-l);border:0;border-radius:16px;padding:8px 12px;font-size:12px;color:var(--green-d);font-family:inherit;font-weight:600}
@@ -160,7 +164,8 @@ svg{display:block}
   <p>• Tin nhắn cuộn, không đẩy ô nhập<br>
      • Ô nhập luôn thấy, kể cả khi bàn phím mở<br>
      • Trong hội thoại: chỉ ← để thoát, không có tab bar<br>
-     • Nút gửi mờ khi chưa có chữ</p>
+     • **Đang chạy: nút Gửi đổi thành nút Dừng** (cùng vị trí, không đặt trên header)<br>
+     • Chạy xong: nút Dừng tự đổi lại thành Gửi (mờ nếu ô trống)</p>
 </div>
 
 <!-- ================= 1. TÌM BẰNG LỜI NÓI (tab Tệp) ================= -->
@@ -249,7 +254,7 @@ svg{display:block}
   <div class="top">
     <button class="iconbtn"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg></button>
     <div class="ttl"><b>Trợ lý</b><small>đang làm việc…</small></div>
-    <button class="iconbtn"><svg viewBox="0 0 24 24" width="17" height="17" fill="currentColor"><rect x="7" y="7" width="10" height="10" rx="2"/></svg></button>
+    <button class="iconbtn">⋯</button>
   </div>
 
   <div class="chat">
@@ -269,12 +274,13 @@ svg{display:block}
 
     <div class="pickbar"><button>Lưu 3 link</button><button class="ghost">Bỏ chọn</button></div>
     <div class="meta">Ghi vào Perkeep luôn cần bạn xác nhận.</div>
+    <div class="typing"><span class="dots"><i></i><i></i><i></i></span> Đang chạy bước 4/8…</div>
   </div>
 
   <div class="composer">
     <button class="plus"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.9"><path d="M12 5v14M5 12h14"/></svg></button>
-    <div class="box">Nhắn thêm cho trợ lý…</div>
-    <button class="send off"><svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V6M6 12l6-6 6 6"/></svg></button>
+    <div class="box">Trợ lý đang làm việc…</div>
+    <button class="send stop" title="Dừng"><svg viewBox="0 0 24 24" width="15" height="15" fill="currentColor"><rect x="6.5" y="6.5" width="11" height="11" rx="2.5"/></svg></button>
   </div>
 </div></div>
 <div class="cap"><b>3</b> · Tool + picker + xác nhận (ô nhập sát đáy)</div>
