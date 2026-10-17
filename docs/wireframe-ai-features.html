@@ -179,7 +179,11 @@ svg{display:block}
     <li><b>Dọn mục trùng</b><span class="ph ph2">GĐ2</span><br>trùng mục, không phải dung lượng.</li>
     <li><b>Tóm tắt video link</b><span class="ph ph3">GĐ3</span><br>cần phụ đề.</li>
     <li><b>Bộ sưu tập &amp; theo dõi</b><span class="ph ph3">GĐ3</span><br>bộ sưu tập = tag; vào từ <b>Nhà</b>; trang quản lý mở từ “Tất cả ›” hoặc Cài đặt.</li>
+    <li><b>Quản lý kênh</b> (thêm / sửa / xoá)<span class="ph ph3">GĐ3</span><br>dán link kênh → lấy tên/RSS → chọn tần suất + cách xử lý video mới.</li>
+    <li><b>Hàng chờ duyệt</b><span class="ph ph3">GĐ3</span><br>kết quả job rơi vào đây; bạn tick rồi Lưu. Không tự thêm.</li>
   </ol>
+
+  <p style="margin-top:6px"><b>Vì sao cần thêm/sửa/xoá kênh?</b> Nếu chỉ có nút bật/tắt thì người dùng không thể: đổi giờ chạy, đổi tag tự gắn, tạm dừng một kênh, hay bỏ hẳn kênh đã lỗi. Đó là lý do có màn 10 và 11.</p>
 
   <h2>Vào bộ sưu tập bằng đâu?</h2>
   <p>
@@ -571,11 +575,22 @@ svg{display:block}
     <div class="grp">Theo dõi kênh (chạy trên PC)</div>
     <div class="row">
       <span class="ic"><svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 7h16v12H4z"/><path d="M10 11l5 2.5-5 2.5z"/></svg></span>
-      <div class="tx"><b>FPT Shop</b><small>08:00 mỗi ngày · video mới vào hàng chờ duyệt</small></div><span class="sw on"></span>
+      <div class="tx"><b>FPT Shop</b><small>08:00 mỗi ngày · 2 video chờ duyệt</small></div>
+      <span class="sw on"></span><span style="color:#bbb;margin-left:6px">›</span>
     </div>
     <div class="row">
       <span class="ic"><svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 7h16v12H4z"/><path d="M10 11l5 2.5-5 2.5z"/></svg></span>
-      <div class="tx"><b>ritvikmath</b><small>đang tắt</small></div><span class="sw"></span>
+      <div class="tx"><b>ritvikmath</b><small>đang tắt</small></div>
+      <span class="sw"></span><span style="color:#bbb;margin-left:6px">›</span>
+    </div>
+    <div class="row">
+      <span class="ic" style="background:#f6f7f6;border:1.5px dashed #c8d2cb;color:#5c6a61"><svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.9"><path d="M12 5v14M5 12h14"/></svg></span>
+      <div class="tx"><b>Thêm kênh</b><small>dán link kênh YouTube</small></div><span style="color:#bbb">›</span>
+    </div>
+    <div class="row">
+      <span class="ic" style="background:#fff7e6;color:#a8791a"><svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 6h16v12H4z"/><path d="M8 10h8M8 14h5"/></svg></span>
+      <div class="tx"><b>Hàng chờ duyệt</b><small>4 video mới từ 1 kênh</small></div>
+      <span class="pill" style="background:#fff1cf;color:#8a6412">4</span>
     </div>
 
     <div class="grp">An toàn</div>
@@ -593,6 +608,101 @@ svg{display:block}
   <div class="nav" data-on="assistant"></div>
 </div></div>
 <div class="cap"><b>9</b> · Trang quản lý (mở từ “Tất cả” hoặc Cài đặt)</div>
+</div>
+
+<!-- ================= 10. THÊM / SỬA KÊNH ================= -->
+<div>
+<div class="phone"><div class="screen">
+  <div class="top">
+    <button class="iconbtn"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg></button>
+    <div class="ttl"><b>Sửa kênh</b><small>FPT Shop · đang theo dõi</small></div>
+  </div>
+
+  <div class="set" style="padding-bottom:16px">
+    <label style="display:block;font-size:12px;color:var(--muted);margin:8px 2px 6px">Link kênh</label>
+    <div style="display:flex;gap:8px">
+      <div style="flex:1;border:1px solid #dadce0;border-radius:12px;padding:12px;font-size:12px;color:#333;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">youtube.com/@FPTShop</div>
+      <button style="border:0;border-radius:12px;padding:0 12px;background:#eef1ef;color:#39433d;font-family:inherit;font-size:12px;font-weight:600">Lấy</button>
+    </div>
+
+    <div style="display:flex;gap:10px;align-items:center;border:1px solid #e6ebe8;border-radius:12px;padding:9px;margin-top:10px">
+      <div style="width:44px;height:44px;border-radius:50%;background:linear-gradient(135deg,#c9d8cf,#8fb3a0);flex:none"></div>
+      <div style="flex:1;min-width:0">
+        <b style="font-size:13px;display:block">FPT Shop</b>
+        <small style="color:var(--muted);font-size:11px">128 video · RSS OK</small>
+      </div>
+      <span class="pill">OK</span>
+    </div>
+
+    <div class="grp">Tần suất kiểm tra</div>
+    <div style="display:flex;gap:6px;flex-wrap:wrap">
+      <span class="chip">Mỗi 6 giờ</span>
+      <span class="chip" style="background:var(--green);color:#fff">Mỗi ngày 08:00</span>
+      <span class="chip">Mỗi tuần</span>
+    </div>
+
+    <div class="grp">Khi có video mới</div>
+    <div class="row" style="border-bottom:1px solid var(--line)">
+      <span style="width:20px;height:20px;border-radius:50%;border:2px solid #b9c6be;flex:none"></span>
+      <div class="tx"><b>Chỉ nhắc</b><small>thông báo, bạn tự mở</small></div>
+    </div>
+    <div class="row" style="border-bottom:1px solid var(--line)">
+      <span style="width:20px;height:20px;border-radius:50%;border:6px solid var(--green);flex:none"></span>
+      <div class="tx"><b>Vào hàng chờ duyệt</b><small>mặc định · bạn tick rồi Lưu</small></div>
+    </div>
+    <div class="row" style="border-bottom:1px solid var(--line);opacity:.5">
+      <span style="width:20px;height:20px;border-radius:50%;border:2px solid #ddd;flex:none"></span>
+      <div class="tx"><b>Tự động thêm</b><small>khoá — tránh rác thư viện</small></div>
+      <span class="pill" style="background:#f7e7e5;color:#a3312a">KHOÁ</span>
+    </div>
+
+    <div class="grp">Tag tự gắn</div>
+    <div style="display:flex;gap:6px;flex-wrap:wrap">
+      <span class="chip">youtube</span><span class="chip">fptshop</span>
+      <span class="chip" style="background:none;border:1.5px dashed #b9c6be;color:#5c6a61">＋ thêm</span>
+    </div>
+
+    <div class="row" style="margin-top:6px">
+      <span class="ic"><svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 7.5A2.5 2.5 0 0 1 5.5 5h3.2l2 2.2h7.8A2.5 2.5 0 0 1 21 9.7v7.8A2.5 2.5 0 0 1 18.5 20h-13A2.5 2.5 0 0 1 3 17.5z"/></svg></span>
+      <div class="tx"><b>Bộ sưu tập đích</b><small>fptshop</small></div><span style="color:#bbb">›</span>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr;gap:8px;margin-top:14px">
+      <button style="border:0;border-radius:12px;padding:14px;background:var(--green);color:#fff;font-weight:700;font-family:inherit;font-size:14px">Lưu kênh</button>
+      <button style="border:0;border-radius:12px;padding:13px;background:#fdecea;color:#a3312a;font-family:inherit;font-size:13px;font-weight:600">Xoá kênh khỏi theo dõi</button>
+    </div>
+    <p style="font-size:11px;color:var(--muted);margin-top:9px;line-height:1.5">Xoá kênh <b>không xoá</b> video đã lưu trong Perkeep.</p>
+  </div>
+</div></div>
+<div class="cap"><b>10</b> · Thêm / sửa / xoá kênh</div>
+</div>
+
+<!-- ================= 11. HÀNG CHỜ DUYỆT ================= -->
+<div>
+<div class="phone"><div class="screen">
+  <div class="top">
+    <button class="iconbtn"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg></button>
+    <div class="ttl"><b>Hàng chờ duyệt</b><small>4 video mới · FPT Shop</small></div>
+    <button class="iconbtn">⋯</button>
+  </div>
+
+  <div class="chat">
+    <div class="meta">Job chạy 08:00 hôm nay · 4 video mới · 0 trùng</div>
+
+    <div class="vlist">
+      <div class="vitem"><div class="vthumb"><span class="dur">12:04</span></div><div class="vt"><b>Review máy lọc nước mới nhất 2026</b><small>FPT Shop · 2 ngày trước</small></div><div class="chk on">✓</div></div>
+      <div class="vitem"><div class="vthumb"><span class="dur">08:31</span></div><div class="vt"><b>Hướng dẫn chọn robot hút bụi</b><small>FPT Shop · 4 ngày trước</small></div><div class="chk on">✓</div></div>
+      <div class="vitem"><div class="vthumb"><span class="dur">15:47</span></div><div class="vt"><b>So sánh 3 dòng tai nghe dưới 1 triệu</b><small>FPT Shop · 6 ngày trước</small></div><div class="chk on">✓</div></div>
+      <div class="vitem"><div class="vthumb"><span class="dur">05:12</span></div><div class="vt"><b>Khuyến mãi cuối tuần</b><small>FPT Shop · 7 ngày trước</small></div><div class="chk"></div></div>
+    </div>
+
+    <div class="pickbar"><button>Lưu 3 link</button><button class="ghost">Bỏ qua 4</button></div>
+    <div class="meta">Bỏ qua = xoá khỏi hàng chờ, không hiện lại. Không có gì được tự thêm.</div>
+  </div>
+
+  <div class="nav" data-on="assistant"></div>
+</div></div>
+<div class="cap"><b>11</b> · Hàng chờ duyệt (kết quả job)</div>
 </div>
 
 <script>
