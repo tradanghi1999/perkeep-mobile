@@ -302,6 +302,7 @@ h3 { margin: 12px 4px; font-size: 1.0625rem; }
 .rowbtn[disabled] .ico { color: #bbb; }
 .rowbtn:active { background: #f2f2f2; }
 .rowbtn[disabled] { color: #aaa; }
+.rowbtn.danger, .rowbtn.danger .ico { color: #b3261e; }
 .sheet .meta { font-size: 0.8125rem; color: var(--muted); margin: 0 10px 10px; word-break: break-all; }
 /* ---------- Kiểu xem: lưới lớn ---------- */
 .list.gridmode { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; }
@@ -342,6 +343,7 @@ h3 { margin: 12px 4px; font-size: 1.0625rem; }
 .edt .btns { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 18px; }
 .edt .btns button { border: 0; border-radius: 12px; padding: 16px; font-size: 1rem; font-family: inherit; background: var(--green); color: #fff; font-weight: 700; }
 .edt .btns .cx { background: #eee; color: #333; font-weight: 400; }
+.edt .btns .danger { background: #b3261e; color: #fff; }
 .cfbox { margin-top: 14px; border: 1px solid #e3e6e9; border-radius: 10px; padding: 10px 12px; }
 .cfbox summary { font-size: 0.875rem; font-weight: 600; color: var(--green-d); cursor: pointer; }
 .cfbox .meta { margin: 8px 0; font-size: 0.75rem; color: var(--muted); line-height: 1.5; }

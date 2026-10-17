@@ -82,6 +82,11 @@ const I18N = {
     empty: 'Không có kết quả.', loading: 'Đang tải…', feed_more: 'Tải thêm', feed_end: 'Đã hết',
     found: (n, s) => `${n} kết quả · ${s}`,
     fa_download: 'Tải về máy', fa_share: 'Sao chép link', fa_open: 'Mở trong Perkeep', fa_detail: 'Chi tiết',
+    fa_delete: 'Xoá mục',
+    del_title: 'Xoá mục này?', del_ok: 'Đã xoá mục',
+    del_note: 'Mục sẽ bị ẩn khỏi thư viện bằng “delete claim”. Blob gốc vẫn nằm trong kho Perkeep (dữ liệu bất biến) và không thể khôi phục từ app.',
+    del_fail: 'Không xoá được', del_need_permanode: 'Chỉ xoá được mục (permanode), không xoá blob gốc.',
+    dl_started: 'Đang tải về thư mục Downloads…', dl_fail: 'Không bắt đầu được tải về',
     tag_add: 'Thêm tag', tag_section: 'Tag', tag_ph: 'Nhập tag rồi bấm Thêm', tag_btn: 'Thêm',
     tag_note: 'Tag giúp bạn tìm lại nhanh: đặt “Tìm theo → Tag” rồi gõ tag.',
     tag_added: (v) => `Đã thêm tag “${v}”`, tag_removed: (v) => `Đã bỏ tag “${v}”`,
@@ -241,6 +246,11 @@ const I18N = {
     empty: 'No results.', loading: 'Loading…', feed_more: 'Load more', feed_end: 'End of list',
     found: (n, s) => `${n} results · ${s}`,
     fa_download: 'Download', fa_share: 'Copy link', fa_open: 'Open in Perkeep', fa_detail: 'Details',
+    fa_delete: 'Delete item',
+    del_title: 'Delete this item?', del_ok: 'Item deleted',
+    del_note: 'The item will be hidden from the library with a “delete claim”. The original blob stays in Perkeep (immutable data) and cannot be restored from the app.',
+    del_fail: 'Could not delete', del_need_permanode: 'Only items (permanodes) can be deleted, not the original blob.',
+    dl_started: 'Downloading to Downloads…', dl_fail: 'Could not start the download',
     tag_add: 'Add tag', tag_section: 'Tags', tag_ph: 'Type a tag then Add', tag_btn: 'Add',
     tag_note: 'Tags make search easy: set “Search by → Tag” and type the tag.',
     tag_added: (v) => `Added tag “${v}”`, tag_removed: (v) => `Removed tag “${v}”`,
@@ -1387,7 +1397,7 @@ function viewerFallback(meta, why, codec) {
       ${canJf ? `<button id="vw-jf">${icon('video')}<span>${esc(t('jf_play'))}</span></button>` : ''}
       <button id="vw-cache">${icon('download')}<span>${esc(t('cache_play'))}</span></button>
       <button id="vw-open-ext">${icon('external')}<span>${esc(t('vw_open_app'))}</span></button>
-      <button class="alt" id="vw-download">${icon('link')}<span>${esc(t('fa_download'))}</span></button>
+      <button class="alt" id="vw-download">${icon('download')}<span>${esc(t('fa_download'))}</span></button>
     </div></div>`;
   if (canJf) {
     vwBody.querySelector('#vw-jf').onclick = () => {
@@ -1398,7 +1408,15 @@ function viewerFallback(meta, why, codec) {
   }
   vwBody.querySelector('#vw-cache').onclick = () => cacheAndPlay(meta, -1);
   vwBody.querySelector('#vw-open-ext').onclick = () => openWithOtherApp(meta);
-  vwBody.querySelector('#vw-download').onclick = () => window.open(directUrl(meta.fileRef), '_blank');
+  vwBody.querySelector('#vw-download').onclick = async () => {
+    if (up.uploadSupported()) {
+      snack(t('dl_started'));
+      const ok = await up.saveToDownloads(active(), meta);
+      if (!ok) snack(t('dl_fail'));
+    } else {
+      window.open(directUrl(meta.fileRef), '_blank');
+    }
+  };
 }
 
 /** Mở file bằng VLC/MX Player (tải về cache rồi chia sẻ), không thì mở trình duyệt. */
@@ -1516,7 +1534,7 @@ async function renderLinkViewer(meta) {
     <div class="vw-actions">
       <button id="lk-open">${icon('external')}<span>${esc(t('link_open'))}</span></button>
       ${d.site === 'youtube' && aiReady() ? `<button class="alt" id="lk-sum">${icon('sparkle')}<span>${esc(t('summary_btn'))}</span></button>` : ''}
-      <button class="alt" id="lk-copy">${icon('link')}<span>${esc(t('fa_share'))}</span></button>
+      <button class="alt" id="lk-copy">${icon('copy')}<span>${esc(t('fa_share'))}</span></button>
     </div>
   </div>`;
 
@@ -2000,6 +2018,48 @@ async function changeTag(blob, meta, tag, add, msg) {
   }
 }
 
+/** Ẩn mục khỏi thư viện bằng delete claim. Perkeep không xoá blob gốc (bất biến). */
+async function deletePermanode(permaRef) {
+  const d = await getDisc();
+  const unsigned = JSON.stringify({
+    camliSigner: d.signerPubKey,
+    camliType: 'claim',
+    camliVersion: 1,
+    claimDate: new Date().toISOString().replace(/\.\d+Z$/, 'Z'),
+    claimType: 'delete',
+    target: permaRef
+  });
+  const signed = await signUnsigned(unsigned);
+  await uploadBlobText(blobRefOf(signed), signed);
+  log(`delete claim → ${blobRefOf(signed).slice(0, 16)}…`);
+}
+
+function confirmDelete(blob, meta) {
+  if (!meta.isPermanode) return snack(t('del_need_permanode'));
+  openSheet(`<h3>${esc(t('del_title'))}</h3>
+    <p class="meta" style="font-weight:600;color:#333">${esc(meta.name)}</p>
+    <p class="meta">${esc(t('del_note'))}</p>
+    <div class="edt"><div class="btns"><button class="danger" id="del-go">${esc(t('fa_delete'))}</button><button class="cx" data-cx>${esc(t('btn_cancel'))}</button></div></div>
+    <p class="err" id="del-err" hidden></p>`);
+  sheetBody.querySelector('[data-cx]').onclick = closeSheet;
+  const errEl = sheetBody.querySelector('#del-err');
+  sheetBody.querySelector('#del-go').onclick = async (ev) => {
+    const btn = ev.currentTarget;
+    btn.disabled = true;
+    try {
+      await deletePermanode(blob);
+      snack(t('del_ok'));
+      closeSheet();
+      setTimeout(() => reloadTab(currentTab()), 1200);
+    } catch (e) {
+      btn.disabled = false;
+      errEl.textContent = `${t('del_fail')}: ${e.message}`;
+      errEl.style.color = '#c62828';
+      errEl.hidden = false;
+    }
+  };
+}
+
 // ============================================================
 // Video link (YouTube...) = 1 mục Perkeep giữ vĩnh viễn
 //   - blob JSON: { type, site, url, title, duration, author, thumbnail, addedAt }
@@ -2326,14 +2386,15 @@ function fileActions(blob, meta) {
     { k: 'view', ico: 'image', label: t('vw_view') },
     ...(/^(video|audio)\//i.test(meta.mime) ? [{ k: 'cache', ico: 'download', label: t('cache_play') }] : []),
     { k: 'external', ico: 'external', label: t('vw_open_app') },
-    { k: 'download', ico: 'link', label: t('fa_download') },
-    { k: 'share', ico: 'link', label: t('fa_share') },
-    { k: 'detail', ico: 'info', label: t('fa_detail') }
+    { k: 'download', ico: 'download', label: t('fa_download') },
+    { k: 'share', ico: 'copy', label: t('fa_share') },
+    { k: 'detail', ico: 'info', label: t('fa_detail') },
+    { k: 'delete', ico: 'trash', label: t('fa_delete'), danger: true }
   ];
   openSheet(`<h3>${esc(meta.name)}</h3>
     <p class="meta">${esc([meta.mime, fmtSize(meta.size), fmtDate(meta.date)].filter(Boolean).join(' · '))}</p>
     ${meta.tags.length ? `<div class="tags">${meta.tags.map((x) => `<span class="tagchip">#${esc(x)}<button data-untag="${esc(x)}" title="${esc(t('tag_remove'))}">✕</button></span>`).join('')}</div>` : ''}
-    ${rows.map((r) => `<button class="rowbtn" data-k="${r.k}">${icon(r.ico)}<span>${esc(r.label)}</span></button>`).join('')}`);
+    ${rows.map((r) => `<button class="rowbtn${r.danger ? ' danger' : ''}" data-k="${r.k}">${icon(r.ico)}<span>${esc(r.label)}</span></button>`).join('')}`);
   sheetBody.querySelectorAll('[data-untag]').forEach((x) => {
     x.onclick = (e) => { e.stopPropagation(); closeSheet(); changeTag(blob, meta, x.dataset.untag, false); };
   });
@@ -2358,12 +2419,23 @@ function fileActions(blob, meta) {
         closeSheet();
         await openWithOtherApp(meta);
       } else if (b.dataset.k === 'download') {
-        window.open(directUrl(ref), '_blank');
         closeSheet();
+        if (up.uploadSupported()) {
+          snack(t('dl_started'));
+          const ok = await up.saveToDownloads(active(), meta);
+          if (!ok) snack(t('dl_fail'));
+        } else {
+          window.open(directUrl(ref), '_blank');
+        }
       } else if (b.dataset.k === 'share') {
-        const link = `${base()}/ui/?p=${encodeURIComponent(ref)}`;
-        try { await navigator.clipboard.writeText(link); snack(t('copied')); } catch { snack(link); }
         closeSheet();
+        let link = `${base()}/ui/?p=${encodeURIComponent(ref)}`;
+        if (isVideoLink(meta)) {
+          try { const d = await loadLink(meta); if (d?.url) link = d.url; } catch {}
+        }
+        try { await navigator.clipboard.writeText(link); snack(t('copied')); } catch { snack(link); }
+      } else if (b.dataset.k === 'delete') {
+        confirmDelete(blob, meta);
       } else if (b.dataset.k === 'open') {
         window.open(`${base()}/ui/?p=${encodeURIComponent(ref)}`, '_blank');
         closeSheet();

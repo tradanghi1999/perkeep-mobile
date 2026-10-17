@@ -1,8 +1,11 @@
 package org.perkeep.mobile.upload
 
+import android.app.DownloadManager
 import android.content.ActivityNotFoundException
 import android.content.Context
 import android.content.Intent
+import android.net.Uri
+import android.os.Environment
 import android.util.Log
 import androidx.core.content.FileProvider
 import java.io.File
@@ -35,8 +38,7 @@ object MediaOpener {
     )
 
     /** Trả về true nếu đã mở được bằng app khác. Chạy ở thread nền. */
-    fun downloadAndOpen(ctx: Context, args: Args): Boolean {
-        val out = MediaCache.ensure(
+    fun downloadAndOpen(ctx: Context, args: Args): Boolean {        val out = MediaCache.ensure(
             ctx, args.base, args.user, args.pass, args.cfId, args.cfSecret,
             args.fileRef, args.name, 0L
         ) { _, _ -> }
@@ -69,5 +71,42 @@ object MediaOpener {
             Log.w(TAG, "startActivity lỗi", t)
             false
         }
+    }
+
+    /** Tải thẳng vào thư mục Downloads của máy (DownloadManager, không qua cache). */
+    fun saveToDownloads(ctx: Context, args: Args): Boolean {
+        val url = args.base.trimEnd('/') + "/ui/download/" + URLEncoder.encode(args.fileRef, "UTF-8")
+        val name = downloadName(args.name, args.fileRef)
+        val req = DownloadManager.Request(Uri.parse(url))
+            .setTitle(name)
+            .setDescription("Perkeep")
+            .setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED)
+            .setDestinationInExternalPublicDir(Environment.DIRECTORY_DOWNLOADS, name)
+            .setMimeType(args.mime.ifBlank { "application/octet-stream" })
+        if (!args.user.isNullOrEmpty()) {
+            req.addRequestHeader(
+                "Authorization",
+                "Basic " + android.util.Base64.encodeToString(
+                    "${args.user}:${args.pass ?: ""}".toByteArray(Charsets.UTF_8),
+                    android.util.Base64.NO_WRAP
+                )
+            )
+        }
+        if (!args.cfId.isNullOrEmpty()) {
+            req.addRequestHeader("CF-Access-Client-Id", args.cfId)
+            req.addRequestHeader("CF-Access-Client-Secret", args.cfSecret ?: "")
+        }
+        val dm = ctx.getSystemService(Context.DOWNLOAD_SERVICE) as DownloadManager
+        dm.enqueue(req)
+        return true
+    }
+
+    private fun downloadName(name: String, fallback: String): String {
+        val cleaned = name.ifBlank { fallback }
+            .replace(Regex("[\\\\/:*?\"<>|\\r\\n\\t]"), " ")
+            .replace(Regex("\\s+"), " ")
+            .trim()
+            .take(110)
+        return cleaned.ifEmpty { "perkeep-file" }
     }
 }

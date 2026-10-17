@@ -123,6 +123,26 @@ export async function openExternally(server, meta) {
   }
 }
 
+/** Tải file về thư mục Downloads của máy (native DownloadManager). */
+export async function saveToDownloads(server, meta) {
+  if (!uploadSupported()) return false;
+  try {
+    const r = await PkUpload.saveToDownloads({
+      fileRef: meta.fileRef,
+      base: server?.url || '',
+      user: server?.user,
+      pass: server?.pass,
+      cfId: server?.cfId,
+      cfSecret: server?.cfSecret,
+      mime: meta.mime || '',
+      name: meta.name || ''
+    });
+    return !!r?.saved;
+  } catch {
+    return false;
+  }
+}
+
 /** Chọn file rồi đưa vào hàng đợi upload nền. */
 export async function pickAndUpload(server, { wifiOnly = true, tag = 'mobile' } = {}) {
   const picked = await PkUpload.pickFiles();

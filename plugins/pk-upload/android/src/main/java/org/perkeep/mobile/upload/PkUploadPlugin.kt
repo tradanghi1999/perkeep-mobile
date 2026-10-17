@@ -296,6 +296,33 @@ class PkUploadPlugin : Plugin() {
         }.start()
     }
 
+    /** Tải file về thư mục Downloads (native DownloadManager, có Basic auth). */
+    @PluginMethod
+    fun saveToDownloads(call: PluginCall) {
+        val ref = call.getString("fileRef") ?: run { call.reject("Thiếu fileRef"); return }
+        val args = MediaOpener.Args(
+            base = call.getString("base") ?: "",
+            user = call.getString("user"),
+            pass = call.getString("pass"),
+            fileRef = ref,
+            mime = call.getString("mime") ?: "",
+            name = call.getString("name") ?: "",
+            cfId = call.getString("cfId"),
+            cfSecret = call.getString("cfSecret")
+        )
+        if (args.base.isBlank()) {
+            call.resolve(JSObject().put("saved", false))
+            return
+        }
+        try {
+            MediaOpener.saveToDownloads(context.applicationContext, args)
+            call.resolve(JSObject().put("saved", true))
+        } catch (t: Throwable) {
+            Log.w(TAG, "saveToDownloads lỗi", t)
+            call.reject(t.message ?: "download failed", t)
+        }
+    }
+
     /** Tải file về cache để xem mượt; phát lại qua proxy cache (Range, tua tức thì). */
     @PluginMethod
     fun cacheMedia(call: PluginCall) {
