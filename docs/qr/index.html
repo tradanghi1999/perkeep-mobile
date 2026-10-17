@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>QR — Perkeep / Jellyfin</title>
+<style>
+  :root { color-scheme: light dark; }
+  body { font-family: system-ui, -apple-system, "Segoe UI", sans-serif; margin: 0; padding: 28px;
+         background: #f6f7f6; color: #1d1d1d; }
+  h1 { font-size: 20px; margin: 0 0 6px; }
+  p.sub { margin: 0 0 22px; color: #666; font-size: 14px; }
+  .grid { display: flex; flex-wrap: wrap; gap: 18px; }
+  .card { background: #fff; border-radius: 16px; padding: 18px 18px 14px; width: 260px;
+          box-shadow: 0 1px 4px #0001; text-align: center; }
+  .card img { width: 220px; height: 220px; display: block; margin: 0 auto 10px; }
+  .card b { display: block; font-size: 15px; margin-bottom: 4px; }
+  .card small { display: block; color: #666; font-size: 12px; word-break: break-all; }
+  @media (prefers-color-scheme: dark) {
+    body { background: #121212; color: #eee; }
+    .card { background: #1e1e1e; }
+    .card small, p.sub { color: #a8a8a8; }
+  }
+</style>
+</head>
+<body>
+  <h1>Quét QR để mở</h1>
+  <p class="sub">Điện thoại phải cùng Wi-Fi (192.168.123.x) hoặc cùng ZeroTier.</p>
+  <div class="grid">
+    <div class="card">
+      <img src="apk.png" alt="QR tải APK" />
+      <b>Tải APK</b>
+      <small>http://192.168.123.9:4173/app-debug.apk</small>
+    </div>
+    <div class="card">
+      <img src="app.png" alt="QR ứng dụng web" />
+      <b>Ứng dụng (bản web)</b>
+      <small>http://192.168.123.9:4173/</small>
+    </div>
+    <div class="card">
+      <img src="app.png" alt="QR ứng dụng web" />
+      <b>Ứng dụng (bản web)</b>
+      <small>http://192.168.123.9:4173/</small>
+    </div>
+    <div class="card">
+      <img src="jellyfin.png" alt="QR Jellyfin" />
+      <b>Jellyfin</b>
+      <small>http://192.168.123.9:8096 &nbsp;·&nbsp; admin / perkeep</small>
+    </div>
+  </div>
+</body>
+</html>
