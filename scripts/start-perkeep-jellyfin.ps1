@@ -118,4 +118,17 @@ if ($jf) {
     }
 }
 
+# ---------- 4. Web + APK server (:4173) ----------
+if (Test-Port 4173) {
+    Write-Log 'serve: 4173 already up'
+} else {
+    $serve = Join-Path $PSScriptRoot 'serve-app.ps1'
+    if (Test-Path $serve) {
+        Start-Process -FilePath 'powershell.exe' -ArgumentList '-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', $serve -WindowStyle Hidden
+        Write-Log 'serve: starting (:4173)'
+    } else {
+        Write-Log 'serve: serve-app.ps1 not found'
+    }
+}
+
 Write-Log '=== done ==='
