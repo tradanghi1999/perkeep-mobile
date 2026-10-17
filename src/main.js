@@ -3375,20 +3375,45 @@ function aiRender() {
   box.scrollTop = box.scrollHeight;
 }
 
+/**
+ * Cập nhật RIÊNG bong bóng bot đang stream — không dựng lại cả danh sách chat.
+ * Trước đây mỗi delta gọi aiRender() (innerHTML toàn bộ + scroll) làm IME tiếng Việt
+ * bị khựng, chữ chỉ hiện sau khi ghép xong từ.
+ */
+function aiRenderStreaming() {
+  const box = $('ai-chat');
+  if (!box || !aiMsgs.length) return;
+  const m = aiMsgs[aiMsgs.length - 1];
+  if (!m || m.role !== 'bot' || !m.text) return aiRender();
+  const nodes = box.querySelectorAll('.ai-msg.bot');
+  const el = nodes[nodes.length - 1];
+  if (!el) return aiRender();
+  const tools = (m.tools || []).length
+    ? `<div class="ai-tools-line">${esc(t('ai_used'))}: ${m.tools.map((x) => esc(prettyTool(x))).join(' · ')}</div>`
+    : '';
+  el.innerHTML = `${mdLite(m.text)}<span class="ai-cursor"></span>${tools}`;
+  const near = box.scrollHeight - box.scrollTop - box.clientHeight < 140;
+  if (near) box.scrollTop = box.scrollHeight;
+}
+
 function aiComposerState() {
   const input = $('ai-input');
   const send = $('ai-send');
   if (!input || !send) return;
   if (aiBusy) {
-    send.disabled = false;
-    send.classList.add('stop');
-    send.innerHTML = icon('stop', 16);
-    send.setAttribute('aria-label', t('ai_stop'));
+    if (!send.classList.contains('stop')) {
+      send.disabled = false;
+      send.classList.add('stop');
+      send.innerHTML = icon('stop', 16);
+      send.setAttribute('aria-label', t('ai_stop'));
+    }
   } else {
-    send.classList.remove('stop');
-    send.innerHTML = icon('send', 18);
+    if (send.classList.contains('stop') || !send.querySelector('svg')) {
+      send.classList.remove('stop');
+      send.innerHTML = icon('send', 18);
+      send.setAttribute('aria-label', t('ai_send'));
+    }
     send.disabled = !input.value.trim() && !aiAttach.length;
-    send.setAttribute('aria-label', t('ai_send'));
   }
 }
 
@@ -3411,16 +3436,21 @@ async function aiSend(text) {
   aiComposerState();
 
   let timer = null;
+  let streamTimer = null;
   const schedule = () => {
     if (timer) return;
-    timer = setTimeout(() => { timer = null; aiRender(); }, 60);
+    timer = setTimeout(() => { timer = null; aiRender(); }, 80);
+  };
+  const scheduleStream = () => {
+    if (streamTimer) return;
+    streamTimer = setTimeout(() => { streamTimer = null; aiRenderStreaming(); }, 80);
   };
 
   try {
     const done = await aiStream(text, {
       images: imagesForSend,
       signal: aiAbort.signal,
-      onDelta: (d) => { bot.status = ''; bot.text += d; schedule(); },
+      onDelta: (d) => { bot.status = ''; bot.text += d; scheduleStream(); },
       onTool: (e) => {
         if (e.name && !bot.tools.includes(e.name)) { bot.tools.push(e.name); schedule(); }
       }
@@ -3448,6 +3478,7 @@ async function aiSend(text) {
     aiPersist();
   } finally {
     if (timer) { clearTimeout(timer); timer = null; }
+    if (streamTimer) { clearTimeout(streamTimer); streamTimer = null; }
     aiBusy = false;
     aiAbort = null;
     aiRender();
@@ -3931,9 +3962,17 @@ $('ai-send').onclick = () => {
   aiComposerState();
   aiSend(v);
 };
-$('ai-input').addEventListener('input', aiComposerState);
-$('ai-input').addEventListener('keydown', (e) => {
-  if (e.key === 'Enter') { e.preventDefault(); $('ai-send').click(); }
+const aiInputEl = $('ai-input');
+aiInputEl.addEventListener('compositionend', () => aiComposerState());
+aiInputEl.addEventListener('input', (e) => {
+  // Đang ghép từ tiếng Việt: không đụng DOM (kể cả nút Gửi) để IME không bị restart.
+  if (e.isComposing || e.inputType === 'insertCompositionText') return;
+  aiComposerState();
+});
+aiInputEl.addEventListener('keydown', (e) => {
+  // Đang ghép chữ tiếng Việt (IME) -> Enter là để chốt từ, KHÔNG gửi tin.
+  if (e.isComposing || e.keyCode === 229) return;
+  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); $('ai-send').click(); }
 });
 
 applyLang();
