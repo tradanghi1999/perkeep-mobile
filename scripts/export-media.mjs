@@ -15,7 +15,8 @@
 //           --overwrite  --force   (mac dinh: bo qua file da co dung kich thuoc)
 
 import { mkdir, open, rename, stat, rm } from 'node:fs/promises';
-import { join, extname, basename } from 'node:path';
+import { join, extname } from 'node:path';
+import { spawn } from 'node:child_process';
 
 // ---------- tham so dong lenh ----------
 function parseArgs(argv) {
@@ -30,6 +31,7 @@ function parseArgs(argv) {
     else if (k === '--user') a.user = argv[++i];
     else if (k === '--pass') a.pass = argv[++i];
     else if (k === '--dry-run') a.dryRun = true;
+    else if (k === '--faststart') a.faststart = true;
     else if (k === '--overwrite' || k === '--force') a.overwrite = true;
     else if (k === '-h' || k === '--help') a.help = true;
     else console.warn(`bo qua tham so la: ${k}`);
@@ -46,6 +48,7 @@ if (args.help || !args.out) {
   --user/--pass          Basic auth neu server bat
   --limit <n>            kich thuoc trang (mac dinh 50)
   --dry-run              chi liet ke, khong tai
+  --faststart            chuyen moov len dau bang ffmpeg -c copy (khong re-encode)
   --overwrite            tai lai du file da ton tai`);
   process.exit(args.help ? 0 : 1);
 }
@@ -75,6 +78,51 @@ function safeName(name, fallback) {
     n = n.slice(0, 120 - e.length) + e;
   }
   return n || 'file';
+}
+
+// ---------- faststart: chuyen "moov" len dau file ----------
+// Vi sao can: file ghi bang dien thoai/ffmpeg mac dinh de moov o CUOI, nen player
+// phai tai gan het file moi biet codec/index -> bat dau phat rat cham hoac khong phat.
+// Remux "-c copy" chi doi cho atom, KHONG nen lai video nen chi mat vai giay.
+async function isFaststart(file) {
+  // Doc 1MB dau bang Bun.file().slice (lazy, khong doc ca file).
+  // File faststart luon co moov trong doan dau; file thuong co mdat truoc.
+  const head = Buffer.from(await Bun.file(file).slice(0, 1 << 20).arrayBuffer());
+  let pos = 0;
+  while (pos + 8 <= head.length) {
+    let sz = head.readUInt32BE(pos);
+    const typ = head.toString('latin1', pos + 4, pos + 8);
+    if (sz === 1) sz = Number(head.readBigUInt64BE(pos + 8));
+    if (typ === 'moov') return true;
+    if (typ === 'mdat') return false; // mdat truoc moov -> chua faststart
+    if (sz < 8) return false;
+    pos += sz;
+  }
+  return false; // khong thay moov trong 1MB dau -> coi nhu chua faststart
+}
+
+function run(cmd, argv) {
+  return new Promise((resolve) => {
+    let err = '';
+    const p = spawn(cmd, argv, { stdio: ['ignore', 'ignore', 'pipe'] });
+    p.stderr.on('data', (d) => { err += d; });
+    p.on('error', () => resolve({ code: -1, err: `${cmd} khong chay duoc` }));
+    p.on('close', (code) => resolve({ code, err }));
+  });
+}
+
+async function remuxFaststart(file) {
+  if (await isFaststart(file)) return 'already';
+  const tmp = file + '.fs.mp4';
+  const { code, err } = await run(process.env.FFMPEG || 'ffmpeg',
+    ['-v', 'error', '-y', '-i', file, '-c', 'copy', '-movflags', '+faststart', tmp]);
+  if (code !== 0) {
+    await rm(tmp, { force: true });
+    return `loi (${(err || '').trim().split('\n').pop() || 'ffmpeg'})`;
+  }
+  await rm(file, { force: true });
+  await rename(tmp, file);
+  return 'ok';
 }
 
 // ---------- discovery ----------
@@ -158,6 +206,16 @@ async function downloadOne(disc, item, dest) {
 // ---------- chay ----------
 const disc = await discover();
 await mkdir(args.out, { recursive: true });
+
+// Doc manifest cu (neu co): luu kich thuoc THUC TE sau khi remux, vi faststart
+// doi kich thuoc file so voi ban goc tren Perkeep -> khong dung kich thuoc goc de
+// kiem tra "da co" duoc (se tai lai mai).
+const prev = new Map();
+try {
+  const old = JSON.parse(await Bun.file(join(args.out, 'manifest.json')).text());
+  for (const f of old.files || []) if (f.fileRef) prev.set(f.fileRef, f);
+} catch {}
+const sizeOf = async (p) => { try { return (await stat(p)).size; } catch { return 0; } };
 console.log(`Server:     ${args.server}`);
 console.log(`Thu muc:    ${args.out}`);
 console.log(`Expression: ${expression}`);
@@ -181,7 +239,12 @@ for (let i = 0; i < files.length; i++) {
   const label = `[${i + 1}/${files.length}] ${name} (${fmt(it.size)})`;
 
   let exists = false;
-  try { const s = await stat(dest); exists = s.size > 0 && (!it.size || s.size === it.size); } catch {}
+  try {
+    const s = await stat(dest);
+    const old = prev.get(it.fileRef);
+    // Hop le neu khop kich thuoc tren Perkeep, hoac khop kich thuoc thuc te da remux
+    exists = s.size > 0 && (!it.size || s.size === it.size || (old && old.localSize === s.size));
+  } catch {}
 
   if (exists && !args.overwrite) {
     console.log(`${label}  -> bo qua (da co)`);
@@ -204,9 +267,30 @@ for (let i = 0; i < files.length; i++) {
   }
 }
 
-// manifest de app/Jellyfin doi chieu fileRef <-> file
+// faststart: xu ly ca file vua tai lan file da co san (idempotent, bo qua file da chuan)
+if (args.faststart && !args.dryRun && manifest.length) {
+  console.log('\n--- faststart: chuyen moov len dau (khong re-encode) ---');
+  let fixed = 0;
+  for (const it of manifest) {
+    let exists = false;
+    try { exists = (await stat(it.path)).size > 0; } catch {}
+    if (!exists) continue;
+    const r = await remuxFaststart(it.path);
+    if (r === 'already') console.log(`  ${it.name}: da faststart`);
+    else {
+      console.log(`  ${it.name}: ${r}`);
+      if (r === 'ok') fixed++;
+    }
+  }
+  console.log(`  -> da chuyen ${fixed} file`);
+}
+
+// manifest de app/Jellyfin doi chieu fileRef <-> file.
+// Ghi SAU faststart va luu localSize (kich thuoc thuc te) de lan chay sau biet
+// file da remux ma bo qua, khong tai lai.
 if (!args.dryRun && manifest.length) {
-  await Bun.write(join(args.out, 'manifest.json'), JSON.stringify({ server: args.server, expression, generatedAt: new Date().toISOString(), files: manifest }, null, 2));
+  for (const it of manifest) it.localSize = await sizeOf(it.path);
+  await Bun.write(join(args.out, 'manifest.json'), JSON.stringify({ server: args.server, expression, faststart: !!args.faststart, generatedAt: new Date().toISOString(), files: manifest }, null, 2));
 }
 
 console.log(`\n--- ket qua ---`);

@@ -97,8 +97,8 @@ Phát hiện quan trọng:
 Perkeep lưu blob **content-addressed** chứ không phải file trên filesystem, và blob có thể nằm trên ổ chậm (USB/HDD). Video gốc 1080p60 (~25–30 Mbps) lại **không được transcode**, nên phát trực tiếp dễ giật. Muốn dùng **Jellyfin** (transcode + HLS) làm "backend phát" thì phải có **file thật** trên đĩa → cần bước export:
 
 ```powershell
-# video (mặc định) -> thư mục trên SSD
-bun scripts/export-media.mjs --out C:\pk-export
+# video (mặc định) -> thư mục trên SSD, kèm faststart (moov lên đầu)
+bun scripts/export-media.mjs --out C:\pk-export --faststart
 
 # mọi loại / ảnh / nhạc / tài liệu
 bun scripts/export-media.mjs --out C:\pk-export --type all
@@ -109,9 +109,22 @@ bun scripts/export-media.mjs --out C:\pk-export --expression 'filename:bbb_test.
 bun scripts/export-media.mjs --out C:\pk-export --dry-run
 ```
 
-- Giữ **tên file gốc** qua `GET {uiRoot}/download/<ref>`; phân trang bằng `continue`; ghi `.part` rồi mới đổi tên; **bỏ qua file đã có đúng kích thước** nên chạy lại rất nhanh (idempotent).
-- Ghi kèm `manifest.json` (`fileRef`, `name`, `size`, `mime`) để app/Jellyfin đối chiếu.
+- Giữ **tên file gốc** qua `GET {uiRoot}/download/<ref>`; phân trang bằng `continue`; ghi `.part` rồi mới đổi tên; **bỏ qua file đã có** nên chạy lại rất nhanh (idempotent).
+- **`--faststart`**: chuyển atom `moov` lên đầu bằng `ffmpeg -c copy -movflags +faststart` — **không re-encode** (vài giây, giữ nguyên chất lượng).
+  - Vì sao cần: file quay bằng điện thoại/ffmpeg thường để `moov` ở **cuối** file, nên player phải tải gần hết file mới biết codec/index → bắt đầu phát rất chậm hoặc **không phát được**. Đo thực tế trên 5 file trong Perkeep: **cả 5 đều có `moov` ở 98–99.99%**.
+- Ghi kèm `manifest.json` (`fileRef`, `name`, `size`, `localSize`, `mime`, `status`) để app/Jellyfin đối chiếu. `localSize` là kích thước **sau** faststart (khác bản gốc) — nhờ đó lần chạy sau không tải lại.
 - Máy dev này: SSD là `C:` (SATA), blob Perkeep nằm trên `D:` (USB) → export sang `C:\pk-export` để phát mượt hơn.
+- Đo codec/bitrate thực tế (`ffprobe`) — quyết định có cần Jellyfin transcode hay không:
+
+| File | Codec | Độ phân giải | Bitrate | Ghi chú |
+|---|---|---|---|---|
+| `20260926_095420.mp4` | H.264 | 1920x1080 | **~28 Mbps** | bitrate quá cao cho WiFi/4G → phải transcode |
+| `Tu_Bat_Hao_Thanh_Bac_Si_Tap_2_Long_Tieng.mp4` | H.264 | 1920x1080 | 1.8 Mbps | phát trực tiếp được sau faststart |
+| `Kasaba_Doktoru_Tap_15_Long_Tieng_Tieng_Viet.mp4` | **AV1** | 1280x720 | 0.28 Mbps | WebView thường **không giải mã AV1** |
+| `video_gan_vs_silicon_tieng_viet_chuan.mp4` | **AV1** | **3840x2160** | 2.0 Mbps | AV1 + 4K → không phát trong WebView |
+| `bbb_test.mp4` | H.264 | 320x176 | 0.3 Mbps | file test nhỏ |
+
+→ H.264 thì chỉ cần faststart là phát tốt; **AV1 và file bitrate cao cần Jellyfin transcode** (hoặc nút "Mở bằng VLC").
 
 ## Thumbnail theo loại file
 Server (Perkeep) chỉ tạo thumbnail cho **ảnh**: JPEG, PNG, GIF, WebP, TIFF, HEIC/HEIF, AVIF, CR2/raw Canon (lấy JPEG nhúng). SVG chỉ đọc được kích thước. Video/audio/PDF/epub/json → `500 image: unknown format`.
