@@ -2,6 +2,7 @@ import { CapacitorHttp } from '@capacitor/core';
 import { icon, iconForMime } from './icons.js';
 import { blobRefOf } from './sha224.js';
 import * as up from './upload.js';
+import { jellyfin } from './jellyfin.js';
 
 // ============================================================
 // Perkeep Mobile — UI theo wireframe: searchbar + bottom nav + sheet + FAB
@@ -110,6 +111,25 @@ const I18N = {
     up_need_native: 'Tải nền chỉ chạy trong app Android. Hãy build APK rồi thử.',
     up_none: 'Chưa có file nào trong hàng đợi.',
     set_wifi: 'Chỉ tải khi dùng Wi-Fi',
+    set_jf: 'Jellyfin (phát mượt)',
+    jf_off: 'Chưa bật — video lớn vẫn phát trực tiếp',
+    jf_on: (b, m) => `${b.replace(/^https?:\/\//, '')} · ${m} Mbps`,
+    jf_title: 'Jellyfin — chuyển mã video lớn',
+    jf_hint: 'Video 4K/AV1 hoặc bitrate cao sẽ được Jellyfin chuyển sang H.264 ~8 Mbps để phát mượt, tua được, không copy dung lượng. Cần Jellyfin trỏ vào thư mục mount của Perkeep (xem scripts/start-perkeep-jellyfin.ps1).',
+    jf_base: 'Địa chỉ Jellyfin', jf_user: 'Tài khoản', jf_pass: 'Mật khẩu',
+    jf_connect: 'Kết nối', jf_disconnect: 'Ngắt kết nối',
+    jf_ok: 'Đã kết nối Jellyfin', jf_fail: 'Không kết nối được Jellyfin',
+    jf_bad_auth: 'Sai tài khoản hoặc mật khẩu Jellyfin',
+    jf_bad_url: 'Địa chỉ phải bắt đầu http(s)://',
+    jf_quality: 'Chất lượng khi chuyển mã',
+    jf_mode: 'Khi nào dùng Jellyfin',
+    jf_mode_auto: 'Tự động (video lớn / codec lạ)',
+    jf_mode_always: 'Luôn dùng',
+    jf_mode_off: 'Tắt',
+    jf_play: 'Phát qua Jellyfin',
+    jf_no_item: 'Jellyfin chưa thấy video này',
+    jf_starting: 'Jellyfin đang chuyển mã…',
+    jf_badge: 'Jellyfin',
     perm_title: 'Cho phép thông báo',
     perm_body: 'App cần quyền thông báo để hiện tiến trình khi tải file lên chạy nền (giống Google Drive). Nếu không cấp, upload vẫn chạy nhưng bạn không thấy tiến trình và không huỷ được từ thông báo.',
     perm_allow: 'Cho phép', perm_later: 'Để sau',
@@ -195,6 +215,25 @@ const I18N = {
     up_need_native: 'Background upload runs in the Android app only. Build the APK to try it.',
     up_none: 'Nothing in the queue yet.',
     set_wifi: 'Wi-Fi only',
+    set_jf: 'Jellyfin (smooth playback)',
+    jf_off: 'Off — large videos play directly',
+    jf_on: (b, m) => `${b.replace(/^https?:\/\//, '')} · ${m} Mbps`,
+    jf_title: 'Jellyfin — transcode big videos',
+    jf_hint: '4K/AV1 or high-bitrate videos get transcoded to H.264 ~8 Mbps: smooth, seekable, and no extra storage. Jellyfin must point at the Perkeep mount (see scripts/start-perkeep-jellyfin.ps1).',
+    jf_base: 'Jellyfin address', jf_user: 'Username', jf_pass: 'Password',
+    jf_connect: 'Connect', jf_disconnect: 'Disconnect',
+    jf_ok: 'Jellyfin connected', jf_fail: 'Could not reach Jellyfin',
+    jf_bad_auth: 'Wrong Jellyfin username or password',
+    jf_bad_url: 'Address must start with http(s)://',
+    jf_quality: 'Transcode quality',
+    jf_mode: 'When to use Jellyfin',
+    jf_mode_auto: 'Auto (big videos / odd codecs)',
+    jf_mode_always: 'Always',
+    jf_mode_off: 'Off',
+    jf_play: 'Play via Jellyfin',
+    jf_no_item: 'Jellyfin has not indexed this video',
+    jf_starting: 'Jellyfin is transcoding…',
+    jf_badge: 'Jellyfin',
     perm_title: 'Allow notifications',
     perm_body: 'The app needs notification permission to show background upload progress (like Google Drive). Without it, uploads still run but you cannot see progress or cancel from the notification.',
     perm_allow: 'Allow', perm_later: 'Later',
@@ -232,6 +271,7 @@ function applyLang() {
   $('close').innerHTML = icon('close') + `<span>${esc(t('btn_close'))}</span>`;
   renderFilters();
   renderSvcSub();
+  renderJfState();
 }
 
 // Gắn icon SVG cho các chỗ đánh dấu data-ico (nav, cài đặt, search).
@@ -1151,12 +1191,21 @@ function viewerFallback(meta, why, codec) {
     why === 'codec' ? t('vw_codec')(codec || '?')
     : why === 'auth' ? t('vw_need_auth')
     : t('vw_unsupported');
+  const canJf = jellyfin.enabled() && /^video\//i.test(meta.mime || '') && jfMode() !== 'off';
   vwBody.innerHTML = `<div class="vw-note">${esc(hint)}
     <div class="vw-actions">
+      ${canJf ? `<button id="vw-jf">${icon('video')}<span>${esc(t('jf_play'))}</span></button>` : ''}
       <button id="vw-cache">${icon('download')}<span>${esc(t('cache_play'))}</span></button>
       <button id="vw-open-ext">${icon('external')}<span>${esc(t('vw_open_app'))}</span></button>
       <button class="alt" id="vw-download">${icon('link')}<span>${esc(t('fa_download'))}</span></button>
     </div></div>`;
+  if (canJf) {
+    vwBody.querySelector('#vw-jf').onclick = () => {
+      jfFailed.delete(meta.fileRef);
+      forceJf = true;
+      renderViewer();
+    };
+  }
   vwBody.querySelector('#vw-cache').onclick = () => cacheAndPlay(meta, -1);
   vwBody.querySelector('#vw-open-ext').onclick = () => openWithOtherApp(meta);
   vwBody.querySelector('#vw-download').onclick = () => window.open(directUrl(meta.fileRef), '_blank');
@@ -1173,9 +1222,90 @@ async function openWithOtherApp(meta) {
   window.open(directUrl(meta.fileRef), '_blank');
 }
 
+// ---------- Jellyfin: phát qua transcode (HLS) ----------
+// Video >200MB hoặc codec máy không giải mã được (AV1/HEVC/Dolby) -> đưa qua Jellyfin.
+const JF_AUTO_SIZE = 200 * 1024 * 1024;
+const jfFailed = new Set();   // fileRef đã thử Jellyfin và thất bại -> đừng thử lại
+let jfHls = null;
+let forceJf = false;
+
+function stopJfPlayback() {
+  if (jfHls) { try { jfHls.destroy(); } catch {} jfHls = null; }
+  try { jellyfin.stop(); } catch {}
+}
+
+async function wantJellyfin(meta) {
+  if (!jellyfin.enabled()) return false;
+  if (!/^video\//i.test(meta.mime || '')) return false;
+  if (jfFailed.has(meta.fileRef)) return false;
+  const mode = jfMode();
+  if (mode === 'off' && !forceJf) return false;
+  if (mode === 'always' || forceJf) return true;
+  const codec = await sniffMp4Codec(meta.fileRef);
+  if (codec && CODEC_RISKY.includes(codec)) return true;
+  return (meta.size || 0) > JF_AUTO_SIZE;
+}
+
+/** Gắn HLS Jellyfin vào <video>. false = không dùng được, quay lại phát trực tiếp. */
+async function playJellyfin(el, meta) {
+  const item = await jellyfin.findItem(meta.name);
+  if (!item) { log('jellyfin: chưa thấy item cho ' + meta.name); return false; }
+
+  const ps = 'pk' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+  const url = jellyfin.hlsUrl(item.id, jfMbps(), ps);
+
+  let Hls = null;
+  try {
+    const mod = await import('hls.js/dist/hls.light.min.js');
+    Hls = mod.default || mod.Hls;
+  } catch (e) { log('jellyfin: không nạp được hls.js'); return false; }
+
+  if (!Hls || !Hls.isSupported()) {
+    if (el.canPlayType('application/vnd.apple.mpegurl')) { el.src = url; return true; }
+    return false;
+  }
+
+  const ok = await new Promise((resolve) => {
+    let done = false;
+    const finish = (v) => { if (done) return; done = true; clearTimeout(tm); resolve(v); };
+    const tm = setTimeout(() => {
+      log('jellyfin: quá 15s chưa có manifest');
+      try { jfHls && jfHls.destroy(); } catch {}
+      jfHls = null;
+      finish(false);
+    }, 15000);
+    try {
+      jfHls = new Hls({ maxBufferLength: 30 });
+      jfHls.on(Hls.Events.MANIFEST_PARSED, () => finish(true));
+      jfHls.on(Hls.Events.ERROR, (ev, data) => {
+        if (!data || !data.fatal) return;
+        log(`jellyfin HLS lỗi: ${data.type}/${data.details}`);
+        try { jfHls && jfHls.destroy(); } catch {}
+        jfHls = null;
+        finish(false);
+      });
+      jfHls.loadSource(url);
+      jfHls.attachMedia(el);
+    } catch (e) {
+      log('jellyfin HLS: ' + e.message);
+      finish(false);
+    }
+  });
+
+  if (!ok) return false;
+
+  jellyfin.start(item.id, ps);
+  el.addEventListener('timeupdate', () => jellyfin.pos(el.currentTime, el.paused));
+  el.addEventListener('pause', () => jellyfin.pos(el.currentTime, true));
+  el.addEventListener('play', () => jellyfin.pos(el.currentTime, false));
+  log(`jellyfin: phát ${item.name} · ${jfMbps()} Mbps`);
+  return true;
+}
+
 async function renderViewer() {
   const it = currentItems[viewIndex];
   if (!it) return closeViewer();
+  stopJfPlayback();
   const meta = it.meta;
   vwName.textContent = meta.name || it.blob;
   vwSub.textContent = [meta.mime, fmtSize(meta.size), fmtDate(meta.date)].filter(Boolean).join(' · ');
@@ -1198,10 +1328,6 @@ async function renderViewer() {
   }
 
   if (/^(video|audio)\//i.test(mime)) {
-    let src = null;
-    try { src = await mediaUrl(meta); } catch (e) { log(`media FAIL: ${e.message}`); }
-    if (!src) return viewerFallback(meta, 'unsupported');
-    if (viewIndex !== currentItems.indexOf(it)) return;
     const tag = /^video\//i.test(mime) ? 'video' : 'audio';
     const el = document.createElement(tag);
     el.controls = true;
@@ -1210,7 +1336,24 @@ async function renderViewer() {
       el.playsInline = true;
       el.setAttribute('playsinline', '');
     }
-    el.onerror = async () => {
+
+    // 1) Video lớn / codec lạ -> để Jellyfin chuyển mã H.264 (mượt + tua được)
+    let usingJf = false;
+    if (tag === 'video' && (await wantJellyfin(meta))) {
+      vwBody.innerHTML = `<p class="vw-note">${esc(t('jf_starting'))}</p>`;
+      try { usingJf = await playJellyfin(el, meta); } catch (e) { log(`jellyfin FAIL: ${e.message}`); }
+      if (viewIndex !== currentItems.indexOf(it)) { stopJfPlayback(); return; }
+      if (!usingJf) jfFailed.add(meta.fileRef);
+    }
+
+    // 2) Không dùng Jellyfin (hoặc lỗi) -> phát trực tiếp như trước
+    if (!usingJf) {
+      stopJfPlayback();
+      let src = null;
+      try { src = await mediaUrl(meta); } catch (e) { log(`media FAIL: ${e.message}`); }
+      if (!src) { forceJf = false; return viewerFallback(meta, 'unsupported'); }
+      if (viewIndex !== currentItems.indexOf(it)) return;
+      el.onerror = async () => {
       const code = el.error?.code;
       // 1) Server đòi đăng nhập -> thẻ media không gửi được header.
       //    Thử tải hẳn file rồi phát từ blob (chỉ với file vừa phải).
@@ -1237,8 +1380,11 @@ async function renderViewer() {
       const risky = codec && CODEC_RISKY.includes(codec);
       log(`media error: code=${code ?? '?'} codec=${codec || '(không rõ)'}`);
       viewerFallback(meta, risky ? 'codec' : 'unsupported', risky ? codecLabel(codec) : '');
-    };
-    el.src = src;
+      };
+      el.src = src;
+    }
+
+    forceJf = false;
     vwBody.innerHTML = '';
     vwBody.appendChild(el);
     return;
@@ -1256,6 +1402,7 @@ function openViewer(i) {
 }
 function closeViewer() {
   viewerEl.hidden = true;
+  stopJfPlayback();
   vwBody.innerHTML = ''; // dừng phát video/audio
   viewIndex = -1;
 }
@@ -1886,6 +2033,85 @@ $('set-wifi').onclick = async () => {
   renderWifiState();
   snack(t(next ? 'on' : 'off'));
 };
+
+// ---------- Jellyfin: phát mượt video lớn (transcode HLS) ----------
+const jfMbps = () => Number(localStorage.getItem('pk-jf-mbps-v1')) || 8;
+const jfMode = () => localStorage.getItem('pk-jf-mode-v1') || 'auto';
+const JF_MBPS = [4, 8, 12, 20];
+
+function renderJfState() {
+  const on = jellyfin.enabled();
+  const st = $('set-jf-state');
+  if (!st) return;
+  $('set-jf-sub').textContent = on ? t('jf_on')(jellyfin.base(), jfMbps()) : t('jf_off');
+  st.innerHTML = icon(on ? 'check' : 'close', 20);
+  st.style.color = on ? 'var(--green)' : '#bbb';
+}
+
+function jfSheet() {
+  const c = jellyfin.cfg();
+  const chipGroup = (title, items, cur, attr) =>
+    `<b style="display:block;margin:10px 2px 6px">${esc(title)}</b>` +
+    items.map(({ v, label }) => `<button class="opt${String(v) === String(cur) ? ' on' : ''}" data-${attr}="${esc(String(v))}"><span>${esc(label)}</span>${String(v) === String(cur) ? `<span class="tick">${icon('check', 18)}</span>` : ''}</button>`).join('');
+  openSheet(`<h3>${esc(t('jf_title'))}</h3>
+    <p class="meta">${esc(t('jf_hint'))}</p>
+    <div class="edt">
+      <label>${esc(t('jf_base'))}</label><input id="jf-b" value="${esc(c.base || 'http://192.168.123.9:8096')}" inputmode="url" />
+      <label>${esc(t('jf_user'))}</label><input id="jf-u" value="${esc(c.userName || '')}" autocomplete="username" />
+      <label>${esc(t('jf_pass'))}</label><input id="jf-p" type="password" value="" autocomplete="current-password" />
+      <div class="btns"><button data-save>${esc(t('jf_connect'))}</button><button class="cx" data-cx>${esc(t('btn_cancel'))}</button></div>
+    </div>
+    <p class="err" id="jf-err" hidden></p>
+    ${chipGroup(t('jf_quality'), JF_MBPS.map((v) => ({ v, label: v + ' Mbps' })), jfMbps(), 'mb')}
+    ${chipGroup(t('jf_mode'), [
+      { v: 'auto', label: t('jf_mode_auto') },
+      { v: 'always', label: t('jf_mode_always') },
+      { v: 'off', label: t('jf_mode_off') }
+    ], jfMode(), 'md')}
+    <button class="rowbtn" id="jf-off2">${icon('close')}<span>${esc(t('jf_disconnect'))}</span></button>`);
+
+  const errEl = sheetBody.querySelector('#jf-err');
+  sheetBody.querySelector('[data-cx]').onclick = closeSheet;
+  sheetBody.querySelector('[data-save]').onclick = async () => {
+    const base = sheetBody.querySelector('#jf-b').value.trim();
+    const user = sheetBody.querySelector('#jf-u').value.trim();
+    const pass = sheetBody.querySelector('#jf-p').value;
+    errEl.hidden = true;
+    if (!/^https?:\/\//i.test(base)) { errEl.textContent = t('jf_bad_url'); errEl.hidden = false; return; }
+    try {
+      snack(t('jf_starting'));
+      await jellyfin.login(base, user, pass);
+      renderJfState();
+      closeSheet();
+      snack(t('jf_ok'));
+      log(`jellyfin: ${base} · ${user}`);
+    } catch (e) {
+      errEl.textContent = /jf-auth/.test(e.message) ? t('jf_bad_auth') : t('jf_fail');
+      errEl.hidden = false;
+      log(`jellyfin login FAIL: ${e.message}`);
+    }
+  };
+  sheetBody.querySelectorAll('[data-mb]').forEach((b) => {
+    b.onclick = () => {
+      localStorage.setItem('pk-jf-mbps-v1', b.dataset.mb);
+      renderJfState();
+      jfSheet();
+    };
+  });
+  sheetBody.querySelectorAll('[data-md]').forEach((b) => {
+    b.onclick = () => {
+      localStorage.setItem('pk-jf-mode-v1', b.dataset.md);
+      jfSheet();
+    };
+  });
+  sheetBody.querySelector('#jf-off2').onclick = () => {
+    jellyfin.logout();
+    renderJfState();
+    closeSheet();
+    snack(t('jf_off'));
+  };
+}
+$('set-jf').onclick = jfSheet;
 
 // Cỡ chữ: đổi hệ số --fs cho toàn app (mọi cỡ chữ dùng rem)
 const FONT_STEPS = [

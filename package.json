@@ -9,8 +9,9 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@capacitor/core": "^6.1.0",
     "@capacitor/android": "^6.1.0",
+    "@capacitor/core": "^6.1.0",
+    "hls.js": "^1.7.3",
     "pk-upload": "file:./plugins/pk-upload"
   },
   "devDependencies": {
