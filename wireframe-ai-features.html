@@ -1,6 +1,6 @@
 <!doctype html>
 <html lang="vi"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Wireframe — Tính năng Trợ lý AI (Perkeep Mobile)</title>
+<title>Wireframe — Trợ lý AI (chat chuẩn) · Perkeep Mobile</title>
 <style>
 *{box-sizing:border-box}
 :root{--green:#3F6B57;--green-d:#2E5546;--green-l:#e3f0e8;--blue:#375EAB;--muted:#666;--line:#ececec;--ink:#1f1f1f}
@@ -20,6 +20,7 @@ svg{display:block}
 .ph2{background:#4a3f14;color:#f0d47a}
 .ph3{background:#3a2a4d;color:#d6b8f5}
 .legend code{background:#16202a;border-radius:5px;padding:1px 5px;font-size:11.5px}
+.legend .fix{background:#16202a;border-left:3px solid #3F6B57;padding:8px 10px;border-radius:6px;font-size:12.5px;margin:10px 0}
 
 /* ---------- phone ---------- */
 .phone{width:366px;height:758px;background:#f6f2fb;color:var(--ink);border-radius:44px;padding:13px;box-shadow:0 20px 60px #0008;position:relative;flex:none}
@@ -28,15 +29,15 @@ svg{display:block}
 .cap b{color:#e6eef5}
 
 /* ---------- top bar ---------- */
-.top{display:flex;align-items:center;gap:10px;padding:12px 12px 6px;flex:none}
-.top .ttl{flex:1;min-width:0}
-.top .ttl b{display:block;font-size:16px}
-.top .ttl small{color:var(--muted);font-size:11.5px}
-.iconbtn{width:38px;height:38px;flex:none;border:0;border-radius:50%;background:#f1f5f3;color:var(--green);display:flex;align-items:center;justify-content:center}
-.iconbtn.plain{background:none;color:#666}
+.top{display:flex;align-items:center;gap:8px;padding:10px 10px 6px;flex:none;border-bottom:1px solid #f1f1f1}
+.top .ttl{flex:1;min-width:0;padding-left:2px}
+.top .ttl b{display:block;font-size:15.5px}
+.top .ttl small{color:var(--muted);font-size:11px}
+.iconbtn{width:38px;height:38px;flex:none;border:0;border-radius:50%;background:none;color:#4a4a4a;display:flex;align-items:center;justify-content:center}
+.iconbtn.solid{background:#f1f5f3;color:var(--green)}
 
 /* ---------- search (tab Tệp) ---------- */
-.searchwrap{padding:6px 12px 0;flex:none}
+.searchwrap{padding:8px 12px 0;flex:none}
 .searchbar{display:flex;align-items:center;gap:8px;background:#edf2fc;border-radius:26px;padding:7px 7px 7px 13px;font-size:13.5px;color:#5f6b7a}
 .searchbar .txt{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:#1f1f1f}
 .searchbar .ai{width:34px;height:34px;flex:none;border:0;border-radius:50%;background:var(--green);color:#fff;display:flex;align-items:center;justify-content:center}
@@ -45,7 +46,7 @@ svg{display:block}
 .underai .edit{color:var(--blue);font-weight:600}
 
 /* ---------- chat ---------- */
-.chat{flex:1;overflow:auto;padding:6px 12px 8px;display:flex;flex-direction:column;gap:9px}
+.chat{flex:1;min-height:0;overflow:auto;padding:10px 12px 12px;display:flex;flex-direction:column;gap:9px}
 .msg{max-width:87%;font-size:13.5px;line-height:1.5;padding:10px 12px;border-radius:16px;white-space:pre-wrap}
 .me{align-self:flex-end;background:var(--green);color:#fff;border-bottom-right-radius:5px}
 .bot{align-self:flex-start;background:#f2f4f3;color:#20261f;border-bottom-left-radius:5px}
@@ -114,15 +115,17 @@ svg{display:block}
 .sw.on{background:var(--green)}
 .sw.on::after{left:19px}
 
-/* composer + chips */
-.composer{flex:none;border-top:1px solid var(--line);padding:8px 10px 10px;display:flex;gap:8px;align-items:center;background:#fff}
-.composer .box{flex:1;display:flex;align-items:center;gap:8px;background:#f1f4f2;border-radius:22px;padding:9px 12px;font-size:13px;color:#7d8a82}
-.composer .send{width:40px;height:40px;flex:none;border:0;border-radius:50%;background:var(--green);color:#fff;display:flex;align-items:center;justify-content:center}
-.chips{display:flex;gap:8px;overflow-x:auto;padding:2px 2px 8px;flex:none}
-.chip{flex:none;background:var(--green-l);border:0;border-radius:16px;padding:8px 12px;font-size:12px;color:var(--green-d);font-family:inherit;font-weight:600}
-.chip.ghost{background:#f1f1f1;color:#444}
+/* ---------- composer (sát đáy) ---------- */
+.composer{flex:none;display:flex;align-items:flex-end;gap:8px;padding:8px 10px calc(10px + env(safe-area-inset-bottom));background:#fff;border-top:1px solid #eee}
+.composer .plus{width:38px;height:38px;flex:none;border:0;border-radius:50%;background:#f1f4f2;color:#5b6a61;display:flex;align-items:center;justify-content:center}
+.composer .box{flex:1;min-height:38px;display:flex;align-items:center;gap:8px;background:#f1f4f2;border-radius:20px;padding:9px 13px;font-size:13px;color:#7d8a82}
+.composer .send{width:38px;height:38px;flex:none;border:0;border-radius:50%;background:var(--green);color:#fff;display:flex;align-items:center;justify-content:center}
+.composer .send.off{background:#cfd8d2}
 
-/* nav */
+.chips{display:flex;gap:8px;overflow-x:auto;padding:2px 2px 4px;flex:none}
+.chip{flex:none;background:var(--green-l);border:0;border-radius:16px;padding:8px 12px;font-size:12px;color:var(--green-d);font-family:inherit;font-weight:600}
+
+/* nav (chỉ ở màn không phải hội thoại) */
 .nav{position:absolute;bottom:0;left:10px;right:10px;margin-bottom:10px;background:#f3edf7;border-radius:24px;display:flex;box-shadow:0 2px 10px #0001}
 .nav button{flex:1;border:0;background:none;padding:7px 2px;font-size:10px;color:#49454f;font-family:inherit;display:flex;flex-direction:column;align-items:center;gap:3px;border-radius:24px}
 .nav button.on{color:var(--green);font-weight:700}
@@ -130,41 +133,42 @@ svg{display:block}
 </style></head><body>
 
 <div class="legend">
-  <h1>Trợ lý AI — 8 luồng chính</h1>
-  <p>Bản static để duyệt <b>vị trí + hành vi</b>. Chưa phải app thật.</p>
+  <h1>Trợ lý AI — chat chuẩn</h1>
+  <p>Đã sửa theo chuẩn chat: <b>ô nhập sát đáy</b>, <b>ẩn thanh tab khi đang hội thoại</b>, header có nút quay lại.</p>
 
-  <h2>Giai đoạn</h2>
-  <p><span class="ph ph1">GĐ1</span> chỉ đọc + gợi ý — không ghi, không cần xác nhận<br>
-     <span class="ph ph2">GĐ2</span> có ghi vào Perkeep — luôn qua picker/xác nhận<br>
-     <span class="ph ph3">GĐ3</span> cần thêm dữ liệu (transcript, cron)</p>
+  <div class="fix">
+    <b>Đã đổi so với bản trước</b><br>
+    • Bỏ composer nằm trong vùng cuộn<br>
+    • Composer là phần tử cuối, sát đáy<br>
+    • Ẩn bottom nav trong hội thoại (quay lại bằng ←)<br>
+    • Thêm nút đính kèm (＋) bên trái ô nhập
+  </div>
 
-  <h2>Danh sách</h2>
+  <h2>Luồng</h2>
   <ol>
-    <li><b>Tìm bằng lời nói</b><span class="ph ph1">GĐ1</span><br>✨ cạnh ô tìm → dịch sang truy vấn Perkeep.</li>
-    <li><b>Hỏi đáp thư viện</b><span class="ph ph1">GĐ1</span><br>“tuần này lưu gì?” → tóm tắt + thumbnail.</li>
-    <li><b>Thêm video từ kênh</b><span class="ph ph2">GĐ2</span><br>web → lọc trùng → picker → lưu.</li>
-    <li><b>Gắn tag hàng loạt</b><span class="ph ph2">GĐ2</span><br>thẻ xin quyền cho 5 mục.</li>
-    <li><b>Gợi ý tag trong form link</b><span class="ph ph1">GĐ1</span><br>AI điền, bạn bấm Lưu.</li>
-    <li><b>Dọn mục trùng</b><span class="ph ph2">GĐ2</span><br>Perkeep đã dedup dung lượng; đây là trùng <i>mục</i>.</li>
-    <li><b>Tóm tắt video link</b><span class="ph ph3">GĐ3</span><br>cần transcript (chỉ YouTube có phụ đề).</li>
-    <li><b>Bộ sưu tập &amp; theo dõi kênh</b><span class="ph ph3">GĐ3</span><br>bộ sưu tập = tag; theo dõi = cron trên PC.</li>
+    <li><b>Tìm bằng lời nói</b><span class="ph ph1">GĐ1</span><br>✨ trên ô tìm của tab Tệp.</li>
+    <li><b>Hỏi đáp thư viện</b><span class="ph ph1">GĐ1</span><br>chat, chỉ đọc.</li>
+    <li><b>Thêm video từ kênh</b><span class="ph ph2">GĐ2</span><br>tool + picker + xác nhận.</li>
+    <li><b>Gắn tag hàng loạt</b><span class="ph ph2">GĐ2</span><br>thẻ quyền.</li>
+    <li><b>Gợi ý tag trong form link</b><span class="ph ph1">GĐ1</span><br>AI điền, bạn Lưu.</li>
+    <li><b>Dọn mục trùng</b><span class="ph ph2">GĐ2</span><br>trùng mục, không phải dung lượng.</li>
+    <li><b>Tóm tắt video link</b><span class="ph ph3">GĐ3</span><br>cần phụ đề.</li>
+    <li><b>Bộ sưu tập &amp; theo dõi</b><span class="ph ph3">GĐ3</span><br>trang quản lý (có nav).</li>
   </ol>
 
-  <h2>Điểm vào (entry points)</h2>
-  <p>• Ô tìm: nút <b>✨</b> (biến câu nói thành truy vấn)<br>
-     • Tab <b>Trợ lý</b>: chat tự do<br>
-     • Form thêm link: chip <b>Gợi ý tag</b><br>
-     • Menu ⋮ của file: <b>Hỏi trợ lý về file này</b></p>
-
-  <p style="margin-top:14px;opacity:.75;font-size:12.5px">Ghi chú: mọi hành động ghi đều hiện thẻ xác nhận. Không cho AI tự lưu, tự xoá, hay chạy shell.</p>
+  <h2>Nguyên tắc chat</h2>
+  <p>• Tin nhắn cuộn, không đẩy ô nhập<br>
+     • Ô nhập luôn thấy, kể cả khi bàn phím mở<br>
+     • Trong hội thoại: chỉ ← để thoát, không có tab bar<br>
+     • Nút gửi mờ khi chưa có chữ</p>
 </div>
 
-<!-- ================= 1. TÌM BẰNG LỜI NÓI ================= -->
+<!-- ================= 1. TÌM BẰNG LỜI NÓI (tab Tệp) ================= -->
 <div>
 <div class="phone"><div class="screen">
   <div class="top">
     <div class="ttl"><b>Tệp</b><small>14 kết quả · mới nhất</small></div>
-    <div class="avatar" style="width:32px;height:32px;border-radius:50%;background:var(--green);color:#fff;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700">P</div>
+    <div style="width:32px;height:32px;border-radius:50%;background:var(--green);color:#fff;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700">P</div>
   </div>
 
   <div class="searchwrap">
@@ -174,22 +178,20 @@ svg{display:block}
       <button class="ai"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3.5l1.9 4.6 4.6 1.9-4.6 1.9L12 16.5l-1.9-4.6L5.5 10l4.6-1.9z"/><path d="M18.5 15.5l.9 2.1 2.1.9-2.1.9-.9 2.1-.9-2.1-2.1-.9 2.1-.9z"/></svg></button>
     </div>
     <div class="underai">
-      <span>AI hiểu:</span>
-      <span class="tag">video</span><span class="tag">tháng 9/2026</span><span class="tag">“mèo”</span>
-      <span class="edit">Sửa</span>
+      <span>AI hiểu:</span><span class="tag">video</span><span class="tag">tháng 9/2026</span><span class="tag">“mèo”</span><span class="edit">Sửa</span>
     </div>
   </div>
 
   <div class="chat" style="gap:0">
-    <div class="frow" style="display:flex;align-items:center;gap:10px;padding:11px 4px;border-bottom:1px solid var(--line)">
+    <div style="display:flex;align-items:center;gap:10px;padding:11px 4px;border-bottom:1px solid var(--line)">
       <div class="vthumb sm"><span class="dur">0:42</span></div>
       <div class="vt"><b>Mèo con tập đi trên bàn</b><small>12/09 · 48 MB · #meo #giadinh</small></div>
     </div>
-    <div class="frow" style="display:flex;align-items:center;gap:10px;padding:11px 4px;border-bottom:1px solid var(--line)">
+    <div style="display:flex;align-items:center;gap:10px;padding:11px 4px;border-bottom:1px solid var(--line)">
       <div class="vthumb sm"><span class="dur">1:18</span></div>
       <div class="vt"><b>Hai con mèo tranh hộp carton</b><small>08/09 · 96 MB</small></div>
     </div>
-    <div class="frow" style="display:flex;align-items:center;gap:10px;padding:11px 4px;border-bottom:1px solid var(--line)">
+    <div style="display:flex;align-items:center;gap:10px;padding:11px 4px;border-bottom:1px solid var(--line)">
       <div class="vthumb sm"><span class="dur">2:05</span></div>
       <div class="vt"><b>Mèo nhà hàng xóm sang chơi</b><small>03/09 · 120 MB · #meo</small></div>
     </div>
@@ -198,15 +200,16 @@ svg{display:block}
 
   <div class="nav" data-on="files"></div>
 </div></div>
-<div class="cap"><b>1</b> · Tìm bằng lời nói (✨ trên ô tìm)</div>
+<div class="cap"><b>1</b> · Tìm bằng lời nói (tab Tệp · có nav)</div>
 </div>
 
 <!-- ================= 2. HỎI ĐÁP THƯ VIỆN ================= -->
 <div>
 <div class="phone"><div class="screen">
   <div class="top">
+    <button class="iconbtn"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg></button>
     <div class="ttl"><b>Trợ lý</b><small>deepseek-v4-flash</small></div>
-    <button class="iconbtn plain">⋯</button>
+    <button class="iconbtn">⋯</button>
   </div>
 
   <div class="chat">
@@ -214,8 +217,7 @@ svg{display:block}
 
     <div class="tool">
       <span class="ic"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.6-3.6"/></svg></span>
-      <span>Tìm trong Perkeep <span class="name">perkeep_search</span></span>
-      <span class="st ok">✓ 14 mục</span>
+      <span>Tìm trong Perkeep <span class="name">perkeep_search</span></span><span class="st ok">✓ 14 mục</span>
     </div>
 
     <div class="answer">
@@ -226,26 +228,26 @@ svg{display:block}
       <span class="more">Xem tất cả 14 →</span>
     </div>
 
-    <div class="chips" style="padding:0">
+    <div class="chips" style="padding:4px 0 0">
       <button class="chip">Gắn tag cho 9 video</button>
       <button class="chip">Tìm video chưa tag</button>
     </div>
-
-    <div class="composer" style="border:0;padding-left:0;padding-right:0">
-      <div class="box">Hỏi tiếp…</div>
-      <button class="send"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h13M12 5l7 7-7 7"/></svg></button>
-    </div>
   </div>
 
-  <div class="nav" data-on="assistant"></div>
+  <div class="composer">
+    <button class="plus"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.9"><path d="M12 5v14M5 12h14"/></svg></button>
+    <div class="box">Nhắn cho trợ lý…</div>
+    <button class="send off"><svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V6M6 12l6-6 6 6"/></svg></button>
+  </div>
 </div></div>
-<div class="cap"><b>2</b> · Hỏi đáp thư viện (chỉ đọc)</div>
+<div class="cap"><b>2</b> · Hội thoại: ô nhập sát đáy, không nav</div>
 </div>
 
 <!-- ================= 3. THÊM VIDEO TỪ KÊNH ================= -->
 <div>
 <div class="phone"><div class="screen">
   <div class="top">
+    <button class="iconbtn"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg></button>
     <div class="ttl"><b>Trợ lý</b><small>đang làm việc…</small></div>
     <button class="iconbtn"><svg viewBox="0 0 24 24" width="17" height="17" fill="currentColor"><rect x="7" y="7" width="10" height="10" rx="2"/></svg></button>
   </div>
@@ -253,18 +255,9 @@ svg{display:block}
   <div class="chat">
     <div class="msg me">Thêm 3 video mới nhất của kênh FPT Shop</div>
 
-    <div class="tool">
-      <span class="ic"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c3 3.5 3 14 0 18M12 3c-3 3.5-3 14 0 18"/></svg></span>
-      <span>Tìm trên web <span class="name">websearch</span></span><span class="st ok">✓ 12</span>
-    </div>
-    <div class="tool">
-      <span class="ic"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 5h16v14H4z"/><path d="M8 9h8M8 13h5"/></svg></span>
-      <span>Đọc trang kênh <span class="name">webfetch</span></span><span class="st ok">✓</span>
-    </div>
-    <div class="tool">
-      <span class="ic"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.6-3.6"/></svg></span>
-      <span>Kiểm tra trùng <span class="name">perkeep_search</span></span><span class="st ok">✓ 1 đã có</span>
-    </div>
+    <div class="tool"><span class="ic"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c3 3.5 3 14 0 18M12 3c-3 3.5-3 14 0 18"/></svg></span><span>Tìm trên web <span class="name">websearch</span></span><span class="st ok">✓ 12</span></div>
+    <div class="tool"><span class="ic"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 5h16v14H4z"/><path d="M8 9h8M8 13h5"/></svg></span><span>Đọc trang kênh <span class="name">webfetch</span></span><span class="st ok">✓</span></div>
+    <div class="tool"><span class="ic"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.6-3.6"/></svg></span><span>Kiểm tra trùng <span class="name">perkeep_search</span></span><span class="st ok">✓ 1 đã có</span></div>
 
     <div class="bot" style="max-width:93%">Tìm thấy 3 video mới (bỏ 1 video đã có trong thư viện):</div>
 
@@ -278,26 +271,28 @@ svg{display:block}
     <div class="meta">Ghi vào Perkeep luôn cần bạn xác nhận.</div>
   </div>
 
-  <div class="nav" data-on="assistant"></div>
+  <div class="composer">
+    <button class="plus"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.9"><path d="M12 5v14M5 12h14"/></svg></button>
+    <div class="box">Nhắn thêm cho trợ lý…</div>
+    <button class="send off"><svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V6M6 12l6-6 6 6"/></svg></button>
+  </div>
 </div></div>
-<div class="cap"><b>3</b> · Thêm video từ kênh (web → lọc trùng → picker)</div>
+<div class="cap"><b>3</b> · Tool + picker + xác nhận (ô nhập sát đáy)</div>
 </div>
 
 <!-- ================= 4. GẮN TAG HÀNG LOẠT ================= -->
 <div>
 <div class="phone"><div class="screen">
   <div class="top">
+    <button class="iconbtn"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg></button>
     <div class="ttl"><b>Trợ lý</b><small>chờ bạn xác nhận</small></div>
-    <button class="iconbtn plain">⋯</button>
+    <button class="iconbtn">⋯</button>
   </div>
 
   <div class="chat">
     <div class="msg me">Gắn tag du-lich cho 5 video Đà Lạt</div>
 
-    <div class="tool">
-      <span class="ic"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.6-3.6"/></svg></span>
-      <span>Tìm trong Perkeep</span><span class="st ok">✓ 5 mục</span>
-    </div>
+    <div class="tool"><span class="ic"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.6-3.6"/></svg></span><span>Tìm trong Perkeep</span><span class="st ok">✓ 5 mục</span></div>
 
     <div class="permcard">
       <h4>Gắn tag “du-lich” cho 5 mục?</h4>
@@ -308,35 +303,34 @@ svg{display:block}
         <li>Chợ đêm Đà Lạt</li>
         <li>… và 2 video khác</li>
       </ul>
-      <div class="permbtns">
-        <button>Cho phép</button>
-        <button class="ghost">Luôn cho phép</button>
-        <button class="no">Từ chối</button>
-      </div>
+      <div class="permbtns"><button>Cho phép</button><button class="ghost">Luôn cho phép</button><button class="no">Từ chối</button></div>
     </div>
 
-    <div class="meta">Chọn “Luôn cho phép” chỉ áp dụng cho tag/ngữ cảnh này, không mở toàn quyền.</div>
+    <div class="meta">“Luôn cho phép” chỉ áp dụng cho tag/ngữ cảnh này.</div>
   </div>
 
-  <div class="nav" data-on="assistant"></div>
+  <div class="composer">
+    <button class="plus"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.9"><path d="M12 5v14M5 12h14"/></svg></button>
+    <div class="box">Nhắn thêm cho trợ lý…</div>
+    <button class="send off"><svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V6M6 12l6-6 6 6"/></svg></button>
+  </div>
 </div></div>
-<div class="cap"><b>4</b> · Gắn tag hàng loạt + thẻ xin quyền</div>
+<div class="cap"><b>4</b> · Thẻ xin quyền (không che ô nhập)</div>
 </div>
 
 <!-- ================= 5. GỢI Ý TAG TRONG FORM ================= -->
 <div>
 <div class="phone"><div class="screen">
   <div class="top">
+    <button class="iconbtn"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg></button>
     <div class="ttl"><b>Thêm link video</b><small>YouTube · đã lấy thông tin</small></div>
-    <button class="iconbtn plain">×</button>
+    <button class="iconbtn">×</button>
   </div>
 
-  <div class="set" style="padding-top:2px">
-    <div style="border:1px solid #e3e8e5;border-radius:14px;overflow:hidden;margin:6px 0 10px">
-      <div style="height:146px;background:linear-gradient(135deg,#c9d8cf,#8fb3a0);position:relative">
-        <div style="position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:46px;height:46px;border-radius:50%;background:#00000075;display:flex;align-items:center;justify-content:center">
-          <div style="border:10px solid transparent;border-left:15px solid #fff;margin-left:4px"></div>
-        </div>
+  <div class="set" style="padding-bottom:16px">
+    <div style="border:1px solid #e3e8e5;border-radius:14px;overflow:hidden;margin:8px 0 10px">
+      <div style="height:150px;background:linear-gradient(135deg,#c9d8cf,#8fb3a0);position:relative">
+        <div style="position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:48px;height:48px;border-radius:50%;background:#00000075;display:flex;align-items:center;justify-content:center"><div style="border:10px solid transparent;border-left:15px solid #fff;margin-left:4px"></div></div>
         <span style="position:absolute;right:8px;bottom:8px;background:#000a;color:#fff;font-size:11px;padding:2px 6px;border-radius:5px">13:16</span>
       </div>
       <div style="padding:10px 12px">
@@ -353,10 +347,8 @@ svg{display:block}
     </div>
 
     <div style="background:#f2f6ff;border:1px solid #d6e2fb;border-radius:12px;padding:10px 11px;font-size:12px;color:#27406e;line-height:1.5">
-      <b>AI gợi ý:</b> thêm tag <b>thống kê</b>, <b>machine-learning</b>; tên gọn hơn:
-      “Thompson Sampling — Data Science”.<br>
-      <span style="display:inline-block;margin-top:6px;color:var(--blue);font-weight:600">Áp dụng</span>
-      <span style="margin-left:14px;color:var(--muted)">Bỏ qua</span>
+      <b>AI gợi ý:</b> thêm tag <b>thống kê</b>, <b>machine-learning</b>; tên gọn hơn: “Thompson Sampling — Data Science”.<br>
+      <span style="display:inline-block;margin-top:6px;color:var(--blue);font-weight:600">Áp dụng</span><span style="margin-left:14px;color:var(--muted)">Bỏ qua</span>
     </div>
 
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:16px">
@@ -366,26 +358,24 @@ svg{display:block}
     <p style="font-size:11px;color:var(--muted);margin-top:10px;line-height:1.5">AI chỉ điền gợi ý. Bạn vẫn là người bấm Lưu.</p>
   </div>
 </div></div>
-<div class="cap"><b>5</b> · Gợi ý tag trong form (không tự lưu)</div>
+<div class="cap"><b>5</b> · Gợi ý tag trong form (không phải chat)</div>
 </div>
 
 <!-- ================= 6. DỌN MỤC TRÙNG ================= -->
 <div>
 <div class="phone"><div class="screen">
   <div class="top">
+    <button class="iconbtn"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg></button>
     <div class="ttl"><b>Trợ lý</b><small>deepseek-v4-flash</small></div>
-    <button class="iconbtn plain">⋯</button>
+    <button class="iconbtn">⋯</button>
   </div>
 
   <div class="chat">
     <div class="msg me">Có video nào bị trùng không?</div>
 
-    <div class="tool">
-      <span class="ic"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="4" y="4" width="11" height="11" rx="2"/><rect x="9" y="9" width="11" height="11" rx="2"/></svg></span>
-      <span>So khớp nội dung <span class="name">perkeep_dupes</span></span><span class="st ok">✓ 2 nhóm</span>
-    </div>
+    <div class="tool"><span class="ic"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="4" y="4" width="11" height="11" rx="2"/><rect x="9" y="9" width="11" height="11" rx="2"/></svg></span><span>So khớp nội dung <span class="name">perkeep_dupes</span></span><span class="st ok">✓ 2 nhóm</span></div>
 
-    <div class="bot" style="max-width:94%">2 nhóm mục trùng nội dung. Perkeep đã tự dedup dung lượng, nên chỉ còn <b>mục thừa</b> — xoá mục thừa không giải phóng thêm chỗ.</div>
+    <div class="bot" style="max-width:94%">2 nhóm mục trùng nội dung. Perkeep đã tự dedup dung lượng, nên chỉ còn <b>mục thừa</b> — ẩn mục thừa không giải phóng thêm chỗ.</div>
 
     <div class="dupe">
       <div class="gh">Nhóm 1 · cùng nội dung, 2 mục</div>
@@ -400,20 +390,25 @@ svg{display:block}
     </div>
 
     <div class="pickbar"><button>Giữ bản chọn, ẩn mục khác</button></div>
-    <div class="meta">“Ẩn” = tạo claim xoá, không xoá blob. Hoàn tác được.</div>
+    <div class="meta">“Ẩn” = claim xoá, không xoá blob. Hoàn tác được.</div>
   </div>
 
-  <div class="nav" data-on="assistant"></div>
+  <div class="composer">
+    <button class="plus"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.9"><path d="M12 5v14M5 12h14"/></svg></button>
+    <div class="box">Nhắn thêm cho trợ lý…</div>
+    <button class="send off"><svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V6M6 12l6-6 6 6"/></svg></button>
+  </div>
 </div></div>
-<div class="cap"><b>6</b> · Dọn mục trùng (không phải dedup dung lượng)</div>
+<div class="cap"><b>6</b> · Dọn mục trùng</div>
 </div>
 
-<!-- ================= 7. TÓM TẮT VIDEO LINK ================= -->
+<!-- ================= 7. TÓM TẮT VIDEO ================= -->
 <div>
 <div class="phone"><div class="screen">
   <div class="top">
+    <button class="iconbtn"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg></button>
     <div class="ttl"><b>Trợ lý</b><small>deepseek-v4-flash</small></div>
-    <button class="iconbtn plain">⋯</button>
+    <button class="iconbtn">⋯</button>
   </div>
 
   <div class="chat">
@@ -424,33 +419,35 @@ svg{display:block}
       <div class="vt"><b>Thompson Sampling : Data Science Concepts</b><small>YouTube · ritvikmath</small></div>
     </div>
 
-    <div class="tool">
-      <span class="ic"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 5h16v14H4z"/><path d="M8 9h8M8 13h8M8 17h5"/></svg></span>
-      <span>Đọc phụ đề <span class="name">webfetch</span></span><span class="st ok">✓ 642 dòng</span>
-    </div>
+    <div class="tool"><span class="ic"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 5h16v14H4z"/><path d="M8 9h8M8 13h8M8 17h5"/></svg></span><span>Đọc phụ đề <span class="name">webfetch</span></span><span class="st ok">✓ 642 dòng</span></div>
 
     <div class="answer">
       <ul>
-        <li><b>Vấn đề:</b> cân bằng giữa khám phá và khai thác khi chọn quảng cáo/biến thể.</li>
+        <li><b>Vấn đề:</b> cân bằng khám phá/khai thác khi chọn biến thể.</li>
         <li><b>Ý tưởng:</b> giữ phân phối xác suất (Beta/Gaussian) cho từng lựa chọn.</li>
-        <li><b>Cơ chế:</b> mỗi lần thử lấy mẫu từ phân phối, chọn mẫu cao nhất → tự giảm khám phá.</li>
-        <li><b>So sánh:</b> tốt hơn ε-greedy ở chi phí thử; đơn giản hơn UCB.</li>
+        <li><b>Cơ chế:</b> mỗi lần lấy mẫu, chọn mẫu cao nhất → tự giảm khám phá.</li>
+        <li><b>So sánh:</b> tốt hơn ε-greedy, đơn giản hơn UCB.</li>
       </ul>
       <span class="more">Mở video · Gắn tag data-science</span>
     </div>
 
-    <div class="meta">Chỉ áp dụng cho video có phụ đề. Video local cần thêm bước transcribe (GĐ3).</div>
+    <div class="meta">Chỉ áp dụng cho video có phụ đề. Video local cần transcribe (GĐ3).</div>
   </div>
 
-  <div class="nav" data-on="assistant"></div>
+  <div class="composer">
+    <button class="plus"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.9"><path d="M12 5v14M5 12h14"/></svg></button>
+    <div class="box">Hỏi tiếp về video này…</div>
+    <button class="send off"><svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V6M6 12l6-6 6 6"/></svg></button>
+  </div>
 </div></div>
-<div class="cap"><b>7</b> · Tóm tắt video link (cần transcript)</div>
+<div class="cap"><b>7</b> · Tóm tắt video link</div>
 </div>
 
-<!-- ================= 8. BỘ SƯU TẬP + THEO DÕI ================= -->
+<!-- ================= 8. BỘ SƯU TẬP (trang quản lý) ================= -->
 <div>
 <div class="phone"><div class="screen">
   <div class="top">
+    <button class="iconbtn"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg></button>
     <div class="ttl"><b>Bộ sưu tập &amp; theo dõi</b><small>Trợ lý · tự động hoá</small></div>
   </div>
 
@@ -458,30 +455,25 @@ svg{display:block}
     <div class="grp">Bộ sưu tập (là tag)</div>
     <div class="row">
       <span class="ic"><svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 7.5A2.5 2.5 0 0 1 5.5 5h3.2l2 2.2h7.8A2.5 2.5 0 0 1 21 9.7v7.8A2.5 2.5 0 0 1 18.5 20h-13A2.5 2.5 0 0 1 3 17.5z"/></svg></span>
-      <div class="tx"><b>du-lich</b><small>12 mục · AI gợi ý tạo 03/09</small></div>
-      <span class="pill">Xem</span>
+      <div class="tx"><b>du-lich</b><small>12 mục · AI gợi ý tạo 03/09</small></div><span class="pill">Xem</span>
     </div>
     <div class="row">
       <span class="ic"><svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 7.5A2.5 2.5 0 0 1 5.5 5h3.2l2 2.2h7.8A2.5 2.5 0 0 1 21 9.7v7.8A2.5 2.5 0 0 1 18.5 20h-13A2.5 2.5 0 0 1 3 17.5z"/></svg></span>
-      <div class="tx"><b>data-science</b><small>7 mục · từ video link</small></div>
-      <span class="pill">Xem</span>
+      <div class="tx"><b>data-science</b><small>7 mục · từ video link</small></div><span class="pill">Xem</span>
     </div>
     <div class="row">
       <span class="ic"><svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 5v14M5 12h14"/></svg></span>
-      <div class="tx"><b>Tạo bộ sưu tập mới</b><small>AI sẽ gợi ý tên + tag</small></div>
-      <span style="color:#bbb">›</span>
+      <div class="tx"><b>Tạo bộ sưu tập mới</b><small>AI gợi ý tên + tag</small></div><span style="color:#bbb">›</span>
     </div>
 
     <div class="grp">Theo dõi kênh (chạy trên PC)</div>
     <div class="row">
       <span class="ic"><svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 7h16v12H4z"/><path d="M10 11l5 2.5-5 2.5z"/></svg></span>
-      <div class="tx"><b>FPT Shop</b><small>mỗi ngày 08:00 · video mới vào picker chờ duyệt</small></div>
-      <span class="sw on"></span>
+      <div class="tx"><b>FPT Shop</b><small>08:00 mỗi ngày · video mới vào hàng chờ duyệt</small></div><span class="sw on"></span>
     </div>
     <div class="row">
       <span class="ic"><svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 7h16v12H4z"/><path d="M10 11l5 2.5-5 2.5z"/></svg></span>
-      <div class="tx"><b>ritvikmath</b><small>đang tắt</small></div>
-      <span class="sw"></span>
+      <div class="tx"><b>ritvikmath</b><small>đang tắt</small></div><span class="sw"></span>
     </div>
 
     <div class="grp">An toàn</div>
@@ -492,16 +484,16 @@ svg{display:block}
     </div>
     <div class="row">
       <span class="ic"><svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></span>
-      <div class="tx"><b>Giới hạn</b><small>8 bước · 30 lượt/ngày · 10 link/lần</small></div>
-      <span style="color:#bbb">›</span>
+      <div class="tx"><b>Giới hạn</b><small>8 bước · 30 lượt/ngày · 10 link/lần</small></div><span style="color:#bbb">›</span>
     </div>
   </div>
+
+  <div class="nav" data-on="assistant"></div>
 </div></div>
-<div class="cap"><b>8</b> · Bộ sưu tập (tag) + theo dõi kênh (có duyệt)</div>
+<div class="cap"><b>8</b> · Trang quản lý (có nav)</div>
 </div>
 
 <script>
-// chèn nav chung cho gọn
 const NAV = (on) => `
   <button class="${on==='home'?'on':''}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M3 10.5 12 3l9 7.5"/><path d="M5.5 9.8V21h13V9.8"/></svg>Nhà</button>
   <button class="${on==='star'?'on':''}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M12 3.6l2.6 5.4 5.9.8-4.3 4.1 1.1 5.9-5.3-2.9-5.3 2.9 1.1-5.9L3.5 9.8l5.9-.8z"/></svg>Ghim</button>
