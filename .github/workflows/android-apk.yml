@@ -22,6 +22,20 @@ jobs:
           distribution: temurin
           java-version: 17
 
+      # Cùng một chữ ký cho mọi lần build → cài đè được, KHÔNG mất localStorage
+      # (trước đây mỗi runner tạo debug keystore mới → buộc gỡ app → nhập lại credential)
+      - name: Dùng keystore cố định (giữ dữ liệu khi cập nhật)
+        env:
+          KS_B64: ${{ secrets.ANDROID_DEBUG_KEYSTORE_B64 }}
+        run: |
+          if [ -z "$KS_B64" ]; then
+            echo "::error::Thiếu secret ANDROID_DEBUG_KEYSTORE_B64 — không build để tránh APK đổi chữ ký làm mất dữ liệu."
+            exit 1
+          fi
+          mkdir -p "$HOME/.android"
+          printf '%s' "$KS_B64" | base64 -d > "$HOME/.android/debug.keystore"
+          keytool -list -keystore "$HOME/.android/debug.keystore" -storepass android -alias androiddebugkey | head -2
+
       # v4 bo package "tools" (da bi go khoi Android SDK repo) -> mac dinh chi con platform-tools.
       # v3 voi mac dinh cu se fail: "Failed to find package 'tools'".
       - uses: android-actions/setup-android@v4
@@ -53,6 +67,12 @@ jobs:
           grep -Eo 'android.permission.[A-Z_]+|foregroundServiceType="[A-Za-z]+"|usesCleartextTraffic="true"|org.perkeep.mobile.upload.PkFileProvider|androidx.core.content.FileProvider|org.perkeep.mobile.upload.ShareActivity|android.intent.action.SEND|text/plain' "$MAN" | sort -u
           echo "--- APK ---"
           ls -lh android/app/build/outputs/apk/debug/app-debug.apk
+
+      - name: Kiểm tra chữ ký APK
+        run: |
+          APK=android/app/build/outputs/apk/debug/app-debug.apk
+          APKSIGNER=$(find "${ANDROID_SDK_ROOT:-$ANDROID_HOME}/build-tools" -name apksigner -type f | sort -V | tail -1)
+          "$APKSIGNER" verify --print-certs "$APK" | grep -E "Signer #1 certificate (DN|SHA-256)" | head -2
 
       - uses: actions/upload-artifact@v7
         with:

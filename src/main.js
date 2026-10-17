@@ -49,7 +49,7 @@ const I18N = {
     f_cf_hint: 'Để TRỐNG nếu bạn dùng Perkeep qua LAN hoặc chỉ cần tài khoản/mật khẩu ở trên. Chỉ điền khi server nằm sau Cloudflare Tunnel + Zero Trust: tạo Service Token trong Cloudflare Zero Trust → Access → Service Auth, rồi thêm rule Service Auth vào policy của ứng dụng. App gửi cả hai kiểu cùng lúc nếu bạn điền cả hai.',
     f_cf_id: 'CF-Access-Client-Id', f_cf_secret: 'CF-Access-Client-Secret',
     auth_basic: 'tài khoản/mật khẩu', auth_cf: 'Cloudflare Access',
-    login_how: 'Cách xác thực (chọn 1 hoặc cả 2, đều không bắt buộc):\n• Perkeep userpass → điền Tài khoản / Mật khẩu\n• Cloudflare Access → dán Service Token ở mục bên dưới',
+    login_how: 'Cách xác thực (chọn 1 hoặc cả 2, đều không bắt buộc):\n• Perkeep userpass → điền Tài khoản / Mật khẩu\n• Cloudflare Access → dán Service Token ở mục bên dưới\n• Ra ngoài: bật Tailscale trên điện thoại rồi dùng https://desktop-9clnd5v.tailffa535.ts.net',
     ob_connect: 'Kết nối →', ob_skip: 'Dùng thử không cần server →',
     ob_bad: 'URL phải bắt đầu http(s)://', ob_fail: 'Không kết nối được. Kiểm tra IP / WiFi / firewall 3179.',
     ob_cf: 'Server đang yêu cầu xác thực Cloudflare Access. Hãy tạo Service Token và dán vào mục Cloudflare Access bên dưới.',
@@ -114,7 +114,7 @@ const I18N = {
     link_saving: 'Đang lưu…', link_ok: 'Đã lưu link video', link_fail: 'Không lưu được link',
     link_play: 'Xem', link_open: 'Mở YouTube', link_unreadable: 'Không đọc được dữ liệu link này.',
     share_no_url: 'Nội dung chia sẻ không có link hợp lệ.',
-    nav_ai: 'Trợ lý', set_ai: 'Trợ lý AI',
+    nav_ai: 'Trợ lý', set_ai: 'Trợ lý AI', set_backup: 'Sao lưu cấu hình', set_backup_sub: 'Chuyển máy / cài lại app',
     ai_off: 'Chưa kết nối bridge',
     ai_title: 'Trợ lý AI — kết nối bridge',
     ai_hint: 'Bridge chạy trên PC (scripts/ai-bridge.mjs). Điện thoại chỉ gửi câu hỏi; tool chạy trên PC cạnh Perkeep.',
@@ -186,8 +186,14 @@ const I18N = {
     cache_clear: 'Xoá hết file đã tải', cache_cleared: 'Đã xoá, giải phóng',
     cache_hint: 'File tải về nằm trong cache của app (Android tự dọn khi cần chỗ). Video xem từ máy sẽ mượt và tua tức thì.',
     copied: 'Đã sao chép link', prompt_title: 'Tìm kiếm',
+    bk_title: 'Sao lưu & khôi phục cấu hình',
+    bk_hint: 'Mã bên dưới chứa địa chỉ server, tài khoản, token AI và cấu hình Jellyfin. Chỉ lưu ở nơi riêng tư. Dán mã vào máy mới để khôi phục — không phải nhập lại.',
+    bk_code: 'Mã cấu hình (sao chép)', bk_copy: 'Sao chép mã', bk_copied: 'Đã sao chép mã cấu hình', bk_copy_fail: 'Không sao chép được — chạm giữ để chọn',
+    bk_restore: 'Khôi phục từ mã', bk_in: 'Dán mã cấu hình…', bk_restore_btn: 'Khôi phục',
+    bk_ok: 'Đã khôi phục cấu hình', bk_bad: 'Mã không hợp lệ hoặc không có dữ liệu.',
+    bk_confirm: 'Khôi phục sẽ thay thế cấu hình hiện tại. Tiếp tục?',
     ph_q: 'Tên tệp, hoặc tag:x / after:2026-01-01',
-    ph_name: 'Tên gợi nhớ (vd: PC nhà)', ph_url: 'http://192.168.123.9:3179', ph_user: 'Tài khoản', ph_pass: 'Mật khẩu',
+    ph_name: 'Tên gợi nhớ (vd: PC nhà)', ph_url: 'https://desktop-9clnd5v.tailffa535.ts.net', ph_user: 'Tài khoản', ph_pass: 'Mật khẩu',
     no_server: 'Chưa có dịch vụ', search_err: 'Câu tìm kiếm không hợp lệ.', conn_err: 'Lỗi kết nối.'
   },
   en: {
@@ -197,7 +203,7 @@ const I18N = {
     f_cf_hint: 'Leave EMPTY if you reach Perkeep on the LAN or only need username/password above. Fill this only when the server sits behind a Cloudflare Tunnel + Zero Trust: create a Service Token in Cloudflare Zero Trust → Access → Service Auth and add a Service Auth rule to the app policy. If you fill both, the app sends both.',
     f_cf_id: 'CF-Access-Client-Id', f_cf_secret: 'CF-Access-Client-Secret',
     auth_basic: 'username/password', auth_cf: 'Cloudflare Access',
-    login_how: 'Authentication (pick one or both — none required):\n• Perkeep userpass → fill Username / Password\n• Cloudflare Access → paste a Service Token below',
+    login_how: 'Authentication (pick one or both — none required):\n• Perkeep userpass → fill Username / Password\n• Cloudflare Access → paste a Service Token below\n• Away from home: turn on Tailscale on the phone and use https://desktop-9clnd5v.tailffa535.ts.net',
     ob_connect: 'Connect →', ob_skip: 'Try without a server →',
     ob_bad: 'URL must start with http(s)://', ob_fail: 'Cannot connect. Check IP / WiFi / firewall 3179.',
     ob_cf: 'This server requires Cloudflare Access. Create a Service Token and paste it under Cloudflare Access below.',
@@ -262,7 +268,7 @@ const I18N = {
     link_saving: 'Saving…', link_ok: 'Video link saved', link_fail: 'Could not save the link',
     link_play: 'Play', link_open: 'Open YouTube', link_unreadable: 'Could not read this link item.',
     share_no_url: 'The shared text has no valid link.',
-    nav_ai: 'Assistant', set_ai: 'AI assistant',
+    nav_ai: 'Assistant', set_ai: 'AI assistant', set_backup: 'Back up settings', set_backup_sub: 'New phone / reinstall',
     ai_off: 'Bridge not connected',
     ai_title: 'AI assistant — bridge connection',
     ai_hint: 'The bridge runs on the PC (scripts/ai-bridge.mjs). The phone only sends questions; tools run on the PC next to Perkeep.',
@@ -334,8 +340,14 @@ const I18N = {
     cache_clear: 'Delete all downloaded files', cache_cleared: 'Deleted, freed',
     cache_hint: 'Downloaded files live in the app cache (Android clears it when space is needed). Playing from the device is smooth and seeks instantly.',
     copied: 'Link copied', prompt_title: 'Search',
+    bk_title: 'Back up & restore settings',
+    bk_hint: 'The code below contains server addresses, usernames, the AI token and Jellyfin settings. Keep it private. Paste it on a new phone to restore — no retyping.',
+    bk_code: 'Settings code (copy)', bk_copy: 'Copy code', bk_copied: 'Settings code copied', bk_copy_fail: 'Could not copy — long-press to select',
+    bk_restore: 'Restore from code', bk_in: 'Paste the settings code…', bk_restore_btn: 'Restore',
+    bk_ok: 'Settings restored', bk_bad: 'Invalid code, or no data found.',
+    bk_confirm: 'Restoring will replace the current settings. Continue?',
     ph_q: 'File name, or tag:x / after:2026-01-01',
-    ph_name: 'Name (e.g. Home PC)', ph_url: 'http://192.168.123.9:3179', ph_user: 'Username', ph_pass: 'Password',
+    ph_name: 'Name (e.g. Home PC)', ph_url: 'https://desktop-9clnd5v.tailffa535.ts.net', ph_user: 'Username', ph_pass: 'Password',
     no_server: 'No service yet', search_err: 'Invalid search query.', conn_err: 'Connection error.'
   }
 };
@@ -2566,7 +2578,7 @@ function jfSheet() {
   openSheet(`<h3>${esc(t('jf_title'))}</h3>
     <p class="meta">${esc(t('jf_hint'))}</p>
     <div class="edt">
-      <label>${esc(t('jf_base'))}</label><input id="jf-b" value="${esc(c.base || 'http://192.168.123.9:8096')}" inputmode="url" />
+      <label>${esc(t('jf_base'))}</label><input id="jf-b" value="${esc(c.base || 'https://desktop-9clnd5v.tailffa535.ts.net:8443')}" inputmode="url" />
       <label>${esc(t('jf_user'))}</label><input id="jf-u" value="${esc(c.userName || '')}" autocomplete="username" />
       <label>${esc(t('jf_pass'))}</label><input id="jf-p" type="password" value="" autocomplete="current-password" />
       <div class="btns"><button data-save>${esc(t('jf_connect'))}</button><button class="cx" data-cx>${esc(t('btn_cancel'))}</button></div>
@@ -2859,7 +2871,7 @@ function openAiSheet() {
     <p class="meta">${esc(t('ai_hint'))}</p>
     <div class="edt">
       <label>${esc(t('ai_base'))}</label>
-      <input id="ai-b" value="${esc(c.base || 'http://192.168.123.9:4180')}" inputmode="url" autocomplete="off" />
+      <input id="ai-b" value="${esc(c.base || 'https://desktop-9clnd5v.tailffa535.ts.net:10000')}" inputmode="url" autocomplete="off" />
       <label>${esc(t('ai_token'))}</label>
       <input id="ai-t" value="${esc(c.token || '')}" autocomplete="off" />
       <div class="btns"><button data-save>${esc(t('btn_save'))}</button><button class="cx" data-test>${esc(t('ai_test'))}</button></div>
@@ -3603,9 +3615,77 @@ async function openWatchQueue() {
   };
 }
 
+// ---------- sao lưu cấu hình ----------
+// Mã tự chứa (base64 JSON) gồm server + tài khoản + token AI + Jellyfin.
+// Dùng khi đổi máy / cài lại app, tránh nhập lại credential.
+const BK_KEYS = [LS_SERVERS, LS_ACTIVE, AI_KEY, 'pk-jf-v1', 'pk-jf-mbps-v1', 'pk-jf-mode-v1'];
+const b64enc = (s) => {
+  const b = new TextEncoder().encode(s);
+  let out = '';
+  for (let i = 0; i < b.length; i += 0x8000) out += String.fromCharCode(...b.subarray(i, i + 0x8000));
+  return btoa(out);
+};
+const b64dec = (s) => {
+  const bin = atob(s);
+  const b = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) b[i] = bin.charCodeAt(i);
+  return new TextDecoder().decode(b);
+};
+
+function openBackupSheet() {
+  const kv = {};
+  for (const k of BK_KEYS) {
+    const v = localStorage.getItem(k);
+    if (v != null) kv[k] = v;
+  }
+  let code = '';
+  try { code = b64enc(JSON.stringify({ v: 1, app: 'pk-app', kv })); } catch {}
+  openSheet(`<h3>${esc(t('bk_title'))}</h3>
+    <p class="meta">${esc(t('bk_hint'))}</p>
+    <div class="edt">
+      <label>${esc(t('bk_code'))}</label>
+      <textarea id="bk-code" readonly rows="5" style="width:100%;box-sizing:border-box;font:11px/1.45 ui-monospace,Menlo,monospace;word-break:break-all;background:#f4f7f5;border:1px solid var(--line);border-radius:10px;padding:8px">${esc(code)}</textarea>
+      <div class="btns"><button data-copy>${esc(t('bk_copy'))}</button><button class="cx" data-cx>${esc(t('btn_close'))}</button></div>
+    </div>
+    <div class="edt">
+      <label>${esc(t('bk_restore'))}</label>
+      <textarea id="bk-in" rows="3" placeholder="${esc(t('bk_in'))}" style="width:100%;box-sizing:border-box;font:11px/1.45 ui-monospace,Menlo,monospace;border:1px solid var(--line);border-radius:10px;padding:8px"></textarea>
+      <div class="btns"><button data-restore>${esc(t('bk_restore_btn'))}</button></div>
+      <p class="err" id="bk-err" hidden></p>
+    </div>`);
+  const errEl = sheetBody.querySelector('#bk-err');
+  const codeEl = sheetBody.querySelector('#bk-code');
+  const fail = (msg) => { errEl.textContent = msg; errEl.style.color = '#c62828'; errEl.hidden = false; };
+  sheetBody.querySelector('[data-cx]').onclick = closeSheet;
+  sheetBody.querySelector('[data-copy]').onclick = async () => {
+    try {
+      await navigator.clipboard.writeText(code);
+      snack(t('bk_copied'));
+    } catch {
+      codeEl.focus();
+      codeEl.select();
+      try { document.execCommand('copy'); snack(t('bk_copied')); } catch { snack(t('bk_copy_fail')); }
+    }
+  };
+  sheetBody.querySelector('[data-restore]').onclick = () => {
+    errEl.hidden = true;
+    const raw = sheetBody.querySelector('#bk-in').value.replace(/\s+/g, '');
+    if (!raw) return fail(t('bk_bad'));
+    let data = null;
+    try { data = JSON.parse(b64dec(raw)); } catch { return fail(t('bk_bad')); }
+    if (!data || data.v !== 1 || !data.kv || typeof data.kv !== 'object') return fail(t('bk_bad'));
+    const keys = Object.keys(data.kv).filter((k) => BK_KEYS.includes(k));
+    if (!keys.length) return fail(t('bk_bad'));
+    for (const k of keys) localStorage.setItem(k, String(data.kv[k]));
+    snack(t('bk_ok'));
+    setTimeout(() => location.reload(), 500);
+  };
+}
+
 // ---------- wiring ----------
 $('s-ai').onclick = aiSearchFromInput;
 $('set-ai').onclick = openAiSheet;
+$('set-backup').onclick = openBackupSheet;
 $('set-watch').onclick = openWatchSheet;
 $('ai-new').onclick = aiNewChat;
 $('ai-history').onclick = openAiHistory;

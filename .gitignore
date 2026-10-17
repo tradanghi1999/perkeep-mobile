@@ -1,5 +1,6 @@
 node_modules/
 dist/
+.secrets/
 
 # Chỉ bỏ qua project Android/iOS do Capacitor sinh ra ở gốc repo.
 # KHÔNG dùng "android/" trần vì sẽ nuốt plugins/pk-upload/android/.

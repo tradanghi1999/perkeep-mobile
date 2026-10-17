@@ -12,9 +12,23 @@
 
 ## Cài đặt trên app (1 lần)
 1. Cài đặt → **Trợ lý AI**
-2. Địa chỉ bridge: `http://192.168.123.9:4180`
+2. Địa chỉ bridge: `https://desktop-9clnd5v.tailffa535.ts.net:10000` (dùng được cả ở nhà lẫn ra ngoài)
 3. Token: đọc file `%LOCALAPPDATA%\pk-ai-token.txt` trên PC
 4. Bấm **Kiểm tra** → thấy agent/model là OK.
+
+## Dùng ngoài LAN (Tailscale)
+PC và điện thoại cùng một tailnet (đăng nhập Google). `tailscale serve` đã map:
+| Cổng | Dịch vụ | Ghi chú |
+|---|---|---|
+| `443` | Perkeep `:3179` | Funnel đang bật (công khai, vẫn cần userpass) |
+| `8443` | Jellyfin `:8096` | chỉ tailnet |
+| `10000` | AI bridge `:4180` | chỉ tailnet, vẫn cần token |
+
+- Điện thoại ra ngoài: bật Tailscale, giữ nguyên URL `*.ts.net` — không đổi IP, không mở port.
+- Muốn Perkeep **chỉ trong tailnet** (khuyến nghị): tắt Funnel rồi giữ serve 443:
+  `tailscale funnel reset` → `tailscale serve --bg --https=443 3179`.
+- Cài đặt → **Sao lưu cấu hình**: mã base64 chứa server + tài khoản + token AI + Jellyfin; dán vào máy mới là xong, không nhập lại.
+- APK từ CI được ký bằng **cùng một keystore** nên cài đè giữ nguyên dữ liệu (trước đây mỗi build một khoá → buộc gỡ app → mất cấu hình).
 
 ## Tính năng
 ### GĐ1 — chỉ đọc
@@ -55,6 +69,7 @@
 | `GET /ai/health` | trạng thái |
 | `POST /ai/search {text}` | câu nói → biểu thức |
 | `POST /ai/ask {text}` | chat có tool |
+| `POST /ai/ask/stream {text}` | chat dạng SSE (fast path hoặc agent) |
 | `POST /ai/tags` | gợi ý tag |
 | `POST /ai/channel {url,limit}` | video mới của kênh (RSS) |
 | `POST /ai/save_links {links,tags}` | tạo video-link |
