@@ -51,6 +51,7 @@ const I18N = {
     auth_basic: 'tài khoản/mật khẩu', auth_cf: 'Cloudflare Access',
     login_how: 'Cách xác thực (chọn 1 hoặc cả 2, đều không bắt buộc):\n• Perkeep userpass → điền Tài khoản / Mật khẩu\n• Cloudflare Access → dán Service Token ở mục bên dưới\n• Ra ngoài: bật Tailscale trên điện thoại rồi dùng https://desktop-9clnd5v.tailffa535.ts.net',
     ob_connect: 'Kết nối →', ob_skip: 'Dùng thử không cần server →',
+    ob_restore: 'Đã có mã sao lưu? Khôi phục →',
     ob_bad: 'URL phải bắt đầu http(s)://', ob_fail: 'Không kết nối được. Kiểm tra IP / WiFi / firewall 3179.',
     ob_cf: 'Server đang yêu cầu xác thực Cloudflare Access. Hãy tạo Service Token và dán vào mục Cloudflare Access bên dưới.',
     ob_ok_cf: 'Đã kết nối qua Cloudflare Access',
@@ -205,6 +206,7 @@ const I18N = {
     auth_basic: 'username/password', auth_cf: 'Cloudflare Access',
     login_how: 'Authentication (pick one or both — none required):\n• Perkeep userpass → fill Username / Password\n• Cloudflare Access → paste a Service Token below\n• Away from home: turn on Tailscale on the phone and use https://desktop-9clnd5v.tailffa535.ts.net',
     ob_connect: 'Connect →', ob_skip: 'Try without a server →',
+    ob_restore: 'Have a backup code? Restore →',
     ob_bad: 'URL must start with http(s)://', ob_fail: 'Cannot connect. Check IP / WiFi / firewall 3179.',
     ob_cf: 'This server requires Cloudflare Access. Create a Service Token and paste it under Cloudflare Access below.',
     ob_ok_cf: 'Connected via Cloudflare Access',
@@ -3677,6 +3679,7 @@ function openBackupSheet() {
     const keys = Object.keys(data.kv).filter((k) => BK_KEYS.includes(k));
     if (!keys.length) return fail(t('bk_bad'));
     for (const k of keys) localStorage.setItem(k, String(data.kv[k]));
+    localStorage.setItem(LS_ONBOARD, '1');
     snack(t('bk_ok'));
     setTimeout(() => location.reload(), 500);
   };
@@ -3685,6 +3688,7 @@ function openBackupSheet() {
 // ---------- wiring ----------
 $('s-ai').onclick = aiSearchFromInput;
 $('set-ai').onclick = openAiSheet;
+$('ob-restore').onclick = openBackupSheet;
 $('set-backup').onclick = openBackupSheet;
 $('set-watch').onclick = openWatchSheet;
 $('ai-new').onclick = aiNewChat;
