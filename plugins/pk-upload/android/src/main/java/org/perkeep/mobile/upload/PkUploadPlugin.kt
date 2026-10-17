@@ -365,6 +365,26 @@ class PkUploadPlugin : Plugin() {
         call.resolve(res)
     }
 
+    /**
+     * Lấy link người dùng vừa "Chia sẻ" sang app (ShareActivity ghi vào SharedPreferences).
+     * Trả {} nếu không có gì; ngược lại { text, url, sharedAt }.
+     */
+    @PluginMethod
+    fun takeShare(call: PluginCall) {
+        val sp = context.getSharedPreferences(ShareActivity.PREFS, android.content.Context.MODE_PRIVATE)
+        val text = sp.getString(ShareActivity.KEY_TEXT, null)
+        val at = sp.getLong(ShareActivity.KEY_TIME, 0L)
+        val res = JSObject()
+        if (!text.isNullOrBlank()) {
+            // đọc xong xoá luôn để không xử lý lại
+            sp.edit().remove(ShareActivity.KEY_TEXT).remove(ShareActivity.KEY_TIME).apply()
+            res.put("text", text)
+            res.put("url", Regex("https?://\\S+").find(text)?.value ?: "")
+            res.put("sharedAt", at)
+        }
+        call.resolve(res)
+    }
+
     /** Log crash lần trước (không cần adb). */
     @PluginMethod
     fun getLastCrash(call: PluginCall) {

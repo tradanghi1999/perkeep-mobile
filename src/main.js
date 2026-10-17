@@ -113,6 +113,7 @@ const I18N = {
     link_need_title: 'Nhập tên video', link_bad: 'Link phải bắt đầu bằng http(s)://',
     link_saving: 'Đang lưu…', link_ok: 'Đã lưu link video', link_fail: 'Không lưu được link',
     link_play: 'Xem', link_open: 'Mở YouTube', link_unreadable: 'Không đọc được dữ liệu link này.',
+    share_no_url: 'Nội dung chia sẻ không có link hợp lệ.',
     up_waiting: 'Chờ mạng…', up_preparing: 'Đang chuẩn bị…', up_uploading: 'Đang tải lên',
     up_signing: 'Đang tạo mục…', up_done: 'Đã tải lên', up_failed: 'Lỗi', up_canceled: 'Đã huỷ',
     up_title: 'Đang tải lên', up_retry: 'Thử lại', up_cancel: 'Huỷ', up_clear: 'Xoá mục xong',
@@ -225,6 +226,7 @@ const I18N = {
     link_need_title: 'Enter a video title', link_bad: 'Link must start with http(s)://',
     link_saving: 'Saving…', link_ok: 'Video link saved', link_fail: 'Could not save the link',
     link_play: 'Play', link_open: 'Open YouTube', link_unreadable: 'Could not read this link item.',
+    share_no_url: 'The shared text has no valid link.',
     up_waiting: 'Waiting for network…', up_preparing: 'Preparing…', up_uploading: 'Uploading',
     up_signing: 'Creating item…', up_done: 'Uploaded', up_failed: 'Failed', up_canceled: 'Canceled',
     up_title: 'Uploads', up_retry: 'Retry', up_cancel: 'Cancel', up_clear: 'Clear finished',
@@ -1997,8 +1999,8 @@ async function loadLink(meta) {
   return data;
 }
 
-/** Sheet thêm link video. */
-function openAddLinkSheet() {
+/** Sheet thêm link video. prefill = URL lấy từ "Chia sẻ" của app khác. */
+function openAddLinkSheet(prefill) {
   openSheet(`<h3>${esc(t('link_add'))}</h3>
     <div class="edt">
       <label>${esc(t('link_url'))}</label>
@@ -2085,6 +2087,12 @@ function openAddLinkSheet() {
       log(`link FAIL: ${e.message} :: ${(e.stack || '').split('\n').slice(0, 3).join(' | ')}`);
     }
   };
+
+  // Mở từ "Chia sẻ" của app khác -> điền sẵn URL và lấy metadata luôn
+  if (prefill && /^https?:\/\//i.test(String(prefill))) {
+    urlEl.value = String(prefill).trim();
+    setTimeout(fill, 80);
+  }
 }
 
 
@@ -2625,10 +2633,35 @@ renderFontState();
 renderPermState();
 renderCacheState();
 refreshUploads();
+
+// ---------- Nhận link chia sẻ từ app khác (Android share sheet) ----------
+let shareBusy = false;
+async function handleSharedLink() {
+  if (shareBusy) return;
+  shareBusy = true;
+  try {
+    const s = await up.takeShare();
+    if (!s) return;
+    const url = String(s.url || '').trim();
+    log(`share: ${s.text.slice(0, 120)}`);
+    if (!/^https?:\/\//i.test(url)) {
+      snack(t('share_no_url'));
+      return;
+    }
+    openAddLinkSheet(url);
+  } catch (e) {
+    log(`share FAIL: ${e.message}`);
+  } finally {
+    shareBusy = false;
+  }
+}
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'visible') handleSharedLink();
+});
 up.onProgress((job) => {
   uploadJobs.set(job.id, job);
   renderUploads();
   if (job.state === 'done') loadHome();
 }).catch(() => {});
 if (!localStorage.getItem(LS_ONBOARD)) showOnboard(true);
-else boot();
+else { boot(); handleSharedLink(); }

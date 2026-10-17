@@ -35,6 +35,21 @@
                 <action android:name="org.perkeep.mobile.upload.CANCEL" />
             </intent-filter>
         </receiver>
+
+        <!-- Nhận chia sẻ link từ YouTube / Chrome (ACTION_SEND text/plain).
+             Hoạt động không UI: lưu text rồi mở app chính. -->
+        <activity
+            android:name="org.perkeep.mobile.upload.ShareActivity"
+            android:exported="true"
+            android:theme="@android:style/Theme.Translucent.NoTitleBar"
+            android:excludeFromRecents="true"
+            android:noHistory="true">
+            <intent-filter>
+                <action android:name="android.intent.action.SEND" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:mimeType="text/plain" />
+            </intent-filter>
+        </activity>
     </application>
 
 </manifest>

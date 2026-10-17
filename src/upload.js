@@ -145,6 +145,18 @@ export async function pickAndUpload(server, { wifiOnly = true, tag = 'mobile' } 
   return { ids: res?.ids || [] };
 }
 
+/** Link người dùng vừa "Chia sẻ" sang app (Android share sheet). null nếu không có. */
+export async function takeShare() {
+  if (!uploadSupported()) return null;
+  try {
+    const r = await PkUpload.takeShare();
+    if (!r || !r.text) return null;
+    return { text: r.text, url: r.url || '', sharedAt: r.sharedAt || 0 };
+  } catch {
+    return null;
+  }
+}
+
 export const listJobs = async () => {
   if (!uploadSupported()) return [];
   try {
