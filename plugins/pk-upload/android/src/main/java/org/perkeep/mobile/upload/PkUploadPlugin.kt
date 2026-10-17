@@ -319,7 +319,7 @@ class PkUploadPlugin : Plugin() {
             call.resolve(JSObject().put("saved", true))
         } catch (t: Throwable) {
             Log.w(TAG, "saveToDownloads lỗi", t)
-            call.reject(t.message ?: "download failed", t)
+            call.reject(t.message ?: "download failed")
         }
     }
 
