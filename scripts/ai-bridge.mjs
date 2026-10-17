@@ -17,7 +17,7 @@
 
 import { OpenCode } from '@opencode/client';
 import { Service } from '@opencode/client/service';
-import { createVideoLink, setTag, findDupes } from './perkeep-lib.mjs';
+import { createVideoLink, setTag, findDupes, search as pkSearchItems } from './perkeep-lib.mjs';
 import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { randomBytes } from 'node:crypto';
@@ -321,12 +321,64 @@ async function askAgent(text) {
   }
 }
 
+/**
+ * Đường nhanh cho câu hỏi tra cứu: 2 lần gọi model, KHÔNG mở session/tool.
+ * Model lo ngôn ngữ, code lo dữ liệu (search Perkeep).
+ */
+async function fastLibrary(text) {
+  const today = new Date().toISOString().slice(0, 10);
+  const router = await generateJson(`Bạn là bộ định tuyến cho trợ lý thư viện Perkeep.
+Hôm nay: ${today}.
+Câu hỏi người dùng: ${JSON.stringify(text)}
+
+Nếu người dùng muốn XEM / TÌM / THỐNG KÊ thư viện (video, ảnh, tài liệu, link, tag, ngày tháng, "tuần này lưu gì"), trả về DUY NHẤT:
+{"intent":"library","expression":"<biểu thức Perkeep>","explain":"ngắn gọn"}
+
+Nếu người dùng muốn HÀNH ĐỘNG khác (thêm video từ kênh, gắn tag, tóm tắt video, tìm web, mở file), trả về:
+{"intent":"agent"}
+
+Quy tắc biểu thức: filename:, tag:, title:, before:, after:, is:, ref:. KHÔNG từ khoá trần. Ngày YYYY-MM-DD.
+"video" -> (filename:*.mp4 or filename:*.mov or filename:*.mkv or filename:*.webm)
+"ảnh" -> (filename:*.jpg or filename:*.png or filename:*.heic)
+"link/youtube" -> tag:video-link
+Để trống expression nếu muốn lấy mục mới nhất.`);
+
+  if (!router || router.intent !== 'library') return null;
+
+  const items = await pkSearchItems(router.expression || '', 10);
+  const ctx = items.map((i) => ({ name: i.name, mime: i.mime, size: i.size, date: i.date, tags: i.tags }));
+  const answer = await generate(`Bạn là trợ lý thư viện Perkeep. Dữ liệu THẬT (JSON): ${JSON.stringify(ctx)}
+
+Câu hỏi: ${JSON.stringify(text)}
+
+Viết 1-2 câu tổng kết bằng tiếng Việt (số lượng, điểm chung, mốc thời gian). TUYỆT ĐỐI không liệt kê tên file trong câu trả lời — giao diện sẽ hiển thị thẻ file. Nếu danh sách rỗng, nói rõ không có. Chỉ trả về đoạn text, không JSON, không markdown table.`);
+  return {
+    text: String(answer || '').trim() || (items.length ? `Có ${items.length} mục.` : 'Không có mục nào.'),
+    items,
+    tools: ['perkeep_search']
+  };
+}
+
+function chunkText(s, n = 14) {
+  const out = [];
+  const str = String(s || '');
+  for (let i = 0; i < str.length; i += n) out.push(str.slice(i, i + n));
+  return out;
+}
+
 // ---------- HTTP ----------
 const CORS = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Methods': 'GET,POST,OPTIONS',
   'Access-Control-Allow-Headers': 'content-type,x-pk-token',
   'Access-Control-Max-Age': '86400'
+};
+const SSE_HEADERS = {
+  'Content-Type': 'text/event-stream; charset=utf-8',
+  'Cache-Control': 'no-cache, no-transform',
+  Connection: 'keep-alive',
+  'X-Accel-Buffering': 'no',
+  ...CORS
 };
 const json = (obj, status = 200) =>
   new Response(JSON.stringify(obj), { status, headers: { 'Content-Type': 'application/json', ...CORS } });
@@ -382,6 +434,37 @@ Yêu cầu: ${JSON.stringify(text)}`;
       if (url.pathname === '/ai/ask/stream' && req.method === 'POST') {
         const { text } = await req.json();
         if (!text || !String(text).trim()) return json({ error: 'empty' }, 400);
+
+        // Đường nhanh: câu hỏi tra cứu -> 2 lần model, không mở session/tool
+        let fast = null;
+        try { fast = await fastLibrary(String(text)); } catch (e) { console.error('fast path:', e.message); }
+        if (fast) {
+          const enc = new TextEncoder();
+          const stream = new ReadableStream({
+            start(controller) {
+              let closed = false;
+              const send = (ev, data) => {
+                if (closed) return;
+                try { controller.enqueue(enc.encode(`event: ${ev}\ndata: ${JSON.stringify(data)}\n\n`)); } catch {}
+              };
+              const parts = chunkText(fast.text);
+              let i = 0;
+              const tm = setInterval(() => {
+                if (i < parts.length) { send('delta', { t: parts[i++] }); return; }
+                clearInterval(tm);
+                send('done', { text: fast.text, items: fast.items, tools: fast.tools, ok: true });
+                closed = true;
+                try { controller.close(); } catch {}
+              }, 25);
+              req.signal.addEventListener('abort', () => {
+                clearInterval(tm);
+                closed = true;
+                try { controller.close(); } catch {}
+              });
+            }
+          });
+          return new Response(stream, { headers: SSE_HEADERS });
+        }
 
         const c = await oc();
         const session = await c.session.create({
@@ -480,15 +563,7 @@ Yêu cầu: ${JSON.stringify(text)}`;
           }
         });
 
-        return new Response(stream, {
-          headers: {
-            'Content-Type': 'text/event-stream; charset=utf-8',
-            'Cache-Control': 'no-cache, no-transform',
-            Connection: 'keep-alive',
-            'X-Accel-Buffering': 'no',
-            ...CORS
-          }
-        });
+        return new Response(stream, { headers: SSE_HEADERS });
       }
 
       if (url.pathname === '/ai/ask' && req.method === 'POST') {
