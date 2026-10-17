@@ -57,5 +57,8 @@ dependencies {
     // kế thừa từ app vì module plugin là library riêng.
     implementation "androidx.activity:activity:1.8.0"
     implementation "androidx.work:work-runtime-ktx:$androidxWorkVersion"
+    // HTTP server siêu nhỏ (~60KB) để proxy media: <video> không gửi được header
+    // Authorization nên phải qua proxy nội bộ 127.0.0.1.
+    implementation 'org.nanohttpd:nanohttpd:2.3.1'
     implementation project(':capacitor-android')
 }
