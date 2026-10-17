@@ -1920,14 +1920,20 @@ async function uploadBlobNamed(text, name) {
 
 /**
  * Tạo permanode: blob JSON camliType=permanode + chữ ký, ref = hash blob đó.
- * (Giống hệt plugin upload: {"camliSigner":..,"camliType":"permanode","camliVersion":1})
+ * BẮT BUỘC có claimDate + random: nếu không, chữ ký RSA giống hệt nhau mỗi lần
+ * -> cùng blobref -> mọi mục dùng chung 1 permanode và ghi đè lên nhau.
  */
 async function createPermanode() {
   const d = await getDisc();
+  const rnd = new Uint8Array(20);
+  if (window.crypto?.getRandomValues) crypto.getRandomValues(rnd);
+  else for (let i = 0; i < rnd.length; i++) rnd[i] = Math.floor(Math.random() * 256);
   const unsigned = JSON.stringify({
+    camliVersion: 1,
     camliSigner: d.signerPubKey,
     camliType: 'permanode',
-    camliVersion: 1
+    claimDate: new Date().toISOString(),
+    random: btoa(String.fromCharCode(...rnd))
   });
   const signed = await signUnsigned(unsigned);
   const ref = blobRefOf(signed);
