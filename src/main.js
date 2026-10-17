@@ -488,6 +488,8 @@ function closeSheet() {
   sheetEl.style.transform = '';
   sheetEl.style.transition = '';
   sheetBody.innerHTML = '';
+  // Bỏ highlight mục đang chọn khi đóng menu
+  document.querySelectorAll('.frow.sel, .vcard.sel').forEach((el) => el.classList.remove('sel'));
 }
 $('close').onclick = closeSheet;
 
@@ -871,10 +873,10 @@ function fileRow(blob, meta, index = 0) {
   lazyThumb(row, row.querySelector('.fic'), meta);
   row.querySelector('.dot-ico').onclick = (e) => {
     e.stopPropagation();
-    fileActions(blob, meta);
+    fileActions(blob, meta, row);
   };
   row.onclick = () => openViewer(index); // chạm vào dòng = mở xem
-  attachLongPress(row, () => fileActions(blob, meta)); // chạm giữ = menu
+  attachLongPress(row, () => fileActions(blob, meta, row)); // chạm giữ = menu
   return row;
 }
 
@@ -890,10 +892,10 @@ function gridCard(blob, meta, index = 0) {
   lazyThumb(c, c.querySelector('.vthumb'), meta);
   c.querySelector('.vmore').onclick = (e) => {
     e.stopPropagation();
-    fileActions(blob, meta);
+    fileActions(blob, meta, c);
   };
   c.onclick = () => openViewer(index);
-  attachLongPress(c, () => fileActions(blob, meta)); // chạm giữ = menu
+  attachLongPress(c, () => fileActions(blob, meta, c)); // chạm giữ = menu
   return c;
 }
 
@@ -2378,7 +2380,10 @@ function openTagSheet(blob, meta) {
   input.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); submit(); } });
 }
 
-function fileActions(blob, meta) {
+function fileActions(blob, meta, el) {
+  // Giữ highlight mục vừa chọn (long-press hoặc nút ⋮) trong lúc menu mở.
+  document.querySelectorAll('.frow.sel, .vcard.sel').forEach((x) => x.classList.remove('sel'));
+  if (el) el.classList.add('sel');
   const idx = currentItems.findIndex((x) => x.blob === blob);
   const rows = [
     { k: 'star', ico: 'star', label: isStarred(meta) ? t('star_removed') : t('star_add') },

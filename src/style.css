@@ -50,6 +50,9 @@ h3 { margin: 12px 4px; font-size: 1.0625rem; }
 .frow { display: flex; align-items: center; gap: 12px; padding: 12px 4px; border-bottom: 1px solid var(--line); font-size: 1rem; }
 .frow, .vcard { -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
 .frow.lp, .vcard.lp { background: #e8f0eb; }
+.frow.sel, .vcard.sel { background: #e3efe7; }
+.frow.sel { box-shadow: inset 3px 0 0 var(--green); }
+.vcard.sel { outline: 2px solid var(--green); outline-offset: -2px; }
 .fic { width: 48px; height: 48px; flex: none; border-radius: 12px; background: #f0f4ee; color: var(--green); display: flex; align-items: center; justify-content: center; overflow: hidden; }
 .fic img { width: 100%; height: 100%; object-fit: cover; display: block; }
 .thumb-vid { width: 100%; height: 100%; object-fit: cover; display: block; background: #000; }
