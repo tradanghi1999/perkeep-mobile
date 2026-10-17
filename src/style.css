@@ -97,8 +97,26 @@ h3 { margin: 12px 4px; font-size: 1.0625rem; }
 .vw-note button { border: 0; border-radius: 12px; padding: 15px; font-size: 1rem; font-family: inherit;
   background: var(--green); color: #fff; font-weight: 700; display: flex; gap: 10px; align-items: center; justify-content: center; }
 .vw-note button.alt { background: #2a2a2a; font-weight: 400; }
-.vw-nav { display: flex; align-items: center; justify-content: center; gap: 18px; padding: 8px 8px calc(10px + env(safe-area-inset-bottom)); background: #161616; }
-.vw-count { color: #9aa0a6; font-size: 0.875rem; min-width: 64px; text-align: center; }
+/* ---------- Video link (YouTube) ---------- */
+.lk { width: 100%; max-width: 760px; padding-bottom: 14px; }
+.lk-top { position: relative; width: 100%; aspect-ratio: 16 / 9; background: #000;
+  display: flex; align-items: center; justify-content: center; overflow: hidden; }
+.lk-top.emb { aspect-ratio: auto; height: 54vh; min-height: 220px; }
+.lk-top img { width: 100%; height: 100%; object-fit: cover; opacity: .82; }
+.lk-top iframe { width: 100%; height: 100%; border: 0; display: block; }
+.lk-play { position: absolute; border: 0; border-radius: 999px; padding: 11px 20px; background: #000000b8; color: #fff;
+  display: flex; align-items: center; gap: 8px; font: inherit; font-weight: 700; }
+.lk-play svg { width: 28px; height: 28px; }
+.lk-info { padding: 14px 16px 2px; }
+.lk-info b { display: block; font-size: 1.0625rem; line-height: 1.35; }
+.lk-info small { color: #9aa0a6; font-size: .8125rem; }
+.lk .vw-actions { display: flex; gap: 10px; padding: 10px 16px 0; }
+.lk .vw-actions button { flex: 1; border: 0; border-radius: 12px; padding: 13px; font: inherit; background: var(--green);
+  color: #fff; font-weight: 700; display: flex; align-items: center; justify-content: center; gap: 8px; }
+.lk .vw-actions button.alt { background: #2a2a2a; font-weight: 400; }
+.lk-prev { display: flex; gap: 10px; align-items: center; margin: 8px 0 4px; color: #666; font-size: .8125rem; }
+.lk-prev img { width: 88px; height: 50px; object-fit: cover; border-radius: 8px; flex: none; }
+.vw-nav { display: flex; align-items: center; justify-content: center; gap: 18px; padding: 8px 8px calc(10px + env(safe-area-inset-bottom)); background: #161616; }.vw-count { color: #9aa0a6; font-size: 0.875rem; min-width: 64px; text-align: center; }
 /* ---------- Vùng nội dung + kéo xuống để tải lại (kiểu Chrome) ---------- */
 .content { position: relative; flex: 1; min-height: 0; display: flex; flex-direction: column; overflow: hidden; }
 .ptr {

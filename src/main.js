@@ -105,6 +105,14 @@ const I18N = {
     fl_expr: 'Câu lệnh gửi tới Perkeep', fl_apply: 'Áp dụng',
     fl_local: 'Lọc ngay trên máy',
     fab_title: 'Tạo mới', fab_upload: 'Tải tệp lên (chạy nền)', fab_note: 'Tạo ghi chú', fab_soon: '(sắp có)',
+    fab_link: 'Thêm link video (YouTube…)',
+    link_add: 'Thêm link video', link_url: 'Link video', link_title: 'Tên video',
+    link_dur: 'Thời lượng (mm:ss)', link_tags: 'Tag (cách nhau dấu phẩy)',
+    link_hint: 'Link + thông tin được lưu thành 1 mục trong Perkeep (file JSON) nên tìm lại được mãi, kể cả khi video bị xoá trên YouTube.',
+    link_fetching: 'Đang lấy thông tin video…', link_generic: 'Link ngoài',
+    link_need_title: 'Nhập tên video', link_bad: 'Link phải bắt đầu bằng http(s)://',
+    link_saving: 'Đang lưu…', link_ok: 'Đã lưu link video', link_fail: 'Không lưu được link',
+    link_play: 'Xem', link_open: 'Mở YouTube', link_unreadable: 'Không đọc được dữ liệu link này.',
     up_waiting: 'Chờ mạng…', up_preparing: 'Đang chuẩn bị…', up_uploading: 'Đang tải lên',
     up_signing: 'Đang tạo mục…', up_done: 'Đã tải lên', up_failed: 'Lỗi', up_canceled: 'Đã huỷ',
     up_title: 'Đang tải lên', up_retry: 'Thử lại', up_cancel: 'Huỷ', up_clear: 'Xoá mục xong',
@@ -209,6 +217,14 @@ const I18N = {
     fl_expr: 'Query sent to Perkeep', fl_apply: 'Apply',
     fl_local: 'Filtered on device',
     fab_title: 'Create', fab_upload: 'Upload files (background)', fab_note: 'New note', fab_soon: '(coming soon)',
+    fab_link: 'Add video link (YouTube…)',
+    link_add: 'Add video link', link_url: 'Video link', link_title: 'Video title',
+    link_dur: 'Duration (mm:ss)', link_tags: 'Tags (comma separated)',
+    link_hint: 'The link and its metadata are stored as one item in Perkeep (a JSON file), so you can always find it again — even if the video is deleted on YouTube.',
+    link_fetching: 'Fetching video info…', link_generic: 'External link',
+    link_need_title: 'Enter a video title', link_bad: 'Link must start with http(s)://',
+    link_saving: 'Saving…', link_ok: 'Video link saved', link_fail: 'Could not save the link',
+    link_play: 'Play', link_open: 'Open YouTube', link_unreadable: 'Could not read this link item.',
     up_waiting: 'Waiting for network…', up_preparing: 'Preparing…', up_uploading: 'Uploading',
     up_signing: 'Creating item…', up_done: 'Uploaded', up_failed: 'Failed', up_canceled: 'Canceled',
     up_title: 'Uploads', up_retry: 'Retry', up_cancel: 'Cancel', up_clear: 'Clear finished',
@@ -338,7 +354,10 @@ function authHeaders(extra = {}) {
 }
 
 function log(...args) {
-  outEl.textContent = args.map((a) => (typeof a === 'string' ? a : JSON.stringify(a, null, 2))).join('\n');
+  const line = args.map((a) => (typeof a === 'string' ? a : JSON.stringify(a, null, 2))).join('\n');
+  const prev = outEl.textContent ? outEl.textContent.split('\n') : [];
+  prev.push(line);
+  outEl.textContent = prev.slice(-200).join('\n');
 }
 function snack(msg) {
   snackEl.textContent = msg;
@@ -436,10 +455,20 @@ const DESCRIBE = { rules: [{ attrs: ['*'], rules: [{ attrs: ['*'] }] }] };
 
 const TYPE_EXPR = {
   image: '(filename:*.jpg or filename:*.jpeg or filename:*.png or filename:*.gif or filename:*.webp or filename:*.heic)',
-  video: '(filename:*.mp4 or filename:*.mov or filename:*.mkv or filename:*.webm or filename:*.avi)',
+  video: '(filename:*.mp4 or filename:*.mov or filename:*.mkv or filename:*.webm or filename:*.avi or tag:video-link)',
   audio: '(filename:*.mp3 or filename:*.m4a or filename:*.wav or filename:*.flac or filename:*.ogg)',
   doc: '(filename:*.pdf or filename:*.doc or filename:*.docx or filename:*.xls or filename:*.xlsx or filename:*.ppt or filename:*.pptx or filename:*.txt)'
 };
+
+// Video link (YouTube...) = 1 permanode + 1 blob JSON, tag "video-link".
+// Tên file: "<Tiêu đề> [YouTube].json" -> tìm theo tên là ra, giữ được mãi.
+const LINK_TAG = 'video-link';
+const LINK_RE = /\[(youtube|video|vimeo|bilibili|dailymotion|tiktok)\][^/]*\.json$/i;
+const isVideoLink = (meta) => !!(meta && ((meta.tags || []).includes(LINK_TAG) || LINK_RE.test(meta.name || '')));
+// Tên hiển thị gọn: bỏ đuôi " [YouTube].json" (tên file vẫn giữ nguyên trên Perkeep để search)
+const displayName = (meta) => (isVideoLink(meta)
+  ? String(meta.name || '').replace(/\s*\[[^\]]+\][^/]*\.json$/i, '')
+  : meta.name);
 
 const iso = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 function timeFrom(kind) {
@@ -624,6 +653,24 @@ async function mountVideoThumb(slot, meta) {
   });
 }
 function applyThumb(slot, meta) {
+  if (isVideoLink(meta)) {
+    loadLink(meta).then((d) => {
+      if (!d) return;
+      if (d.thumbnail) {
+        const img = document.createElement('img');
+        img.alt = ''; img.loading = 'lazy';
+        img.onerror = () => img.remove();
+        img.src = d.thumbnail;
+        slot.textContent = '';
+        slot.appendChild(img);
+      }
+      const line = [siteLabel(d.site), d.author, fmtDur(d.duration)].filter(Boolean).join(' · ');
+      const row = slot.closest('.frow, .vcard');
+      const sub = row && row.querySelector('.fx small, .vmeta');
+      if (sub && line) sub.textContent = line;
+    });
+    return;
+  }
   if (isImage(meta.mime) && meta.fileRef) {
     const img = document.createElement('img');
     img.alt = ''; img.loading = 'lazy';
@@ -667,8 +714,8 @@ function fileRow(blob, meta, index = 0) {
   const row = document.createElement('div');
   row.className = 'frow';
   row.innerHTML = `
-    <div class="fic">${iconFor(meta.mime)}</div>
-    <div class="fx"><b>${esc(meta.name)}</b><small>${esc(metaLine(meta))}</small></div>
+    <div class="fic">${isVideoLink(meta) ? icon('video') : iconFor(meta.mime)}</div>
+    <div class="fx"><b>${esc(displayName(meta))}</b><small>${esc(metaLine(meta))}</small></div>
     <button class="dot-ico" aria-label="menu">${icon('more', 20)}</button>`;
   lazyThumb(row, row.querySelector('.fic'), meta);
   row.querySelector('.dot-ico').onclick = (e) => {
@@ -684,8 +731,8 @@ function gridCard(blob, meta, index = 0) {
   const c = document.createElement('button');
   c.className = 'vcard';
   c.innerHTML = `
-    <span class="vthumb">${icon(iconForMime(meta.mime), 34)}</span>
-    <span class="vname">${isStarred(meta) ? '★ ' : ''}${esc(meta.name)}</span>
+    <span class="vthumb">${isVideoLink(meta) ? icon('video', 34) : icon(iconForMime(meta.mime), 34)}</span>
+    <span class="vname">${isStarred(meta) ? '★ ' : ''}${esc(displayName(meta))}</span>
     <span class="vmeta">${esc(metaLine(meta))}</span>
     <button class="vmore" aria-label="menu">${icon('more', 18)}</button>`;
   lazyThumb(c, c.querySelector('.vthumb'), meta);
@@ -1302,16 +1349,64 @@ async function playJellyfin(el, meta) {
   return true;
 }
 
+/** Viewer cho mục video-link: thumbnail + nhúng iframe + mở YouTube. */
+async function renderLinkViewer(meta) {
+  const d = await loadLink(meta);
+  if (!d) {
+    vwBody.innerHTML = `<div class="vw-note">${esc(t('link_unreadable'))}</div>`;
+    return;
+  }
+  const { id } = linkIdOf(d.url);
+  const embed = d.site === 'youtube' && id
+    ? `https://www.youtube.com/embed/${id}?playsinline=1&rel=0&modestbranding=1`
+    : '';
+  const dur = fmtDur(d.duration);
+  vwBody.innerHTML = `<div class="lk">
+    <div class="lk-top" id="lk-top">
+      ${d.thumbnail ? `<img src="${esc(d.thumbnail)}" alt="" />` : ''}
+      <button class="lk-play" id="lk-play">${icon('video', 34)}<span>${esc(t('link_play'))}</span></button>
+    </div>
+    <div class="lk-info">
+      <b>${esc(d.title || meta.name)}</b>
+      <small>${esc([siteLabel(d.site), d.author, dur].filter(Boolean).join(' · '))}</small>
+    </div>
+    <div class="vw-actions">
+      <button id="lk-open">${icon('external')}<span>${esc(t('link_open'))}</span></button>
+      <button class="alt" id="lk-copy">${icon('link')}<span>${esc(t('fa_share'))}</span></button>
+    </div>
+  </div>`;
+
+  const openBtn = vwBody.querySelector('#lk-open');
+  if (openBtn) openBtn.onclick = () => window.open(d.url, '_blank');
+  const copyBtn = vwBody.querySelector('#lk-copy');
+  if (copyBtn) copyBtn.onclick = async () => {
+    try { await navigator.clipboard.writeText(d.url); snack(t('copied')); }
+    catch { snack(d.url); }
+  };
+  const play = vwBody.querySelector('#lk-play');
+  if (play) play.onclick = () => {
+    if (!embed) return window.open(d.url, '_blank');
+    const top = vwBody.querySelector('#lk-top');
+    top.classList.add('emb');
+    top.innerHTML = `<iframe src="${esc(embed)}" allow="autoplay; encrypted-media; fullscreen; picture-in-picture" allowfullscreen frameborder="0"></iframe>`;
+  };
+}
+
 async function renderViewer() {
   const it = currentItems[viewIndex];
   if (!it) return closeViewer();
   stopJfPlayback();
   const meta = it.meta;
-  vwName.textContent = meta.name || it.blob;
+  vwName.textContent = displayName(meta);
   vwSub.textContent = [meta.mime, fmtSize(meta.size), fmtDate(meta.date)].filter(Boolean).join(' · ');
   vwCount.textContent = `${viewIndex + 1}/${currentItems.length}`;
   vwBody.innerHTML = `<p class="vw-note">${esc(t('loading'))}</p>`;
   const mime = meta.mime || '';
+
+  if (isVideoLink(meta)) {
+    await renderLinkViewer(meta);
+    return;
+  }
 
   if (isImage(mime)) {
     let src = null;
@@ -1674,12 +1769,13 @@ async function signUnsigned(unsigned) {
   return text;
 }
 
-async function uploadBlobText(ref, text) {
+async function uploadBlobText(ref, text, fileName) {
   const d = await getDisc();
   const boundary = '----pk' + Date.now().toString(36);
+  const safeName = String(fileName || ref).replace(/["\r\n]/g, '_');
   const body =
     `--${boundary}\r\n` +
-    `Content-Disposition: form-data; name="${ref}"; filename="${ref}"\r\n` +
+    `Content-Disposition: form-data; name="${ref}"; filename="${safeName}"\r\n` +
     'Content-Type: application/octet-stream\r\n\r\n' +
     text +
     `\r\n--${boundary}--\r\n`;
@@ -1689,6 +1785,13 @@ async function uploadBlobText(ref, text) {
     body
   });
   if (!r.ok) throw new Error(`HTTP ${r.status} ${(r.text || '').slice(0, 120)}`);
+  // Perkeep trả 200 kèm errorText khi từ chối blob. "received" là [{blobRef,size}]
+  // (rỗng nếu blob đã có sẵn) nên KHÔNG dùng nó để kết luận lỗi.
+  let j = null;
+  try { j = JSON.parse(r.text || '{}'); } catch {}
+  if (j && j.errorText && !/already (exists|received)/i.test(j.errorText)) {
+    throw new Error(`blob bị từ chối: ${String(j.errorText).trim().slice(0, 160)}`);
+  }
 }
 
 /** Thêm/bỏ 1 tag trên permanode (claimType: add-attribute | del-attribute). */
@@ -1724,6 +1827,260 @@ async function changeTag(blob, meta, tag, add, msg) {
     log(`tag FAIL: ${e.message}`);
   }
 }
+
+// ============================================================
+// Video link (YouTube...) = 1 mục Perkeep giữ vĩnh viễn
+//   - blob JSON: { type, site, url, title, duration, author, thumbnail, addedAt }
+//   - permanode: camliContent -> JSON, title, tag=video-link
+//   - tên file: "<Tiêu đề> [YouTube].json"  -> search theo tên là ra
+// Không phụ thuộc YouTube còn sống hay không: link + metadata nằm trong Perkeep.
+// ============================================================
+const linkCache = new Map();     // fileRef -> JSON | null
+
+const fmtDur = (sec) => {
+  const s = Math.max(0, Math.round(Number(sec) || 0));
+  if (!s) return '';
+  const h = Math.floor(s / 3600);
+  const m = Math.floor((s % 3600) / 60);
+  const x = s % 60;
+  return h
+    ? `${h}:${String(m).padStart(2, '0')}:${String(x).padStart(2, '0')}`
+    : `${m}:${String(x).padStart(2, '0')}`;
+};
+
+const sanitizeName = (s) => String(s || '').replace(/[\\/:*?"<>|\r\n\t]+/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 110);
+const siteLabel = (site) => ({ youtube: 'YouTube', vimeo: 'Vimeo', tiktok: 'TikTok' }[site] || 'Video');
+
+function linkIdOf(raw) {
+  try {
+    const u = new URL(String(raw).trim());
+    const host = u.hostname.replace(/^www\./i, '').toLowerCase();
+    if (host === 'youtu.be') return { site: 'youtube', id: u.pathname.slice(1).split('/')[0] };
+    if (host === 'youtube.com' || host === 'm.youtube.com') {
+      if (u.pathname === '/watch') return { site: 'youtube', id: u.searchParams.get('v') || '' };
+      const m = u.pathname.match(/^\/(shorts|embed|live|v)\/([^/?#]+)/);
+      if (m) return { site: 'youtube', id: m[2] };
+    }
+    if (host === 'vimeo.com') return { site: 'vimeo', id: u.pathname.split('/').filter(Boolean).pop() || '' };
+    if (host.endsWith('tiktok.com')) return { site: 'tiktok', id: u.pathname.split('/').filter(Boolean).pop() || '' };
+    return { site: 'web', id: '' };
+  } catch { return { site: 'web', id: '' }; }
+}
+
+/** Lấy tiêu đề / kênh / thời lượng / thumbnail (oEmbed + trang watch). */
+async function fetchLinkMeta(raw) {
+  const url = String(raw || '').trim();
+  const { site, id } = linkIdOf(url);
+  const out = { url, site, id, title: '', duration: 0, author: '', thumbnail: '', embed: '' };
+  if (site === 'youtube' && id) {
+    out.thumbnail = `https://i.ytimg.com/vi/${id}/hqdefault.jpg`;
+    out.embed = `https://www.youtube.com/embed/${id}`;
+    try {
+      const r = await http(`https://www.youtube.com/oembed?format=json&url=${encodeURIComponent(url)}`);
+      if (r.ok && r.text) {
+        const j = JSON.parse(r.text);
+        out.title = j.title || '';
+        out.author = j.author_name || '';
+        if (j.thumbnail_url) out.thumbnail = j.thumbnail_url;
+      }
+    } catch (e) { log(`link oembed FAIL: ${e.message}`); }
+    try {
+      const r = await http(`https://www.youtube.com/watch?v=${encodeURIComponent(id)}`);
+      const m = /"lengthSeconds":"(\d+)"/.exec(r.text || '');
+      if (m) out.duration = Number(m[1]) || 0;
+    } catch (e) { log(`link page FAIL: ${e.message}`); }
+  }
+  return out;
+}
+
+/** Ký + upload 1 claim. */
+async function signClaim(fields) {
+  const d = await getDisc();
+  const unsigned = JSON.stringify({
+    attribute: fields.attribute,
+    camliSigner: d.signerPubKey,
+    camliType: 'claim',
+    camliVersion: 1,
+    claimDate: new Date().toISOString().replace(/\.\d+Z$/, 'Z'),
+    claimType: fields.claimType,
+    permaNode: fields.permaNode,
+    ...(fields.value !== undefined ? { value: fields.value } : {})
+  });
+  const signed = await signUnsigned(unsigned);
+  await uploadBlobText(blobRefOf(signed), signed);
+  log(`claim ${fields.claimType}${fields.attribute ? ' ' + fields.attribute : ''} → ${blobRefOf(signed).slice(0, 16)}…`);
+  return signed;
+}
+
+async function uploadBlobNamed(text, name) {
+  const ref = blobRefOf(text);
+  await uploadBlobText(ref, text, name);
+  return ref;
+}
+
+/**
+ * Tạo permanode: blob JSON camliType=permanode + chữ ký, ref = hash blob đó.
+ * (Giống hệt plugin upload: {"camliSigner":..,"camliType":"permanode","camliVersion":1})
+ */
+async function createPermanode() {
+  const d = await getDisc();
+  const unsigned = JSON.stringify({
+    camliSigner: d.signerPubKey,
+    camliType: 'permanode',
+    camliVersion: 1
+  });
+  const signed = await signUnsigned(unsigned);
+  const ref = blobRefOf(signed);
+  await uploadBlobText(ref, signed);
+  log(`permanode → ${ref.slice(0, 18)}…`);
+  return ref;
+}
+
+/** Tạo 1 mục video-link: blob nội dung + blob "file" schema + permanode + claim. */
+async function createVideoLink(info) {
+  const text = JSON.stringify({
+    type: 'pk.video.link',
+    site: info.site || 'web',
+    url: info.url,
+    title: info.title || '',
+    duration: Number(info.duration) || 0,
+    author: info.author || '',
+    thumbnail: info.thumbnail || '',
+    addedAt: new Date().toISOString()
+  }, null, 2);
+
+  const fileName = `${sanitizeName(info.title) || 'video'} [${siteLabel(info.site)}].json`;
+  log(`link: upload JSON "${fileName}"`);
+  const contentRef = await uploadBlobNamed(text, fileName);
+  const size = new TextEncoder().encode(text).length;
+
+  // Blob "file" (schema) — nhờ nó app/Perkeep mới có fileName + mở/tải được
+  const schema = JSON.stringify({
+    camliType: 'file',
+    camliVersion: 1,
+    fileName,
+    parts: [{ blobRef: contentRef, size }],
+    size
+  });
+  const fileRef = blobRefOf(schema);
+  await uploadBlobText(fileRef, schema);
+  log(`link: file blob ${fileRef.slice(0, 18)}… (${size} B)`);
+
+  const permaRef = await createPermanode();
+  await signClaim({ claimType: 'set-attribute', permaNode: permaRef, attribute: 'camliContent', value: fileRef });
+  if (info.title) await signClaim({ claimType: 'set-attribute', permaNode: permaRef, attribute: 'title', value: info.title });
+  await signClaim({ claimType: 'set-attribute', permaNode: permaRef, attribute: 'mimeType', value: 'application/json' });
+  await signClaim({ claimType: 'add-attribute', permaNode: permaRef, attribute: 'tag', value: LINK_TAG });
+  for (const tag of (info.tags || [])) {
+    if (tag && tag !== LINK_TAG) await signClaim({ claimType: 'add-attribute', permaNode: permaRef, attribute: 'tag', value: tag });
+  }
+  log(`link: ${fileName} → permanode ${permaRef}`);
+  return { permaRef, contentRef, fileName };
+}
+
+/** Đọc JSON của 1 mục link (cache theo fileRef). */
+async function loadLink(meta) {
+  if (!meta?.fileRef) return null;
+  if (linkCache.has(meta.fileRef)) return linkCache.get(meta.fileRef);
+  let data = null;
+  try {
+    const r = await http(directUrl(meta.fileRef), { headers: authHeaders() });
+    if (r.ok && r.text) data = JSON.parse(r.text);
+  } catch (e) { log(`link JSON FAIL: ${e.message}`); }
+  linkCache.set(meta.fileRef, data);
+  return data;
+}
+
+/** Sheet thêm link video. */
+function openAddLinkSheet() {
+  openSheet(`<h3>${esc(t('link_add'))}</h3>
+    <div class="edt">
+      <label>${esc(t('link_url'))}</label>
+      <input id="lk-url" inputmode="url" placeholder="https://www.youtube.com/watch?v=..." autocomplete="off" />
+      <div class="lk-prev" id="lk-prev" hidden></div>
+      <label>${esc(t('link_title'))}</label><input id="lk-title" autocomplete="off" />
+      <label>${esc(t('link_dur'))}</label><input id="lk-dur" inputmode="numeric" placeholder="12:34" autocomplete="off" />
+      <label>${esc(t('link_tags'))}</label><input id="lk-tags" autocomplete="off" />
+      <div class="btns"><button data-save>${esc(t('btn_save'))}</button><button class="cx" data-cx>${esc(t('btn_cancel'))}</button></div>
+    </div>
+    <p class="err" id="lk-err" hidden></p>
+    <p class="meta">${esc(t('link_hint'))}</p>`);
+
+  const errEl = sheetBody.querySelector('#lk-err');
+  const urlEl = sheetBody.querySelector('#lk-url');
+  const titleEl = sheetBody.querySelector('#lk-title');
+  const durEl = sheetBody.querySelector('#lk-dur');
+  const tagsEl = sheetBody.querySelector('#lk-tags');
+  const prev = sheetBody.querySelector('#lk-prev');
+  let meta = null;
+
+  const parseDur = (v) => {
+    const s = String(v || '').trim();
+    if (!s) return 0;
+    const p = s.split(':').map(Number);
+    if (p.some((n) => Number.isNaN(n))) return 0;
+    if (p.length === 3) return p[0] * 3600 + p[1] * 60 + p[2];
+    if (p.length === 2) return p[0] * 60 + p[1];
+    return p[0] || 0;
+  };
+
+  const fill = async () => {
+    const url = urlEl.value.trim();
+    if (!url) return;
+    prev.hidden = false;
+    prev.textContent = t('link_fetching');
+    try {
+      meta = await fetchLinkMeta(url);
+      if (meta.title && !titleEl.value.trim()) titleEl.value = meta.title;
+      if (meta.duration) durEl.value = fmtDur(meta.duration);
+      prev.innerHTML = meta.thumbnail
+        ? `<img src="${esc(meta.thumbnail)}" alt="" /><span>${esc([siteLabel(meta.site), meta.author, fmtDur(meta.duration)].filter(Boolean).join(' · '))}</span>`
+        : esc(meta.site === 'web' ? t('link_generic') : siteLabel(meta.site));
+      log(`link meta: ${meta.site}/${meta.id} · ${meta.title || '(no title)'} · ${meta.duration}s`);
+    } catch (e) {
+      prev.hidden = true;
+      log(`link meta FAIL: ${e.message}`);
+    }
+  };
+
+  urlEl.addEventListener('change', fill);
+  urlEl.addEventListener('blur', fill);
+  urlEl.addEventListener('paste', () => setTimeout(fill, 60));
+  sheetBody.querySelector('[data-cx]').onclick = closeSheet;
+  sheetBody.querySelector('[data-save]').onclick = async () => {
+    errEl.hidden = true;
+    const url = urlEl.value.trim();
+    if (!/^https?:\/\//i.test(url)) { errEl.textContent = t('link_bad'); errEl.hidden = false; return; }
+    if (!meta || meta.url !== url) meta = await fetchLinkMeta(url);
+    const title = titleEl.value.trim() || meta.title || '';
+    if (!title) { errEl.textContent = t('link_need_title'); errEl.hidden = false; return; }
+    const tags = tagsEl.value.split(',').map((s) => s.trim()).filter(Boolean);
+    const btn = sheetBody.querySelector('[data-save]');
+    btn.disabled = true;
+    try {
+      snack(t('link_saving'));
+      await createVideoLink({
+        url,
+        site: meta.site,
+        title,
+        duration: parseDur(durEl.value) || meta.duration || 0,
+        author: meta.author,
+        thumbnail: meta.thumbnail,
+        tags
+      });
+      linkCache.clear();
+      closeSheet();
+      snack(t('link_ok'));
+      setTimeout(() => reloadTab(currentTab()), 900);
+    } catch (e) {
+      btn.disabled = false;
+      errEl.textContent = `${t('link_fail')}: ${e.message}`;
+      errEl.hidden = false;
+      log(`link FAIL: ${e.message} :: ${(e.stack || '').split('\n').slice(0, 3).join(' | ')}`);
+    }
+  };
+}
+
 
 /** Sheet thêm tag cho 1 file. */
 function openTagSheet(blob, meta) {
@@ -1878,21 +2235,19 @@ async function refreshUploads() {
 }
 
 $('fab').onclick = () => {
-  if (!up.uploadSupported()) {
-    openSheet(`<h3>${esc(t('fab_title'))}</h3>
-      <button class="rowbtn">${icon('upload')}<span>${esc(t('fab_upload'))}</span></button>
-      <p class="meta">${esc(t('up_need_native'))}</p>`);
-    sheetBody.querySelector('.rowbtn').onclick = async () => {
-      closeSheet();
-      snack(t('up_need_native'));
-    };
-    return;
-  }
+  const native = up.uploadSupported();
   openSheet(`<h3>${esc(t('fab_title'))}</h3>
     <button class="rowbtn" data-k="upload">${icon('upload')}<span>${esc(t('fab_upload'))}</span></button>
-    <button class="rowbtn" disabled>${icon('doc')}<span>${esc(t('fab_note'))} ${esc(t('fab_soon'))}</span></button>`);
+    <button class="rowbtn" data-k="link">${icon('video')}<span>${esc(t('fab_link'))}</span></button>
+    <button class="rowbtn" disabled>${icon('doc')}<span>${esc(t('fab_note'))} ${esc(t('fab_soon'))}</span></button>
+    ${native ? '' : `<p class="meta">${esc(t('up_need_native'))}</p>`}`);
+  sheetBody.querySelector('[data-k="link"]').onclick = () => {
+    closeSheet();
+    openAddLinkSheet();
+  };
   sheetBody.querySelector('[data-k="upload"]').onclick = async () => {
     closeSheet();
+    if (!native) return snack(t('up_need_native'));
     try {
       const wifiOnly = await up.getWifiOnly();
       const a = active();
