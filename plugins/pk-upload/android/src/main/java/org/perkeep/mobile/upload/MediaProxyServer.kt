@@ -1,8 +1,11 @@
 package org.perkeep.mobile.upload
 
 import android.content.Context
+import android.util.Base64
 import android.util.Log
-import fi.iki.elonen.NanoHTTPD
+import fi.iki.nanohttpd.NanoHTTPD
+import fi.iki.nanohttpd.Response
+import fi.iki.nanohttpd.Response.Status
 import java.io.File
 import java.io.InputStream
 import java.net.HttpURLConnection
@@ -11,14 +14,15 @@ import java.net.URLEncoder
 import java.util.UUID
 
 /**
- * Proxy HTTP nội bộ để PHÁT media khi server Perkeep đòi đăng nhập.
- *
- * Vì sao cần: thẻ <video>/<img> trong WebView không gửi được header
- * `Authorization`, còn Service Worker thì bị CORS chặn khi gắn header đó.
- * Nên: <video src="http://127.0.0.1:<port>/m/<ref>?t=<token>"> -> server này
- * thêm Basic auth rồi stream (có chuyển tiếp Range) từ Perkeep.
- *
- * Chỉ listen trên 127.0.0.1, kèm token ngẫu nhiên mỗi lần chạy app.
+ * Proxy HTTP nội bộ để phát media khi server Perkeep đòi đăng nhập.
+ * <p>
+ * Thẻ <video>/ trong WebView không gửi được header Authorization,
+ * mà Service Worker thì bị CORS chặn. Nên proxy nội bộ trên localhost:
+ *   <video src="http://127.0.0.1:<port>/m/<blobref>?t=<token>">
+ *   -> proxy thêm Authorization: Basic (hoặc Cloudflare Access)
+ *   -> stream từ Perkeep qua Range (tua được, không giới hạn kích thước).
+ * <p>
+ * Chỉ listen localhost + token ngẫu nhiên mỗi lần chạy app.
  */
 class MediaProxyServer(private val ctx: Context) : NanoHTTPD("127.0.0.1", 0) {
 
@@ -30,39 +34,39 @@ class MediaProxyServer(private val ctx: Context) : NanoHTTPD("127.0.0.1", 0) {
 
     fun configure(baseUrl: String, user: String?, pass: String?, cfClientId: String? = null, cfClientSecret: String? = null) {
         base = baseUrl.trimEnd('/')
-        authHeader = if (!user.isNullOrEmpty()) {
-            "Basic " + android.util.Base64.encodeToString(
-                "$user:${pass ?: ""}".toByteArray(Charsets.UTF_8),
-                android.util.Base64.NO_WRAP
+        authHeader = if (user.isNullOrEmpty()) null else {
+            "Basic " + Base64.encodeToString(
+                ("$user:${pass ?: ""}").toByteArray(Charsets.UTF_8),
+                Base64.NO_WRAP
             )
-        } else null
+        }
         cfId = cfClientId?.takeIf { it.isNotEmpty() }
         cfSecret = cfClientSecret
     }
 
-    /** URL nội bộ để JS gán vào <video>/<img>. */
+    /** URL nội bộ để JS gán vào <video>/. */
     fun urlFor(fileRef: String): String =
         "http://127.0.0.1:$listeningPort/m/${URLEncoder.encode(fileRef, "UTF-8")}?t=$token"
 
-    /** URL nội bộ phát file ĐÃ TẢI VỀ CACHE (xem mượt, tua tức thì). */
-    fun cacheUrlFor(name: String): String =
-        "http://127.0.0.1:$listeningPort/c/${URLEncoder.encode(name, "UTF-8")}?t=$token"
+    /** URL nội bộ để phát file đã tải về cache (xem mượt, tua tức thì). */
+    fun cacheUrlFor(fileName: String): String =
+        "http://127.0.0.1:$listeningPort/c/${URLEncoder.encode(fileName, "UTF-8")}?t=$token"
 
-    override fun serve(session: IHTTPSession): Response {
-        val uri = session.uri ?: return err(Response.Status.BAD_REQUEST, "bad request")
-        if (session.parameters["t"]?.firstOrNull() != token) return err(Response.Status.FORBIDDEN, "forbidden")
+    override fun serve(request: IHTTPSession): Response {
+        val uri = request.uri ?: return err(Status.BAD_REQUEST, "bad request")
+        if (request.parameters["t"]?.firstOrNull() != token) return err(Status.FORBIDDEN, "forbidden")
         return when {
             uri.startsWith("/m/") -> serveUpstream(uri.substring(3), session)
             uri.startsWith("/c/") -> serveCache(uri.substring(3), session)
-            else -> err(Response.Status.NOT_FOUND, "not found")
+            else -> err(Status.NOT_FOUND, "not found")
         }
     }
 
-    /** Phát file đã tải trong cache, có hỗ trợ Range để tua. */
-    private fun serveCache(encodedName: String, session: IHTTPSession): Response {
-        val name = java.net.URLDecoder.decode(encodedName, "UTF-8")
+    /** Phát file đã tải về cache, hỗ trợ Range để tua. */
+    private fun serveCache(fileRef: String, session: IHTTPSession): Response {
+        val name = URLDecoder.decode(fileRef, "UTF-8")
         val f = File(MediaCache.dir(ctx), name)
-        if (!f.exists() || f.length() == 0L) return err(Response.Status.NOT_FOUND, "chưa tải về máy")
+        if (!f.exists() || f.length() == 0L) return err(Status.NOT_FOUND, "not cached yet")
         val total = f.length()
         var start = 0L
         var end = total - 1
@@ -79,21 +83,24 @@ class MediaProxyServer(private val ctx: Context) : NanoHTTPD("127.0.0.1", 0) {
         }
         val len = end - start + 1
         val mime = java.net.URLConnection.guessContentTypeFromName(f.name) ?: "application/octet-stream"
-        val ins = java.io.FileInputStream(f)
-        if (start > 0) ins.channel.position(start)
-        val status = if (partial) Response.Status.PARTIAL_CONTENT else Response.Status.OK
-        val res = newFixedLengthResponse(status, mime, ins, len)
+        val ins = FileInputStream(f)
+        if (start > 0) ins.skip(start)
+        val res: Response = if (partial) {
+            Response(Status.PARTIAL_CONTENT, mime, ins, len)
+        } else {
+            Response(status, mime, ins, len)
+        }
         if (partial) res.addHeader("Content-Range", "bytes $start-$end/$total")
         res.addHeader("Accept-Ranges", "bytes")
         res.addHeader("Access-Control-Allow-Origin", "*")
         return res
     }
 
+    /** Stream từ Perkeep qua proxy (thêm Basic auth / Cloudflare Access). */
     private fun serveUpstream(ref: String, session: IHTTPSession): Response {
-        if (base.isBlank()) return err(Response.Status.INTERNAL_ERROR, "chưa cấu hình server")
+        if (base.isBlank()) return err(Status.INTERNAL_ERROR, "chưa cấu hình server")
         return try {
-            val target = URL("$base/ui/download/" + URLEncoder.encode(ref, "UTF-8"))
-            val conn = (target.openConnection() as HttpURLConnection).apply {
+            val conn = (URL("$base/ui/download/${URLEncoder.encode(ref, "UTF-8")}").openConnection() as HttpURLConnection).apply {
                 connectTimeout = 15000
                 readTimeout = 0 // stream dài, không cắt giữa video
                 authHeader?.let { setRequestProperty("Authorization", it) }
@@ -105,31 +112,30 @@ class MediaProxyServer(private val ctx: Context) : NanoHTTPD("127.0.0.1", 0) {
                 setRequestProperty("Accept", "*/*")
             }
             val code = conn.responseCode
-            val stream: InputStream = if (code in 200..299) conn.inputStream else (conn.errorStream ?: return err(Response.Status.lookup(code) ?: Response.Status.INTERNAL_ERROR, "lỗi upstream $code"))
-            val status = Response.Status.lookup(code) ?: Response.Status.OK
+            val stream: InputStream = if (code in 200..299) conn.inputStream else (conn.errorStream ?: return err(Status.INTERNAL_ERROR, "lỗi upstream $code"))
+            val status = Response.Status.lookup(code) ?: Status.OK
             val mime = conn.contentType ?: "application/octet-stream"
-            val len = conn.getHeaderField("Content-Length")?.toLongOrNull() ?: -1L
-
-            val res = if (len >= 0) newFixedLengthResponse(status, mime, stream, len)
-            else newChunkedResponse(status, mime, stream)
+            val len = conn.contentLength
+            val res: Response = if (len >= 0) {
+                Response(status, mime, stream, len)
+            } else {
+                Response(status, mime, stream)
+            }
             conn.getHeaderField("Content-Range")?.let { res.addHeader("Content-Range", it) }
             conn.getHeaderField("Accept-Ranges")?.let { res.addHeader("Accept-Ranges", it) }
-            // Cho phép WebView đọc (origin là https://localhost)
             res.addHeader("Access-Control-Allow-Origin", "*")
             res
         } catch (t: Throwable) {
             Log.w(TAG, "proxy media lỗi", t)
-            err(Response.Status.INTERNAL_ERROR, t.message ?: "proxy error")
+            err(Status.INTERNAL_ERROR, t.message ?: "proxy error")
         }
     }
 
-    private fun err(status: Response.IStatus, msg: String) =
+    private fun err(status: Status, msg: String) =
         newFixedLengthResponse(status, "text/plain", msg)
 
     companion object {
         private const val TAG = "PkMediaProxy"
-
-        @Volatile private var instance: MediaProxyServer? = null
 
         /** Khởi động (1 lần) và trả về server đang chạy. */
         @Synchronized
@@ -138,7 +144,7 @@ class MediaProxyServer(private val ctx: Context) : NanoHTTPD("127.0.0.1", 0) {
             val s = MediaProxyServer(ctx.applicationContext)
             s.start(SOCKET_READ_TIMEOUT, false) // daemon, không chặn thoát app
             instance = s
-            Log.i(TAG, "media proxy chạy ở cổng ${s.listeningPort}")
+            Log.i(TAG, "media proxy chạy tại cổng ${s.listeningPort}")
             return s
         }
     }
