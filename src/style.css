@@ -115,6 +115,11 @@ h3 { margin: 12px 4px; font-size: 1.0625rem; }
 /* tab Trợ lý */
 .tabs.ai-tab{display:none;flex-direction:column;padding:0 0 72px}
 .tabs.ai-tab.on{display:flex}
+.ai-head{flex:none;display:flex;align-items:center;gap:8px;padding:10px 12px 8px;border-bottom:1px solid #f1f1f1}
+.ai-head b{flex:1;min-width:0;font-size:16px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ai-head-actions{display:flex;gap:6px;flex:none}
+.ai-head-actions button{width:36px;height:36px;border:0;border-radius:50%;background:#f1f5f3;color:var(--green);
+  display:flex;align-items:center;justify-content:center}
 .ai-chat{flex:1;min-height:0;overflow:auto;padding:10px 12px 6px;display:flex;flex-direction:column;gap:9px}
 .ai-msg{max-width:88%;padding:10px 12px;border-radius:16px;font-size:14px;line-height:1.5;white-space:pre-wrap;
   word-break:break-word}
@@ -124,6 +129,16 @@ h3 { margin: 12px 4px; font-size: 1.0625rem; }
 .ai-tool{align-self:flex-start;display:flex;align-items:center;gap:8px;font-size:12px;color:#3d4a43;
   background:#fff;border:1px solid #e3e8e5;border-radius:12px;padding:7px 10px;max-width:92%}
 .ai-tool .st{margin-left:auto;color:#2f7d52;font-size:11px;white-space:nowrap}
+.ai-files{display:flex;flex-direction:column;gap:6px;margin-top:8px}
+.ai-file{display:flex;gap:9px;align-items:center;background:#fff;border:1px solid #e6ebe8;border-radius:12px;padding:7px;
+  text-align:left;font:inherit;color:inherit;width:100%}
+.ai-file:active{background:#f6f8f7}
+.ai-file .th{width:58px;height:34px;border-radius:7px;background:#eef2ef;flex:none;display:flex;align-items:center;
+  justify-content:center;overflow:hidden;color:var(--green)}
+.ai-file .th img{width:100%;height:100%;object-fit:cover}
+.ai-file .tx{flex:1;min-width:0}
+.ai-file b{display:block;font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ai-file small{font-size:10.5px;color:var(--muted)}
 .ai-chips{display:flex;gap:8px;flex-wrap:wrap;padding:2px}
 .ai-chips button{flex:none;background:var(--green-l);border:0;border-radius:16px;padding:8px 12px;
   font-size:12.5px;color:var(--green-d);font-family:inherit;font-weight:600}

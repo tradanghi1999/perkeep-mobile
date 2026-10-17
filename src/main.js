@@ -147,6 +147,8 @@ const I18N = {
     watch_need_url: 'Dán link kênh', watch_queue_empty: 'Hàng chờ trống',
     watch_save: (n) => `Lưu ${n} link`, watch_skip: (n) => `Bỏ qua ${n}`, watch_done: (n) => `Đã lưu ${n} video`,
     watch_fail: 'Lỗi theo dõi kênh',
+    ai_new: 'Hội thoại mới', ai_history: 'Lịch sử chat',
+    ai_history_empty: 'Chưa có hội thoại nào.', ai_chat: 'Hội thoại', ai_msgs: 'tin',
     up_waiting: 'Chờ mạng…', up_preparing: 'Đang chuẩn bị…', up_uploading: 'Đang tải lên',
     up_signing: 'Đang tạo mục…', up_done: 'Đã tải lên', up_failed: 'Lỗi', up_canceled: 'Đã huỷ',
     up_title: 'Đang tải lên', up_retry: 'Thử lại', up_cancel: 'Huỷ', up_clear: 'Xoá mục xong',
@@ -293,6 +295,8 @@ const I18N = {
     watch_need_url: 'Paste a channel link', watch_queue_empty: 'Nothing pending',
     watch_save: (n) => `Save ${n} links`, watch_skip: (n) => `Skip ${n}`, watch_done: (n) => `Saved ${n} videos`,
     watch_fail: 'Channel watch error',
+    ai_new: 'New chat', ai_history: 'Chat history',
+    ai_history_empty: 'No conversations yet.', ai_chat: 'Conversation', ai_msgs: 'messages',
     up_waiting: 'Waiting for network…', up_preparing: 'Preparing…', up_uploading: 'Uploading',
     up_signing: 'Creating item…', up_done: 'Uploaded', up_failed: 'Failed', up_canceled: 'Canceled',
     up_title: 'Uploads', up_retry: 'Retry', up_cancel: 'Cancel', up_clear: 'Clear finished',
@@ -369,6 +373,8 @@ function paintIcons() {
   $('fab').innerHTML = icon('plus', 26);
   $('s-ai').innerHTML = icon('sparkle', 18);
   $('ai-plus').innerHTML = icon('plus', 20);
+  $('ai-new').innerHTML = icon('plus', 20);
+  $('ai-history').innerHTML = icon('history', 20);
   aiComposerState();
 }
 function setLang(l) {
@@ -1077,7 +1083,7 @@ function renderFilters() {
     $('btn-view-grid').classList.toggle('on', filters.view === 'grid');
     $('btn-view-list').title = t('view_list');
     $('btn-view-grid').title = t('view_grid');
-    seg.hidden = currentTab() === 't-set';
+    seg.hidden = ['t-set', 't-ai'].includes(currentTab());
   }
   updateTabTitle();
   el.hidden = false;
@@ -1588,6 +1594,11 @@ function closeViewer() {
   stopJfPlayback();
   vwBody.innerHTML = ''; // dừng phát video/audio
   viewIndex = -1;
+  if (aiViewerReturn) {
+    currentItems = aiViewerReturn.items;
+    viewIndex = aiViewerReturn.index;
+    aiViewerReturn = null;
+  }
 }
 const stepViewer = (d) => {
   if (viewIndex < 0) return;
@@ -1732,6 +1743,10 @@ function switchTab(tab) {
   $('viewseg').hidden = tab === 't-set' || chat;
   const fb = document.querySelector('.filterbar');
   if (fb) fb.style.display = chat ? 'none' : '';
+  const sb = document.querySelector('.searchbar');
+  if (sb) sb.style.display = chat ? 'none' : '';
+  const th = document.querySelector('.tabhead');
+  if (th) th.style.display = chat ? 'none' : '';
   if (chat) { const ab = $('aibar'); if (ab) { ab.hidden = true; ab.classList.remove('on'); } }
   if (tab === 't-home') renderColls();
   updateTabTitle();
@@ -2887,9 +2902,109 @@ async function aiSearchFromInput() {
 }
 
 // ---------- chat ----------
+// phiên chat: nhiều hội thoại + lịch sử
+const AI_SESS_KEY = 'pk-ai-sessions-v1';
+const AI_ACTIVE_KEY = 'pk-ai-active-v1';
+let aiSessions = [];
+try { aiSessions = JSON.parse(localStorage.getItem(AI_SESS_KEY) || '[]') || []; } catch { aiSessions = []; }
+let aiActiveId = localStorage.getItem(AI_ACTIVE_KEY) || '';
 let aiMsgs = [];
-try { aiMsgs = JSON.parse(localStorage.getItem(AI_CHAT_KEY) || '[]') || []; } catch { aiMsgs = []; }
-const aiSaveChat = () => { try { localStorage.setItem(AI_CHAT_KEY, JSON.stringify(aiMsgs.slice(-40))); } catch {} };
+let aiViewerReturn = null;
+
+// migrate hội thoại cũ (1 danh sách) thành 1 phiên
+try {
+  const old = JSON.parse(localStorage.getItem(AI_CHAT_KEY) || '[]');
+  if (!aiSessions.length && Array.isArray(old) && old.length) {
+    const id = 's' + Date.now().toString(36);
+    const first = old.find((m) => m.role === 'me');
+    aiSessions.push({ id, title: (first?.text || 'Hội thoại').slice(0, 40), at: Date.now(), messages: old });
+    aiActiveId = id;
+    localStorage.setItem(AI_SESS_KEY, JSON.stringify(aiSessions));
+    localStorage.setItem(AI_ACTIVE_KEY, aiActiveId);
+    localStorage.removeItem(AI_CHAT_KEY);
+  }
+} catch {}
+
+if (aiActiveId) {
+  const s = aiSessions.find((x) => x.id === aiActiveId);
+  aiMsgs = s ? [...s.messages] : [];
+  if (!s) aiActiveId = '';
+}
+
+function updateAiTitle() {
+  const el = $('ai-title');
+  if (!el) return;
+  const s = aiSessions.find((x) => x.id === aiActiveId);
+  el.textContent = s?.title || t('nav_ai');
+}
+
+function aiPersist() {
+  if (!aiActiveId) return;
+  const s = aiSessions.find((x) => x.id === aiActiveId);
+  if (!s) return;
+  s.messages = aiMsgs.slice(-40);
+  s.at = Date.now();
+  if (!s.title) {
+    const first = aiMsgs.find((m) => m.role === 'me');
+    if (first) s.title = first.text.slice(0, 40);
+  }
+  try {
+    localStorage.setItem(AI_SESS_KEY, JSON.stringify(aiSessions.slice(-30)));
+    localStorage.setItem(AI_ACTIVE_KEY, aiActiveId);
+  } catch {}
+}
+
+function aiEnsureSession(text) {
+  if (aiActiveId) return;
+  aiActiveId = 's' + Date.now().toString(36);
+  aiSessions.push({ id: aiActiveId, title: String(text || '').slice(0, 40), at: Date.now(), messages: [] });
+  try { localStorage.setItem(AI_ACTIVE_KEY, aiActiveId); } catch {}
+}
+
+function aiNewChat() {
+  aiActiveId = '';
+  aiMsgs = [];
+  try { localStorage.removeItem(AI_ACTIVE_KEY); } catch {}
+  updateAiTitle();
+  aiRender();
+}
+
+function openAiHistory() {
+  const list = [...aiSessions].sort((a, b) => (b.at || 0) - (a.at || 0));
+  openSheet(`<h3>${esc(t('ai_history'))}</h3>
+    ${list.length
+      ? list.map((s) => `
+        <div style="display:flex;align-items:center;gap:8px;border-bottom:1px solid var(--line);padding:10px 2px">
+          <button data-open="${esc(s.id)}" style="flex:1;min-width:0;text-align:left;border:0;background:none;font:inherit;color:inherit">
+            <b style="display:block;font-size:13.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(s.title || t('ai_chat'))}</b>
+            <small style="color:#666;font-size:11px">${esc(new Date(s.at || Date.now()).toLocaleString())} · ${s.messages?.length || 0} ${esc(t('ai_msgs'))}</small>
+          </button>
+          <button data-del="${esc(s.id)}" style="border:0;background:none;color:#b3261e;font:inherit;font-size:12px;font-weight:600">${esc(t('btn_del'))}</button>
+        </div>`).join('')
+      : `<p class="meta">${esc(t('ai_history_empty'))}</p>`}
+    <button class="rowbtn" id="ai-new2">＋ ${esc(t('ai_new'))}</button>`);
+  sheetBody.querySelector('#ai-new2').onclick = () => { closeSheet(); aiNewChat(); };
+  sheetBody.querySelectorAll('[data-open]').forEach((b) => {
+    b.onclick = () => {
+      const s = aiSessions.find((x) => x.id === b.dataset.open);
+      if (!s) return;
+      aiActiveId = s.id;
+      aiMsgs = [...s.messages];
+      try { localStorage.setItem(AI_ACTIVE_KEY, aiActiveId); } catch {}
+      closeSheet();
+      updateAiTitle();
+      aiRender();
+    };
+  });
+  sheetBody.querySelectorAll('[data-del]').forEach((b) => {
+    b.onclick = () => {
+      aiSessions = aiSessions.filter((x) => x.id !== b.dataset.del);
+      try { localStorage.setItem(AI_SESS_KEY, JSON.stringify(aiSessions)); } catch {}
+      if (aiActiveId === b.dataset.del) aiNewChat();
+      openAiHistory();
+    };
+  });
+}
 
 let aiBusy = false;
 let aiAbort = null;
@@ -2913,9 +3028,43 @@ function mdLite(s) {
     .replace(/\n/g, '<br>');
 }
 
+function aiFileCard(item, key) {
+  const mime = item.mime || '';
+  const sub = [mime ? mime.split('/')[0] : '', item.size ? fmtSize(item.size) : '', item.date ? fmtDate(item.date) : '']
+    .filter(Boolean).join(' · ');
+  return `<button class="ai-file" data-ai-file="${key}">
+    <span class="th">${icon(iconForMime(mime), 20)}</span>
+    <span class="tx"><b>${esc(item.name || item.blobref || '')}</b><small>${esc(sub)}</small></span>
+  </button>`;
+}
+
+/** Mở 1 file trong chat: dùng viewer hiện có; nếu không nằm trong danh sách thì dựng tạm. */
+function openAiItem(item) {
+  if (!item) return;
+  const meta = {
+    name: item.name || item.blobref || '',
+    mime: item.mime || '',
+    size: item.size || 0,
+    date: item.date || '',
+    tags: item.tags || [],
+    fileRef: item.fileRef || '',
+    isPermanode: true,
+    raw: null
+  };
+  const idx = currentItems.findIndex((x) => x.blob === item.blobref);
+  if (idx >= 0) return openViewer(idx);
+  aiViewerReturn = { items: currentItems, index: viewIndex };
+  currentItems = [{ blob: item.blobref, meta }];
+  viewIndex = 0;
+  paintViewer();
+  viewerEl.hidden = false;
+  renderViewer();
+}
+
 function aiRender() {
   const box = $('ai-chat');
   if (!box) return;
+  updateAiTitle();
   if (!aiMsgs.length) {
     box.innerHTML = `<div class="ai-empty">
       <b>${esc(t('ai_start'))}</b><br>${esc(t('ai_start_hint'))}
@@ -2929,15 +3078,22 @@ function aiRender() {
     });
     return;
   }
-  box.innerHTML = aiMsgs.map((m) => {
+  box.innerHTML = aiMsgs.map((m, mi) => {
     if (m.role === 'me') return `<div class="ai-msg me">${mdLite(m.text)}</div>`;
     if (m.role === 'tool') return `<div class="ai-tool"><span>${esc(m.text)}</span><span class="st">···</span></div>`;
     const cls = m.role === 'err' ? 'ai-msg err' : 'ai-msg bot';
     const tools = (m.tools || []).length
       ? `<div class="ai-tools-line">${esc(t('ai_used'))}: ${m.tools.map((x) => esc(prettyTool(x))).join(' · ')}</div>`
       : '';
-    return `<div class="${cls}">${mdLite(m.text)}${tools}</div>`;
+    const files = (m.items || []).length
+      ? `<div class="ai-files">${m.items.map((it, ii) => aiFileCard(it, `${mi}:${ii}`)).join('')}</div>`
+      : '';
+    return `<div class="${cls}">${mdLite(m.text)}${tools}</div>${files}`;
   }).join('');
+  box.querySelectorAll('[data-ai-file]').forEach((b) => {
+    const [mi, ii] = b.dataset.aiFile.split(':').map(Number);
+    b.onclick = () => openAiItem(aiMsgs[mi]?.items?.[ii]);
+  });
   box.scrollTop = box.scrollHeight;
 }
 
@@ -2963,20 +3119,23 @@ async function aiSend(text) {
   if (aiBusy) return;
   aiBusy = true;
   aiAbort = new AbortController();
+  aiEnsureSession(text);
   aiMsgs.push({ role: 'me', text });
   aiMsgs.push({ role: 'tool', text: t('ai_thinking') });
+  aiPersist();
+  updateAiTitle();
   aiRender();
   aiComposerState();
   try {
     const r = await aiFetch('/ai/ask', { body: { text }, signal: aiAbort.signal });
     aiMsgs.pop();
-    aiMsgs.push({ role: 'bot', text: r.text || t('ai_empty_answer'), tools: r.tools || [] });
-    aiSaveChat();
+    aiMsgs.push({ role: 'bot', text: r.text || t('ai_empty_answer'), tools: r.tools || [], items: r.items || [] });
+    aiPersist();
   } catch (e) {
     aiMsgs.pop();
     const aborted = e.name === 'AbortError' || /abort/i.test(e.message || '');
     aiMsgs.push({ role: 'err', text: aborted ? t('ai_stopped') : `${t('ai_fail')}: ${e.message}` });
-    aiSaveChat();
+    aiPersist();
   } finally {
     aiBusy = false;
     aiAbort = null;
@@ -3378,6 +3537,8 @@ async function openWatchQueue() {
 $('s-ai').onclick = aiSearchFromInput;
 $('set-ai').onclick = openAiSheet;
 $('set-watch').onclick = openWatchSheet;
+$('ai-new').onclick = aiNewChat;
+$('ai-history').onclick = openAiHistory;
 $('ai-plus').onclick = () => snack(t('ai_attach_soon'));
 $('ai-send').onclick = () => {
   if (aiBusy) { aiAbort?.abort(); return; }

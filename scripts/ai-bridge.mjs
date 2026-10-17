@@ -190,6 +190,28 @@ function stripFence(s) {
   return String(s || '').replace(/^```(?:json)?\s*/i, '').replace(/```\s*$/, '').trim();
 }
 
+/** Tách khối <ui>{items}</ui> khỏi câu trả lời để app render file cards. */
+function extractUi(text) {
+  const m = String(text || '').match(/<ui>([\s\S]*?)<\/ui>/i);
+  if (!m) return { text: String(text || '').trim(), items: [] };
+  let items = [];
+  try {
+    const j = JSON.parse(m[1]);
+    if (Array.isArray(j.items)) {
+      items = j.items.slice(0, 10).map((i) => ({
+        blobref: String(i.blobref || ''),
+        fileRef: String(i.fileRef || ''),
+        name: String(i.name || ''),
+        mime: String(i.mime || ''),
+        size: Number(i.size) || 0,
+        date: String(i.date || ''),
+        tags: Array.isArray(i.tags) ? i.tags.slice(0, 8).map(String) : []
+      })).filter((i) => i.blobref);
+    }
+  } catch (e) { console.error('ui parse:', e.message); }
+  return { text: String(text || '').replace(m[0], '').trim(), items };
+}
+
 async function generate(prompt) {
   const c = await oc();
   const r = await c.generate.text({ prompt, model: MODEL });
@@ -315,7 +337,8 @@ Yêu cầu: ${JSON.stringify(text)}`;
         const { text } = await req.json();
         if (!text || !String(text).trim()) return json({ error: 'empty' }, 400);
         const out = await askAgent(String(text));
-        return json(out);
+        const ui = extractUi(out.text);
+        return json({ text: ui.text, items: ui.items, tools: out.tools });
       }
 
       if (url.pathname === '/ai/channel' && req.method === 'POST') {
