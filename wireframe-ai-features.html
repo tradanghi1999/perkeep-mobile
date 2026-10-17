@@ -108,6 +108,13 @@ svg{display:block}
 .suggest .acts button.ghost{background:#eef1ef;color:#39433d;font-weight:500}
 .suggest .savenote{font-size:10.5px;color:#7b8a80;margin:7px 1px 0}
 
+/* album (bộ sưu tập) */
+.album{width:118px;flex:none}
+.album .cover{height:78px;border-radius:12px;background:linear-gradient(135deg,#c9d8cf,#8fb3a0);position:relative;display:flex;align-items:flex-end;justify-content:flex-start;padding:6px}
+.album .cover span{background:#00000066;color:#fff;font-size:10px;font-weight:700;border-radius:6px;padding:1px 5px}
+.album b{display:block;font-size:12px;margin-top:6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.album small{font-size:10.5px;color:var(--muted)}
+
 /* duplicate groups */
 .dupe{background:#fff;border:1px solid #e6ebe8;border-radius:12px;padding:8px;margin-top:2px}
 .dupe .gh{font-size:11px;color:var(--muted);margin-bottom:6px}
@@ -171,8 +178,17 @@ svg{display:block}
     <li><b>Gợi ý tag inline trong chat</b><span class="ph ph1">GĐ1</span><br>dán link → thẻ video + tag gợi ý + Lưu, ngay trong chat.</li>
     <li><b>Dọn mục trùng</b><span class="ph ph2">GĐ2</span><br>trùng mục, không phải dung lượng.</li>
     <li><b>Tóm tắt video link</b><span class="ph ph3">GĐ3</span><br>cần phụ đề.</li>
-    <li><b>Bộ sưu tập &amp; theo dõi</b><span class="ph ph3">GĐ3</span><br>trang quản lý (có nav).</li>
+    <li><b>Bộ sưu tập &amp; theo dõi</b><span class="ph ph3">GĐ3</span><br>bộ sưu tập = tag; vào từ <b>Nhà</b>; trang quản lý mở từ “Tất cả ›” hoặc Cài đặt.</li>
   </ol>
+
+  <h2>Vào bộ sưu tập bằng đâu?</h2>
+  <p>
+    <b>1.</b> Tab <b>Nhà</b> → dải album ngang (chính, hằng ngày)<br>
+    <b>2.</b> Tab <b>Nhà</b> → nút <b>Tất cả ›</b> → trang quản lý<br>
+    <b>3.</b> <b>Cài đặt → Trợ lý AI → Bộ sưu tập &amp; theo dõi</b><br>
+    <b>4.</b> Menu <b>⋮</b> trên một file → <b>Thêm vào bộ sưu tập</b> (tạo tag mới)<br>
+    <b>5.</b> Chat: “tạo bộ sưu tập du lịch từ 5 video này”
+  </p>
 
   <h2>Nguyên tắc chat</h2>
   <p>• Tin nhắn cuộn, không đẩy ô nhập<br>
@@ -478,7 +494,58 @@ svg{display:block}
 <div class="cap"><b>7</b> · Tóm tắt video link</div>
 </div>
 
-<!-- ================= 8. BỘ SƯU TẬP (trang quản lý) ================= -->
+<!-- ================= 8. VÀO BỘ SƯU TẬP TỪ NHÀ ================= -->
+<div>
+<div class="phone"><div class="screen">
+  <div class="top">
+    <div class="ttl"><b>Nhà</b><small>Hôm nay</small></div>
+    <div style="width:32px;height:32px;border-radius:50%;background:var(--green);color:#fff;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700">P</div>
+  </div>
+
+  <div class="chat" style="gap:0">
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:6px 4px 8px">
+      <b style="font-size:14px">Bộ sưu tập</b>
+      <span style="font-size:12px;color:var(--blue);font-weight:600">Tất cả ›</span>
+    </div>
+
+    <div style="display:flex;gap:9px;overflow-x:auto;padding-bottom:12px">
+      <div class="album">
+        <div class="cover"><span>12</span></div>
+        <b>du-lich</b><small>12 mục · 3 tuần trước</small>
+      </div>
+      <div class="album">
+        <div class="cover" style="background:linear-gradient(135deg,#c9cfe0,#8f9db8)"><span>7</span></div>
+        <b>data-science</b><small>7 mục · video link</small>
+      </div>
+      <div class="album">
+        <div class="cover" style="background:linear-gradient(135deg,#e0d3c9,#b89f8f)"><span>9</span></div>
+        <b>meo</b><small>9 mục · tháng 9</small>
+      </div>
+    </div>
+
+    <b style="font-size:14px;padding:4px 4px 6px;display:block">Được đề xuất</b>
+    <div style="display:flex;align-items:center;gap:10px;padding:10px 4px;border-bottom:1px solid var(--line)">
+      <div class="vthumb sm"><span class="dur">12:04</span></div>
+      <div class="vt"><b>Review máy lọc nước mới nhất 2026</b><small>YouTube · hôm qua</small></div>
+    </div>
+    <div style="display:flex;align-items:center;gap:10px;padding:10px 4px;border-bottom:1px solid var(--line)">
+      <div class="vthumb sm"><span class="dur">0:42</span></div>
+      <div class="vt"><b>Mèo con tập đi trên bàn</b><small>12/09 · #meo</small></div>
+    </div>
+    <div style="display:flex;align-items:center;gap:10px;padding:10px 4px;border-bottom:1px solid var(--line)">
+      <div class="vthumb sm"><span class="dur">13:16</span></div>
+      <div class="vt"><b>Thompson Sampling</b><small>YouTube · 17/10</small></div>
+    </div>
+
+    <div class="meta" style="margin-top:10px">Chạm một album → mở danh sách đã lọc theo tag đó.</div>
+  </div>
+
+  <div class="nav" data-on="home"></div>
+</div></div>
+<div class="cap"><b>8</b> · Vào bộ sưu tập từ tab Nhà</div>
+</div>
+
+<!-- ================= 9. BỘ SƯU TẬP (trang quản lý) ================= -->
 <div>
 <div class="phone"><div class="screen">
   <div class="top">
@@ -525,7 +592,7 @@ svg{display:block}
 
   <div class="nav" data-on="assistant"></div>
 </div></div>
-<div class="cap"><b>8</b> · Trang quản lý (có nav)</div>
+<div class="cap"><b>9</b> · Trang quản lý (mở từ “Tất cả” hoặc Cài đặt)</div>
 </div>
 
 <script>
