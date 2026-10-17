@@ -50,6 +50,24 @@ function Find-Rclone {
 
 Write-Log '=== start ==='
 
+# ---------- 0. Perkeep server (:3179) ----------
+# Task Scheduler "Perkeep" has a boot trigger with Interactive logon; it did NOT
+# run at the last boot. Start it here as a fallback (the task may also start it).
+if (Test-Port 3179) {
+    Write-Log 'perkeep: already running'
+} else {
+    $pk = 'C:\perkeep\bin\perkeepd.exe'
+    if (Test-Path $pk) {
+        Start-Process -FilePath $pk -WindowStyle Hidden
+        Write-Log 'perkeep: started'
+        $tries = 0
+        while (-not (Test-Port 3179) -and $tries -lt 40) { Start-Sleep -Milliseconds 500; $tries++ }
+        if (Test-Port 3179) { Write-Log 'perkeep: port 3179 up' } else { Write-Log 'perkeep: FAILED to open 3179' }
+    } else {
+        Write-Log "perkeep: not found ($pk)"
+    }
+}
+
 # ---------- 1. WebDAV gateway (:8099) ----------
 if (Test-Port 8099) {
     Write-Log 'gateway: already running'
@@ -131,7 +149,29 @@ if (Test-Port 4173) {
     }
 }
 
-# ---------- 5. AI bridge (:4180) ----------
+# ---------- 5. OpenCode service (:49374) ----------
+# The bridge starts it on demand, but only if "opencode" is on PATH (it is not).
+# Start the desktop CLI directly so the AI works right after logon.
+if (Test-Port 49374) {
+    Write-Log 'opencode: already running'
+} else {
+    $cliRoot = Join-Path $env:APPDATA 'ai.opencode.desktop\cli'
+    $cliDir = Get-ChildItem $cliRoot -Directory -ErrorAction SilentlyContinue |
+        Sort-Object { try { [version]$_.Name } catch { [version]'0.0.0' } } -Descending |
+        Select-Object -First 1
+    $cliExe = if ($cliDir) { Join-Path $cliDir.FullName 'opencode-cli.exe' } else { '' }
+    if (Test-Path $cliExe) {
+        Start-Process -FilePath $cliExe -ArgumentList @('serve', '--service') -WindowStyle Hidden
+        Write-Log "opencode: started ($cliExe)"
+        $tries = 0
+        while (-not (Test-Port 49374) -and $tries -lt 40) { Start-Sleep -Milliseconds 500; $tries++ }
+        if (Test-Port 49374) { Write-Log 'opencode: port 49374 up' } else { Write-Log 'opencode: FAILED to open 49374' }
+    } else {
+        Write-Log 'opencode: CLI not found'
+    }
+}
+
+# ---------- 6. AI bridge (:4180) ----------
 if (Test-Port 4180) {
     Write-Log 'ai-bridge: already running'
 } else {
