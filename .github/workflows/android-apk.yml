@@ -57,7 +57,7 @@ jobs:
       - run: chmod +x android/gradlew
 
       - name: Build APK
-        run: cd android && ./gradlew assembleDebug --no-daemon --stacktrace
+        run: cd android && ./gradlew assembleDebug --no-daemon --stacktrace --init-script ../ci-sign.gradle
 
       - name: Kiểm tra manifest merge + APK
         run: |
@@ -70,9 +70,14 @@ jobs:
 
       - name: Kiểm tra chữ ký APK
         run: |
+          set -euo pipefail
           APK=android/app/build/outputs/apk/debug/app-debug.apk
           APKSIGNER=$(find "${ANDROID_SDK_ROOT:-$ANDROID_HOME}/build-tools" -name apksigner -type f | sort -V | tail -1)
-          "$APKSIGNER" verify --print-certs "$APK" | grep -E "Signer #1 certificate (DN|SHA-256)" | head -2
+          "$APKSIGNER" verify --print-certs "$APK" | head -10
+          if ! "$APKSIGNER" verify --print-certs "$APK" | grep -q "7C:19:AD:4F:A9:50:F9:06:74:C2:65:B0:D9:11:86:D1:66:A2:1C:42:0F:19:6B:F6:FF:E0:1B:F7:69:70:BE:B5"; then
+            echo "::error::APK không được ký bằng keystore cố định — cập nhật sẽ mất dữ liệu."
+            exit 1
+          fi
 
       - uses: actions/upload-artifact@v7
         with:

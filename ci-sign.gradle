@@ -1,0 +1,17 @@
+// Ép mọi build dùng keystore cố định (CI giải mã từ secret vào ~/.android/debug.keystore).
+// Lý do: debug keystore mặc định của AGP có thể bị tạo mới/ghi đè, làm chữ ký APK đổi
+// giữa các lần build -> Android buộc gỡ app -> mất localStorage (credential, chat...).
+allprojects {
+    afterEvaluate { p ->
+        if (p.plugins.hasPlugin('com.android.application')) {
+            def debug = p.android.signingConfigs.findByName('debug')
+            if (debug != null) {
+                debug.storeFile = new File(System.getProperty('user.home'), '.android/debug.keystore')
+                debug.storePassword = 'android'
+                debug.keyAlias = 'androiddebugkey'
+                debug.keyPassword = 'android'
+                debug.storeType = 'JKS'
+            }
+        }
+    }
+}
