@@ -36,35 +36,10 @@ object MediaOpener {
 
     /** Trả về true nếu đã mở được bằng app khác. Chạy ở thread nền. */
     fun downloadAndOpen(ctx: Context, args: Args): Boolean {
-        val safeName = args.name.ifBlank { args.fileRef }.replace(Regex("[^A-Za-z0-9._-]"), "_").take(80)
-        val dir = File(ctx.cacheDir, "media").apply { mkdirs() }
-        val out = File(dir, safeName.ifEmpty { "media" })
-
-        if (!out.exists() || out.length() == 0L) {
-            val url = URL(args.base.trimEnd('/') + "/ui/download/" + URLEncoder.encode(args.fileRef, "UTF-8"))
-            val conn = (url.openConnection() as HttpURLConnection).apply {
-                connectTimeout = 15000
-                readTimeout = 0
-                if (!args.user.isNullOrEmpty()) {
-                    val token = android.util.Base64.encodeToString(
-                        "${args.user}:${args.pass ?: ""}".toByteArray(Charsets.UTF_8),
-                        android.util.Base64.NO_WRAP
-                    )
-                    setRequestProperty("Authorization", "Basic $token")
-                }
-                if (!args.cfId.isNullOrEmpty()) {
-                    setRequestProperty("CF-Access-Client-Id", args.cfId)
-                    setRequestProperty("CF-Access-Client-Secret", args.cfSecret ?: "")
-                }
-            }
-            val code = conn.responseCode
-            if (code !in 200..299) {
-                Log.w(TAG, "tải thất bại HTTP $code")
-                return false
-            }
-            conn.inputStream.use { input -> out.outputStream().use { input.copyTo(it) } }
-            Log.i(TAG, "đã tải ${out.length()} bytes vào ${out.name}")
-        }
+        val out = MediaCache.ensure(
+            ctx, args.base, args.user, args.pass, args.cfId, args.cfSecret,
+            args.fileRef, args.name, 0L
+        ) { _, _ -> }
 
         val mime = args.mime.ifBlank { "application/octet-stream" }
         val uri = FileProvider.getUriForFile(ctx, "${ctx.packageName}.pkupload.files", out)

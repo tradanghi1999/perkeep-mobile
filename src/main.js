@@ -87,6 +87,9 @@ const I18N = {
     tag_remove: 'Bỏ tag này',
     vw_view: 'Xem trong app', vw_open_ext: 'Mở bằng ứng dụng khác', vw_unsupported: 'Loại file này không xem được trong app. Bạn mở bằng ứng dụng khác nhé.',
     vw_open_app: 'Mở bằng VLC / ứng dụng khác', vw_downloading: 'Đang tải file để mở bằng ứng dụng khác…', vw_no_app: 'Không mở được, thử tải về máy',
+    cache_play: 'Tải về để xem mượt', cache_start: 'Bắt đầu tải về máy…',
+    cache_progress: 'Đang tải', cache_done: 'Đã tải xong, phát từ máy', cache_running: 'File này đang tải…',
+    cache_fail: 'Tải về thất bại', cache_native: 'Chỉ chạy trong app Android',
     vw_need_auth: 'Server cần đăng nhập nên app không phát trực tiếp được. Mở bằng ứng dụng khác hoặc tải về máy nhé.',
     vw_codec: (c) => `Video dùng codec ${c} — máy này không giải mã được. Mở bằng VLC / MX Player, hoặc xem bản đã chuyển sang H.264.`,
     ptr: 'Đang tải lại…',
@@ -115,6 +118,9 @@ const I18N = {
     perm_granted: 'Đã cấp quyền thông báo', perm_denied: 'Chưa được cấp. Bật trong Cài đặt Android → Ứng dụng → pk-app → Thông báo.',
     perm_android_only: 'Chỉ áp dụng trong app Android',
     set_font: 'Cỡ chữ', fs_s: 'Nhỏ', fs_m: 'Vừa (mặc định)', fs_l: 'Lớn', fs_xl: 'Rất lớn',
+    set_cache: 'File đã tải để xem mượt', cache_empty: 'Chưa tải file nào về máy',
+    cache_clear: 'Xoá hết file đã tải', cache_cleared: 'Đã xoá, giải phóng',
+    cache_hint: 'File tải về nằm trong cache của app (Android tự dọn khi cần chỗ). Video xem từ máy sẽ mượt và tua tức thì.',
     copied: 'Đã sao chép link', prompt_title: 'Tìm kiếm',
     ph_q: 'Tên tệp, hoặc tag:x / after:2026-01-01',
     ph_name: 'Tên gợi nhớ (vd: PC nhà)', ph_url: 'http://192.168.123.9:3179', ph_user: 'Tài khoản', ph_pass: 'Mật khẩu',
@@ -166,6 +172,9 @@ const I18N = {
     tag_remove: 'Remove this tag',
     vw_view: 'View in app', vw_open_ext: 'Open with another app', vw_unsupported: 'This file type cannot be previewed in the app. Open it with another app?',
     vw_open_app: 'Open with VLC / another app', vw_downloading: 'Downloading to open with another app…', vw_no_app: 'Could not open, try downloading',
+    cache_play: 'Download for smooth playback', cache_start: 'Downloading to device…',
+    cache_progress: 'Downloading', cache_done: 'Downloaded — playing from device', cache_running: 'Already downloading…',
+    cache_fail: 'Download failed', cache_native: 'Android app only',
     vw_need_auth: 'The server requires sign-in, so the app cannot stream this. Open with another app or download it.',
     vw_codec: (c) => `This video uses ${c} — this device cannot decode it. Open with VLC / MX Player, or use an H.264 version.`,
     ptr: 'Reloading…',
@@ -194,6 +203,9 @@ const I18N = {
     perm_granted: 'Notification permission granted', perm_denied: 'Not granted. Enable it in Android Settings → Apps → pk-app → Notifications.',
     perm_android_only: 'Android app only',
     set_font: 'Text size', fs_s: 'Small', fs_m: 'Default', fs_l: 'Large', fs_xl: 'Extra large',
+    set_cache: 'Downloaded for smooth playback', cache_empty: 'Nothing downloaded yet',
+    cache_clear: 'Delete all downloaded files', cache_cleared: 'Deleted, freed',
+    cache_hint: 'Downloaded files live in the app cache (Android clears it when space is needed). Playing from the device is smooth and seeks instantly.',
     copied: 'Link copied', prompt_title: 'Search',
     ph_q: 'File name, or tag:x / after:2026-01-01',
     ph_name: 'Name (e.g. Home PC)', ph_url: 'http://192.168.123.9:3179', ph_user: 'Username', ph_pass: 'Password',
@@ -972,17 +984,69 @@ async function serverNeedsAuth() {
 }
 
 /** URL xem được:
+ *  - đã tải về máy (cache) -> phát từ file local, mượt + tua tức thì
  *  - server không đòi đăng nhập: phát trực tiếp (Range, tua được, mọi kích thước)
- *  - server đòi đăng nhập: qua proxy nội bộ của app (proxy thêm Basic auth rồi stream)
+ *  - server đòi đăng nhập: qua proxy nội bộ của app (proxy thêm auth rồi stream)
  *  - nếu proxy không có (chạy web): ảnh dùng endpoint thumbnail, còn lại chịu
  */
 async function mediaUrl(meta, big = false) {
   if (!meta.fileRef) return null;
+  const cached = cacheUrls.get(meta.fileRef);
+  if (cached) return cached;
   if (!(await serverNeedsAuth())) return directUrl(meta.fileRef);
   const proxied = await up.mediaProxyUrl(active(), meta.fileRef);
   if (proxied) return proxied;
   if (isImage(meta.mime)) return await thumbObjectUrl(meta.fileRef, big ? 1600 : 400);
   return null;
+}
+
+// ============================================================
+// Tải về máy để xem mượt (video điện thoại thường 1080p60 ~28Mbps, xem trực tiếp
+// qua Wi-Fi yếu hoặc qua tunnel sẽ giật; tải về rồi phát từ máy thì mượt)
+// ============================================================
+const cacheUrls = new Map(); // fileRef -> url phát từ cache
+const cacheJobs = new Map();
+let cacheListenersOn = false;
+
+function setupCacheProgress() {
+  if (cacheListenersOn) return;
+  cacheListenersOn = true;
+  up.onCacheProgress((p) => {
+    const j = cacheJobs.get(p.fileRef);
+    if (!j) return;
+    j.got = p.got;
+    j.total = p.total || j.total || 0;
+    const pct = j.total ? Math.round((j.got / j.total) * 100) : 0;
+    snack(`${t('cache_progress')} ${pct}% · ${fmtSize(j.got)}${j.total ? ' / ' + fmtSize(j.total) : ''}`);
+    log(`cache ${p.fileRef.slice(0, 20)}… ${pct}% ${fmtSize(j.got)}/${fmtSize(j.total)}`);
+  }).catch(() => {});
+}
+
+async function cacheAndPlay(meta, index) {
+  if (!up.uploadSupported()) return snack(t('cache_native'));
+  if (!meta?.fileRef) return;
+  if (cacheUrls.has(meta.fileRef)) {
+    if (index >= 0) return openViewer(index);
+    return;
+  }
+  if (cacheJobs.has(meta.fileRef)) return snack(t('cache_running'));
+  setupCacheProgress();
+  cacheJobs.set(meta.fileRef, { got: 0, total: meta.size || 0 });
+  snack(t('cache_start'));
+  try {
+    const r = await up.cacheMedia(active(), meta);
+    cacheJobs.delete(meta.fileRef);
+    if (!r?.url) throw new Error(t('cache_fail'));
+    cacheUrls.set(meta.fileRef, r.url);
+    snack(t('cache_done'));
+    log(`cache xong: ${r.name} ${fmtSize(r.size)}`);
+    if (index >= 0) openViewer(index);
+    else if (!viewerEl.hidden) renderViewer();
+  } catch (e) {
+    cacheJobs.delete(meta.fileRef);
+    snack(`${t('cache_fail')}: ${e.message}`);
+    log(`cache FAIL: ${e.message}`);
+  }
 }
 
 function viewerFallback(meta, why, codec) {
@@ -992,9 +1056,11 @@ function viewerFallback(meta, why, codec) {
     : t('vw_unsupported');
   vwBody.innerHTML = `<div class="vw-note">${esc(hint)}
     <div class="vw-actions">
+      <button id="vw-cache">${icon('download')}<span>${esc(t('cache_play'))}</span></button>
       <button id="vw-open-ext">${icon('external')}<span>${esc(t('vw_open_app'))}</span></button>
-      <button class="alt" id="vw-download">${icon('download')}<span>${esc(t('fa_download'))}</span></button>
+      <button class="alt" id="vw-download">${icon('link')}<span>${esc(t('fa_download'))}</span></button>
     </div></div>`;
+  vwBody.querySelector('#vw-cache').onclick = () => cacheAndPlay(meta, -1);
   vwBody.querySelector('#vw-open-ext').onclick = () => openWithOtherApp(meta);
   vwBody.querySelector('#vw-download').onclick = () => window.open(directUrl(meta.fileRef), '_blank');
 }
@@ -1318,6 +1384,29 @@ function askNotificationPermission(force = false) {
 
 $('set-perm').onclick = () => askNotificationPermission(true).then(renderPermState);
 
+// Dung lượng đã tải về máy (cache media) + nút xoá
+async function renderCacheState() {
+  const sub = $('set-cache-sub');
+  if (!sub) return;
+  const info = await up.mediaCacheInfo();
+  sub.textContent = info.files ? `${info.files} file · ${fmtSize(info.bytes)}` : t('cache_empty');
+}
+$('set-cache').onclick = async () => {
+  const info = await up.mediaCacheInfo();
+  openSheet(`<h3>${esc(t('set_cache'))}</h3>
+    <p class="meta">${esc(info.files ? `${info.files} file · ${fmtSize(info.bytes)}` : t('cache_empty'))}</p>
+    <button class="rowbtn" id="cache-clear">${icon('trash')}<span>${esc(t('cache_clear'))}</span></button>
+    <p class="meta">${esc(t('cache_hint'))}</p>`);
+  const btn = sheetBody.querySelector('#cache-clear');
+  btn.onclick = async () => {
+    const freed = await up.clearMediaCache();
+    cacheUrls.clear();
+    snack(`${t('cache_cleared')} ${fmtSize(freed.bytes)}`);
+    closeSheet();
+    renderCacheState();
+  };
+};
+
 // ============================================================
 // Tag: thêm/bỏ tag = ký claim (add/del-attribute) rồi upload blob
 // Dùng chung cho cả app Android (native HTTP) và web (fetch, dev).
@@ -1420,8 +1509,9 @@ function fileActions(blob, meta) {
     { k: 'star', ico: 'star', label: isStarred(meta) ? t('star_removed') : t('star_add') },
     { k: 'tag', ico: 'plus', label: t('tag_add') },
     { k: 'view', ico: 'image', label: t('vw_view') },
-    { k: 'external', ico: 'external', label: t('vw_open_ext') },
-    { k: 'download', ico: 'download', label: t('fa_download') },
+    ...(/^(video|audio)\//i.test(meta.mime) ? [{ k: 'cache', ico: 'download', label: t('cache_play') }] : []),
+    { k: 'external', ico: 'external', label: t('vw_open_app') },
+    { k: 'download', ico: 'link', label: t('fa_download') },
     { k: 'share', ico: 'link', label: t('fa_share') },
     { k: 'detail', ico: 'info', label: t('fa_detail') }
   ];
@@ -1439,6 +1529,10 @@ function fileActions(blob, meta) {
         closeSheet();
         const on = !isStarred(meta);
         await changeTag(blob, meta, STAR_TAG, on, t(on ? 'star_on' : 'star_off'));
+      } else if (b.dataset.k === 'cache') {
+        closeSheet();
+        const i = currentItems.findIndex((x) => x.blob === blob);
+        await cacheAndPlay(meta, i);
       } else if (b.dataset.k === 'tag') {
         closeSheet();
         openTagSheet(blob, meta);
@@ -1845,6 +1939,7 @@ renderVidState();
 renderWifiState();
 renderFontState();
 renderPermState();
+renderCacheState();
 refreshUploads();
 up.onProgress((job) => {
   uploadJobs.set(job.id, job);

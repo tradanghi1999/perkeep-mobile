@@ -43,13 +43,53 @@ class MediaProxyServer(private val ctx: Context) : NanoHTTPD("127.0.0.1", 0) {
     fun urlFor(fileRef: String): String =
         "http://127.0.0.1:$listeningPort/m/${URLEncoder.encode(fileRef, "UTF-8")}?t=$token"
 
+    /** URL nội bộ phát file ĐÃ TẢI VỀ CACHE (xem mượt, tua tức thì). */
+    fun cacheUrlFor(name: String): String =
+        "http://127.0.0.1:$listeningPort/c/${URLEncoder.encode(name, "UTF-8")}?t=$token"
+
     override fun serve(session: IHTTPSession): Response {
         val uri = session.uri ?: return err(Response.Status.BAD_REQUEST, "bad request")
-        if (!uri.startsWith("/m/")) return err(Response.Status.NOT_FOUND, "not found")
         if (session.parameters["t"]?.firstOrNull() != token) return err(Response.Status.FORBIDDEN, "forbidden")
-        if (base.isBlank()) return err(Response.Status.INTERNAL_ERROR, "chưa cấu hình server")
+        return when {
+            uri.startsWith("/m/") -> serveUpstream(uri.substring(3), session)
+            uri.startsWith("/c/") -> serveCache(uri.substring(3), session)
+            else -> err(Response.Status.NOT_FOUND, "not found")
+        }
+    }
 
-        val ref = uri.substring(3)
+    /** Phát file đã tải trong cache, có hỗ trợ Range để tua. */
+    private fun serveCache(encodedName: String, session: IHTTPSession): Response {
+        val name = java.net.URLDecoder.decode(encodedName, "UTF-8")
+        val f = File(MediaCache.dir(ctx), name)
+        if (!f.exists() || f.length() == 0L) return err(Response.Status.NOT_FOUND, "chưa tải về máy")
+        val total = f.length()
+        var start = 0L
+        var end = total - 1
+        var partial = false
+        val range = session.headers["range"]
+        if (range != null && range.startsWith("bytes=")) {
+            val spec = range.removePrefix("bytes=").split("-")
+            start = spec.getOrNull(0)?.toLongOrNull() ?: 0L
+            if (start < 0 || start >= total) start = 0L
+            end = spec.getOrNull(1)?.toLongOrNull() ?: (total - 1)
+            if (end >= total) end = total - 1
+            if (end < start) end = start
+            partial = true
+        }
+        val len = end - start + 1
+        val mime = java.net.URLConnection.guessContentTypeFromName(f.name) ?: "application/octet-stream"
+        val ins = java.io.FileInputStream(f)
+        if (start > 0) ins.channel.position(start)
+        val status = if (partial) Response.Status.PARTIAL_CONTENT else Response.Status.OK
+        val res = newFixedLengthResponse(status, mime, ins, len)
+        if (partial) res.addHeader("Content-Range", "bytes $start-$end/$total")
+        res.addHeader("Accept-Ranges", "bytes")
+        res.addHeader("Access-Control-Allow-Origin", "*")
+        return res
+    }
+
+    private fun serveUpstream(ref: String, session: IHTTPSession): Response {
+        if (base.isBlank()) return err(Response.Status.INTERNAL_ERROR, "chưa cấu hình server")
         return try {
             val target = URL("$base/ui/download/" + URLEncoder.encode(ref, "UTF-8"))
             val conn = (target.openConnection() as HttpURLConnection).apply {

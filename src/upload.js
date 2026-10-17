@@ -74,6 +74,35 @@ export async function mediaProxyUrl(server, fileRef) {
   }
 }
 
+/** Tải file về cache máy để xem mượt (kiểu "xem ngoại tuyến" của Drive). */
+export async function cacheMedia(server, meta) {
+  if (!uploadSupported()) return null;
+  const r = await PkUpload.cacheMedia({
+    fileRef: meta.fileRef,
+    base: server?.url || '',
+    user: server?.user,
+    pass: server?.pass,
+    cfId: server?.cfId,
+    cfSecret: server?.cfSecret,
+    name: meta.name || '',
+    size: meta.size || 0
+  });
+  return r?.url ? { url: r.url, name: r.name, size: r.size } : null;
+}
+
+export async function onCacheProgress(cb) {
+  if (!uploadSupported()) return { remove() {} };
+  return PkUpload.addListener('cacheProgress', cb);
+}
+export const mediaCacheInfo = async () => {
+  if (!uploadSupported()) return { files: 0, bytes: 0 };
+  try { return await PkUpload.mediaCacheInfo(); } catch { return { files: 0, bytes: 0 }; }
+};
+export const clearMediaCache = async () => {
+  if (!uploadSupported()) return { files: 0, bytes: 0 };
+  try { return await PkUpload.clearMediaCache(); } catch { return { files: 0, bytes: 0 }; }
+};
+
 /** Mở file bằng app khác (VLC/MX Player): tải về cache rồi hiện danh sách app. */
 export async function openExternally(server, meta) {
   if (!uploadSupported()) return false;

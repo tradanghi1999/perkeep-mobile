@@ -296,6 +296,75 @@ class PkUploadPlugin : Plugin() {
         }.start()
     }
 
+    /** Tải file về cache để xem mượt; phát lại qua proxy cache (Range, tua tức thì). */
+    @PluginMethod
+    fun cacheMedia(call: PluginCall) {
+        val ref = call.getString("fileRef") ?: run { call.reject("Thiếu fileRef"); return }
+        val base = (call.getString("base") ?: "").trimEnd('/')
+        if (base.isEmpty()) {
+            call.resolve(JSObject().put("url", org.json.JSONObject.NULL))
+            return
+        }
+        val name = call.getString("name") ?: ""
+        val size = call.getLong("size", 0L) ?: 0L
+        val user = call.getString("user")
+        val pass = call.getString("pass")
+        val cfId = call.getString("cfId")
+        val cfSecret = call.getString("cfSecret")
+        Thread {
+            try {
+                val srv = MediaProxyServer.get(context)
+                val f = MediaCache.ensure(context.applicationContext, base, user, pass, cfId, cfSecret, ref, name, size) { got, total ->
+                    val o = JSObject()
+                    o.put("fileRef", ref)
+                    o.put("got", got)
+                    o.put("total", total)
+                    try { notifyListeners("cacheProgress", o, true) } catch (_: Throwable) {}
+                }
+                srv.configure(base, user, pass, cfId, cfSecret)
+                val res = JSObject()
+                res.put("url", srv.cacheUrlFor(f.name))
+                res.put("name", f.name)
+                res.put("size", f.length())
+                call.resolve(res)
+            } catch (t: Throwable) {
+                Log.w(TAG, "cacheMedia lỗi", t)
+                call.reject(t.message ?: "cache error")
+            }
+        }.start()
+    }
+
+    /** Xoá file đã tải về cache (giải phóng dung lượng). */
+    @PluginMethod
+    fun clearMediaCache(call: PluginCall) {
+        Thread {
+            var freed = 0L
+            var n = 0
+            try {
+                MediaCache.dir(context.applicationContext).listFiles()?.forEach {
+                    freed += it.length()
+                    if (it.delete()) n++
+                }
+            } catch (t: Throwable) {
+                Log.w(TAG, "không xoá được cache", t)
+            }
+            val res = JSObject()
+            res.put("files", n)
+            res.put("bytes", freed)
+            call.resolve(res)
+        }.start()
+    }
+
+    /** Dung lượng cache media hiện tại. */
+    @PluginMethod
+    fun mediaCacheInfo(call: PluginCall) {
+        val files = MediaCache.dir(context.applicationContext).listFiles()
+        val res = JSObject()
+        res.put("files", files?.size ?: 0)
+        res.put("bytes", files?.sumOf { it.length() } ?: 0L)
+        call.resolve(res)
+    }
+
     /** Log crash lần trước (không cần adb). */
     @PluginMethod
     fun getLastCrash(call: PluginCall) {
