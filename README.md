@@ -59,6 +59,36 @@ Vào tab Actions → tải artifact `pk-app-debug` → file `app-debug.apk` (~2-
 Local chỉ chạy `bun run build`, không cần `android/` (CI tự `cap add android`).
 Nếu muốn cài APK local sau này: `adb install app-debug.apk`.
 
+## Perkeep + Jellyfin (xem video mượt, không nhân đôi dung lượng)
+
+Video quay bằng điện thoại thường **1080p60 ~28 Mbps**. Xem trực tiếp trong app qua Wi-Fi yếu hoặc qua Cloudflare Tunnel sẽ giật (Perkeep bản thân stream rất nhanh — đo được ~700 MB/s qua localhost). Cách xử lý tốt nhất là để **Jellyfin transcode** rồi phát, nhưng Jellyfin chỉ đọc file trên ổ đĩa thật.
+
+**Không copy file** — dùng ổ đĩa ảo:
+
+```
+Perkeep (3179)  ←  scripts/jellyfin-gateway.mjs (WebDAV, 8099)  ←  ổ J:  ←  Jellyfin
+```
+
+1. Chạy gateway (để nguyên cửa sổ):
+```powershell
+$env:PK_BASE="http://127.0.0.1:3179"; bun run scripts/jellyfin-gateway.mjs
+```
+2. Nâng giới hạn WebDAV của Windows lên 4GB (WebDAV mặc định chặn file > 50MB):
+```powershell
+# chuột phải scripts\setup-webdav-admin.ps1 → Run with PowerShell (cần Admin)
+```
+3. Map ổ đĩa:
+```powershell
+net use J: http://127.0.0.1:8099/ /persistent:yes
+```
+4. Jellyfin → **Dashboard → Libraries → Add Media Library → chọn `J:\`**
+
+Kết quả: Jellyfin quét trực tiếp từ Perkeep, transcode 28 Mbps → vài Mbps, tua mượt, **không tốn thêm dung lượng**.
+
+Tuỳ chọn env cho gateway: `PK_USER`/`PK_PASS` (Perkeep auth), `PK_CF_ID`/`PK_CF_SECRET` (Cloudflare Access), `PK_TYPES` (`video` mặc định, `video,image`, `all`).
+
+Nếu WebDAV của Windows vẫn chập chờn với file lớn, dùng `rclone mount` (cần WinFsp) trỏ vào gateway — ổn định hơn.
+
 ## Lưu ý kỹ thuật
 - Mỗi server lưu thêm tài khoản/mật khẩu (nếu Perkeep bật `auth userpass`). Request gửi `Authorization: Basic ...`.
 - **Cloudflare Access**: nếu Perkeep nằm sau Cloudflare Tunnel + Zero Trust, điền **Service Token** (`CF-Access-Client-Id` / `CF-Access-Client-Secret`) trong form dịch vụ — app gửi 2 header này trên mọi request (tìm kiếm, thumbnail, upload, proxy media, mở bằng VLC).
