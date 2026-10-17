@@ -191,6 +191,22 @@ function stripFence(s) {
 }
 
 /** Tách khối <ui>{items}</ui> khỏi câu trả lời để app render file cards. */
+/** Chỉ giữ các item thực sự được nhắc trong câu trả lời (tránh 10 card khi trả lời 2). */
+function matchItems(text, items) {
+  const t = String(text || '').toLowerCase();
+  const list = Array.isArray(items) ? items : [];
+  if (!t) return list.slice(0, 5);
+  const hit = list.filter((i) => {
+    const n = String(i.name || '').toLowerCase();
+    if (!n) return false;
+    if (t.includes(n)) return true;
+    const base = n.replace(/\.[^.]+$/, '');
+    const key = base.slice(0, Math.min(base.length, 24));
+    return key.length >= 6 && t.includes(key);
+  });
+  return hit.length ? hit : list.slice(0, 5);
+}
+
 function extractUi(text) {
   const m = String(text || '').match(/<ui>([\s\S]*?)<\/ui>/i);
   if (!m) return { text: String(text || '').trim(), items: [] };
@@ -363,6 +379,118 @@ Yêu cầu: ${JSON.stringify(text)}`;
         return json({ expression: out.expression || '', explain: out.explain || '', count, error });
       }
 
+      if (url.pathname === '/ai/ask/stream' && req.method === 'POST') {
+        const { text } = await req.json();
+        if (!text || !String(text).trim()) return json({ error: 'empty' }, 400);
+
+        const c = await oc();
+        const session = await c.session.create({
+          title: String(text).slice(0, 60),
+          agent: AGENT,
+          model: MODEL,
+          location: { directory: PROJECT }
+        });
+        const sid = session.id || session.sessionID;
+        await c.session.switchAgent({ sessionID: sid, agent: AGENT });
+        await c.session.switchModel({ sessionID: sid, model: MODEL });
+
+        const enc = new TextEncoder();
+        const ctrl = new AbortController();
+        let closed = false;
+
+        const stream = new ReadableStream({
+          start(controller) {
+            const send = (event, data) => {
+              if (closed) return;
+              try {
+                controller.enqueue(enc.encode(`event: ${event}\ndata: ${JSON.stringify(data)}\n\n`));
+              } catch {}
+            };
+            const finish = async (payload) => {
+              if (closed) return;
+              send('done', payload);
+              closed = true;
+              try { controller.close(); } catch {}
+              try { ctrl.abort(); } catch {}
+              try { await c.session.remove({ sessionID: sid }); } catch {}
+            };
+
+            const hb = setInterval(() => {
+              if (!closed) { try { controller.enqueue(enc.encode(': ping\n\n')); } catch {} }
+            }, 10000);
+
+            // lắng nghe event của phiên này
+            (async () => {
+              const toolNames = new Map();
+              try {
+                for await (const ev of c.event.subscribe({ signal: ctrl.signal })) {
+                  const d = ev?.data || {};
+                  if (d.sessionID !== sid) continue;
+                  if (ev.type === 'session.text.delta') {
+                    if (d.delta) send('delta', { t: d.delta });
+                  } else if (ev.type === 'session.tool.input.started') {
+                    toolNames.set(d.id, d.name);
+                    send('tool', { name: d.name, state: 'start' });
+                  } else if (ev.type === 'session.tool.success' || ev.type === 'session.tool.error') {
+                    send('tool', { name: toolNames.get(d.id) || '', state: 'done' });
+                  } else if (ev.type === 'session.execution.succeeded' || ev.type === 'session.execution.failed') {
+                    clearInterval(hb);
+                    let final = { text: '', tools: [], items: [] };
+                    try {
+                      const msgs = await c.session.context({ sessionID: sid });
+                      const out = extractAssistant(msgs);
+                      const ui = extractUi(out.text);
+                      const map = new Map();
+                      for (const it of [...(out.items || []), ...(ui.items || [])]) {
+                        if (it?.blobref) map.set(it.blobref, { ...map.get(it.blobref), ...it });
+                      }
+                      final = { text: ui.text, tools: out.tools, items: matchItems(ui.text, [...map.values()]) };
+                    } catch {}
+                    await finish({ ...final, ok: ev.type.endsWith('succeeded') });
+                    return;
+                  }
+                }
+              } catch (e) {
+                if (!closed) {
+                  clearInterval(hb);
+                  await finish({ text: '', tools: [], items: [], error: String(e?.message || e).slice(0, 200) });
+                }
+              }
+            })();
+
+            // ngắt khi client đóng
+            req.signal.addEventListener('abort', async () => {
+              if (closed) return;
+              closed = true;
+              try { ctrl.abort(); } catch {}
+              try { await c.session.interrupt({ sessionID: sid }); } catch {}
+              try { await c.session.remove({ sessionID: sid }); } catch {}
+              try { controller.close(); } catch {}
+            });
+
+            c.session.prompt({ sessionID: sid, text: String(text) }).catch((e) => {
+              finish({ text: '', tools: [], items: [], error: String(e?.message || e).slice(0, 200) });
+            });
+          },
+          cancel() {
+            closed = true;
+            try { ctrl.abort(); } catch {}
+            try { c.session.interrupt({ sessionID: sid }); } catch {}
+            try { c.session.remove({ sessionID: sid }); } catch {}
+          }
+        });
+
+        return new Response(stream, {
+          headers: {
+            'Content-Type': 'text/event-stream; charset=utf-8',
+            'Cache-Control': 'no-cache, no-transform',
+            Connection: 'keep-alive',
+            'X-Accel-Buffering': 'no',
+            ...CORS
+          }
+        });
+      }
+
       if (url.pathname === '/ai/ask' && req.method === 'POST') {
         const { text } = await req.json();
         if (!text || !String(text).trim()) return json({ error: 'empty' }, 400);
@@ -372,7 +500,7 @@ Yêu cầu: ${JSON.stringify(text)}`;
         for (const it of [...(out.items || []), ...(ui.items || [])]) {
           if (it?.blobref) map.set(it.blobref, { ...map.get(it.blobref), ...it });
         }
-        return json({ text: ui.text, items: [...map.values()].slice(0, 10), tools: out.tools });
+        return json({ text: ui.text, items: matchItems(ui.text, [...map.values()]), tools: out.tools });
       }
 
       if (url.pathname === '/ai/channel' && req.method === 'POST') {

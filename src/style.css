@@ -126,6 +126,9 @@ h3 { margin: 12px 4px; font-size: 1.0625rem; }
 .ai-msg.me{align-self:flex-end;background:var(--green);color:#fff;border-bottom-right-radius:5px}
 .ai-msg.bot{align-self:flex-start;background:#f2f4f3;color:#20261f;border-bottom-left-radius:5px}
 .ai-msg.err{align-self:flex-start;background:#fdecea;color:#a3312a;border-bottom-left-radius:5px}
+.ai-cursor{display:inline-block;width:2px;height:14px;background:var(--green);margin-left:2px;vertical-align:-2px;
+  animation:aiblink 1s steps(1) infinite}
+@keyframes aiblink{50%{opacity:0}}
 .ai-tool{align-self:flex-start;display:flex;align-items:center;gap:8px;font-size:12px;color:#3d4a43;
   background:#fff;border:1px solid #e3e8e5;border-radius:12px;padding:7px 10px;max-width:92%}
 .ai-tool .st{margin-left:auto;color:#2f7d52;font-size:11px;white-space:nowrap}

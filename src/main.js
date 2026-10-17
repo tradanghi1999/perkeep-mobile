@@ -2799,6 +2799,49 @@ async function aiFetch(path, { method = 'POST', body, signal, timeout = 180000 }
   }
 }
 
+/** Gọi bridge ở chế độ stream (SSE). Trả payload của event "done". */
+async function aiStream(text, { onDelta, onTool, signal } = {}) {
+  const base = aiBase();
+  if (!base) throw new Error(t('ai_need_config'));
+  const res = await fetch(base + '/ai/ask/stream', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'x-pk-token': aiToken() },
+    body: JSON.stringify({ text }),
+    signal
+  });
+  if (!res.ok || !res.body) {
+    const j = await res.json().catch(() => ({}));
+    throw new Error(j.error || `HTTP ${res.status}`);
+  }
+  const reader = res.body.getReader();
+  const dec = new TextDecoder();
+  let buf = '';
+  let donePayload = null;
+  for (;;) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    buf += dec.decode(value, { stream: true });
+    let i;
+    while ((i = buf.indexOf('\n\n')) >= 0) {
+      const raw = buf.slice(0, i);
+      buf = buf.slice(i + 2);
+      let ev = '';
+      let data = '';
+      for (const line of raw.split('\n')) {
+        if (line.startsWith('event:')) ev = line.slice(6).trim();
+        else if (line.startsWith('data:')) data += line.slice(5).trim();
+      }
+      if (!data) continue;
+      let j = null;
+      try { j = JSON.parse(data); } catch { continue; }
+      if (ev === 'delta' && j.t) { if (onDelta) onDelta(j.t); }
+      else if (ev === 'tool') { if (onTool) onTool(j); }
+      else if (ev === 'done') donePayload = j;
+    }
+  }
+  return donePayload;
+}
+
 function renderAiState() {
   const sub = $('set-ai-sub');
   if (!sub) return;
@@ -3088,7 +3131,8 @@ function aiRender() {
     const files = (m.items || []).length
       ? `<div class="ai-files">${m.items.map((it, ii) => aiFileCard(it, `${mi}:${ii}`)).join('')}</div>`
       : '';
-    return `<div class="${cls}">${mdLite(m.text)}${tools}</div>${files}`;
+    const cursor = m.streaming ? '<span class="ai-cursor"></span>' : '';
+    return `<div class="${cls}">${mdLite(m.text)}${cursor}${tools}</div>${files}`;
   }).join('');
   box.querySelectorAll('[data-ai-file]').forEach((b) => {
     const [mi, ii] = b.dataset.aiFile.split(':').map(Number);
@@ -3121,22 +3165,48 @@ async function aiSend(text) {
   aiAbort = new AbortController();
   aiEnsureSession(text);
   aiMsgs.push({ role: 'me', text });
-  aiMsgs.push({ role: 'tool', text: t('ai_thinking') });
+  const bot = { role: 'bot', text: '', tools: [], items: [], streaming: true };
+  aiMsgs.push(bot);
   aiPersist();
   updateAiTitle();
   aiRender();
   aiComposerState();
+
+  let timer = null;
+  const schedule = () => {
+    if (timer) return;
+    timer = setTimeout(() => { timer = null; aiRender(); }, 60);
+  };
+
   try {
-    const r = await aiFetch('/ai/ask', { body: { text }, signal: aiAbort.signal });
-    aiMsgs.pop();
-    aiMsgs.push({ role: 'bot', text: r.text || t('ai_empty_answer'), tools: r.tools || [], items: r.items || [] });
+    const done = await aiStream(text, {
+      signal: aiAbort.signal,
+      onDelta: (d) => { bot.text += d; schedule(); },
+      onTool: (e) => {
+        if (e.name && !bot.tools.includes(e.name)) { bot.tools.push(e.name); schedule(); }
+      }
+    });
+    bot.streaming = false;
+    if (done) {
+      if (typeof done.text === 'string' && done.text.trim()) bot.text = done.text;
+      if (Array.isArray(done.items)) bot.items = done.items;
+      if (Array.isArray(done.tools) && done.tools.length) bot.tools = done.tools;
+      if (done.error) { bot.role = 'err'; bot.text = `${t('ai_fail')}: ${done.error}`; }
+    }
+    if (!String(bot.text || '').trim()) bot.text = t('ai_empty_answer');
     aiPersist();
   } catch (e) {
-    aiMsgs.pop();
+    bot.streaming = false;
     const aborted = e.name === 'AbortError' || /abort/i.test(e.message || '');
-    aiMsgs.push({ role: 'err', text: aborted ? t('ai_stopped') : `${t('ai_fail')}: ${e.message}` });
+    if (aborted) {
+      bot.text = (bot.text ? bot.text + '\n\n' : '') + t('ai_stopped');
+    } else {
+      bot.role = 'err';
+      bot.text = `${t('ai_fail')}: ${e.message}`;
+    }
     aiPersist();
   } finally {
+    if (timer) { clearTimeout(timer); timer = null; }
     aiBusy = false;
     aiAbort = null;
     aiRender();
