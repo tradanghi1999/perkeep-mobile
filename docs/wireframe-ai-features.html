@@ -96,6 +96,18 @@ svg{display:block}
 .answer ul li{margin-bottom:3px}
 .answer .ts{font-family:ui-monospace,Consolas,monospace;font-size:10.5px;color:var(--green-d);background:#eef6f1;border-radius:4px;padding:0 4px}
 
+/* suggestion card inline trong chat */
+.suggest{align-self:flex-start;width:100%;background:#fff;border:1px solid #e6ebe8;border-radius:14px;padding:10px;box-shadow:0 1px 3px #0000000d}
+.suggest .row1{display:flex;gap:9px;align-items:center;margin-bottom:9px}
+.suggest .aihint{font-size:10.5px;color:#6b7a70;margin:0 0 7px;display:flex;align-items:center;gap:5px}
+.suggest .chips2{display:flex;gap:6px;flex-wrap:wrap;margin:0 0 10px}
+.suggest .tg{background:#eef6f1;border:1px solid #cfe3d6;border-radius:14px;padding:5px 9px;font-size:11.5px;color:var(--green-d);font-weight:600}
+.suggest .tg.add{border-style:dashed;color:#5c6a61;font-weight:500;background:none}
+.suggest .acts{display:flex;gap:8px}
+.suggest .acts button{flex:1;border:0;border-radius:10px;padding:11px;font-size:12.5px;font-family:inherit;font-weight:700;background:var(--green);color:#fff}
+.suggest .acts button.ghost{background:#eef1ef;color:#39433d;font-weight:500}
+.suggest .savenote{font-size:10.5px;color:#7b8a80;margin:7px 1px 0}
+
 /* duplicate groups */
 .dupe{background:#fff;border:1px solid #e6ebe8;border-radius:12px;padding:8px;margin-top:2px}
 .dupe .gh{font-size:11px;color:var(--muted);margin-bottom:6px}
@@ -145,7 +157,9 @@ svg{display:block}
     • Bỏ composer nằm trong vùng cuộn<br>
     • Composer là phần tử cuối, sát đáy<br>
     • Ẩn bottom nav trong hội thoại (quay lại bằng ←)<br>
-    • Thêm nút đính kèm (＋) bên trái ô nhập
+    • Thêm nút đính kèm (＋) bên trái ô nhập<br>
+    • Đang chạy: nút Gửi → nút Dừng (cùng chỗ)<br>
+    • <b>Gợi ý tag + Lưu: component ngay trong chat</b>, không mở form riêng
   </div>
 
   <h2>Luồng</h2>
@@ -154,7 +168,7 @@ svg{display:block}
     <li><b>Hỏi đáp thư viện</b><span class="ph ph1">GĐ1</span><br>chat, chỉ đọc.</li>
     <li><b>Thêm video từ kênh</b><span class="ph ph2">GĐ2</span><br>tool + picker + xác nhận.</li>
     <li><b>Gắn tag hàng loạt</b><span class="ph ph2">GĐ2</span><br>thẻ quyền.</li>
-    <li><b>Gợi ý tag trong form link</b><span class="ph ph1">GĐ1</span><br>AI điền, bạn Lưu.</li>
+    <li><b>Gợi ý tag inline trong chat</b><span class="ph ph1">GĐ1</span><br>dán link → thẻ video + tag gợi ý + Lưu, ngay trong chat.</li>
     <li><b>Dọn mục trùng</b><span class="ph ph2">GĐ2</span><br>trùng mục, không phải dung lượng.</li>
     <li><b>Tóm tắt video link</b><span class="ph ph3">GĐ3</span><br>cần phụ đề.</li>
     <li><b>Bộ sưu tập &amp; theo dõi</b><span class="ph ph3">GĐ3</span><br>trang quản lý (có nav).</li>
@@ -165,7 +179,8 @@ svg{display:block}
      • Ô nhập luôn thấy, kể cả khi bàn phím mở<br>
      • Trong hội thoại: chỉ ← để thoát, không có tab bar<br>
      • **Đang chạy: nút Gửi đổi thành nút Dừng** (cùng vị trí, không đặt trên header)<br>
-     • Chạy xong: nút Dừng tự đổi lại thành Gửi (mờ nếu ô trống)</p>
+     • Chạy xong: nút Dừng tự đổi lại thành Gửi (mờ nếu ô trống)<br>
+     • <b>Mọi kết quả AI = component trong chat</b> (picker, thẻ tag, thẻ quyền) — không mở màn riêng</p>
 </div>
 
 <!-- ================= 1. TÌM BẰNG LỜI NÓI (tab Tệp) ================= -->
@@ -324,47 +339,61 @@ svg{display:block}
 <div class="cap"><b>4</b> · Thẻ xin quyền (không che ô nhập)</div>
 </div>
 
-<!-- ================= 5. GỢI Ý TAG TRONG FORM ================= -->
+<!-- ================= 5. GỢI Ý TAG INLINE TRONG CHAT ================= -->
 <div>
 <div class="phone"><div class="screen">
   <div class="top">
     <button class="iconbtn"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg></button>
-    <div class="ttl"><b>Thêm link video</b><small>YouTube · đã lấy thông tin</small></div>
-    <button class="iconbtn">×</button>
+    <div class="ttl"><b>Trợ lý</b><small>deepseek-v4-flash</small></div>
+    <button class="iconbtn">⋯</button>
   </div>
 
-  <div class="set" style="padding-bottom:16px">
-    <div style="border:1px solid #e3e8e5;border-radius:14px;overflow:hidden;margin:8px 0 10px">
-      <div style="height:150px;background:linear-gradient(135deg,#c9d8cf,#8fb3a0);position:relative">
-        <div style="position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:48px;height:48px;border-radius:50%;background:#00000075;display:flex;align-items:center;justify-content:center"><div style="border:10px solid transparent;border-left:15px solid #fff;margin-left:4px"></div></div>
-        <span style="position:absolute;right:8px;bottom:8px;background:#000a;color:#fff;font-size:11px;padding:2px 6px;border-radius:5px">13:16</span>
+  <div class="chat">
+    <div class="msg me">Lưu link này giúp tôi: https://www.youtube.com/watch?v=Zgwfw3bzSmQ</div>
+
+    <div class="tool">
+      <span class="ic"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 5h16v14H4z"/><path d="M8 9h8M8 13h5"/></svg></span>
+      <span>Lấy thông tin video <span class="name">webfetch</span></span><span class="st ok">✓</span>
+    </div>
+
+    <!-- Component inline: thẻ lưu link + gợi ý tag -->
+    <div class="suggest">
+      <div class="row1">
+        <div class="vthumb"><span class="dur">13:16</span></div>
+        <div class="vt">
+          <b>Thompson Sampling : Data Science Concepts</b>
+          <small>YouTube · ritvikmath · 13:16</small>
+        </div>
       </div>
-      <div style="padding:10px 12px">
-        <b style="font-size:13.5px;display:block;line-height:1.35">Thompson Sampling : Data Science Concepts</b>
-        <small style="color:var(--muted);font-size:11.5px">YouTube · ritvikmath · 13:16</small>
+
+      <div class="aihint">
+        <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3.5l1.9 4.6 4.6 1.9-4.6 1.9L12 16.5l-1.9-4.6L5.5 10l4.6-1.9z"/></svg>
+        AI gợi ý tag — bấm để bỏ chọn
       </div>
+      <div class="chips2">
+        <span class="tg">✓ thống kê</span>
+        <span class="tg">✓ machine-learning</span>
+        <span class="tg">✓ data-science</span>
+        <span class="tg add">＋ thêm tag</span>
+      </div>
+
+      <div class="acts">
+        <button>Lưu vào Perkeep</button>
+        <button class="ghost">Sửa</button>
+      </div>
+      <div class="savenote">Sẽ tạo 1 mục “video link” + tag ở trên. Bạn vẫn là người bấm Lưu.</div>
     </div>
 
-    <label style="display:block;font-size:12px;color:var(--muted);margin:6px 2px 6px">Tag</label>
-    <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px">
-      <span style="background:var(--green-l);color:var(--green-d);border-radius:14px;padding:6px 10px;font-size:12px">youtube</span>
-      <span style="background:var(--green-l);color:var(--green-d);border-radius:14px;padding:6px 10px;font-size:12px">data-science</span>
-      <button style="border:1.5px dashed #b9c6be;background:none;border-radius:14px;padding:6px 10px;font-size:12px;color:var(--green-d);font-family:inherit;font-weight:600">＋ Gợi ý tag bằng AI</button>
-    </div>
+    <div class="meta">Không mở form riêng: mọi kết quả AI trả về đều là component ngay trong chat.</div>
+  </div>
 
-    <div style="background:#f2f6ff;border:1px solid #d6e2fb;border-radius:12px;padding:10px 11px;font-size:12px;color:#27406e;line-height:1.5">
-      <b>AI gợi ý:</b> thêm tag <b>thống kê</b>, <b>machine-learning</b>; tên gọn hơn: “Thompson Sampling — Data Science”.<br>
-      <span style="display:inline-block;margin-top:6px;color:var(--blue);font-weight:600">Áp dụng</span><span style="margin-left:14px;color:var(--muted)">Bỏ qua</span>
-    </div>
-
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:16px">
-      <button style="border:0;border-radius:12px;padding:14px;background:var(--green);color:#fff;font-weight:700;font-family:inherit;font-size:14px">Lưu</button>
-      <button style="border:0;border-radius:12px;padding:14px;background:#eee;color:#333;font-family:inherit;font-size:14px">Huỷ</button>
-    </div>
-    <p style="font-size:11px;color:var(--muted);margin-top:10px;line-height:1.5">AI chỉ điền gợi ý. Bạn vẫn là người bấm Lưu.</p>
+  <div class="composer">
+    <button class="plus"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.9"><path d="M12 5v14M5 12h14"/></svg></button>
+    <div class="box">Nhắn thêm cho trợ lý…</div>
+    <button class="send off"><svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V6M6 12l6-6 6 6"/></svg></button>
   </div>
 </div></div>
-<div class="cap"><b>5</b> · Gợi ý tag trong form (không phải chat)</div>
+<div class="cap"><b>5</b> · Gợi ý tag + Lưu — component ngay trong chat</div>
 </div>
 
 <!-- ================= 6. DỌN MỤC TRÙNG ================= -->
