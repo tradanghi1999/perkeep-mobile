@@ -32,6 +32,12 @@
 - **Bộ sưu tập** (Home): là tag; thêm/xoá trong "Quản lý"; chạm chip để lọc.
 - **Theo dõi kênh** (Cài đặt): thêm/sửa/xoá kênh, giờ chạy, số video, tag; task Windows tự chạy mỗi ngày; kết quả vào **hàng chờ** để duyệt.
 
+## Cách trả lời (streaming + fast path)
+- **Fast path** cho câu hỏi tra cứu: router model → biểu thức Perkeep → bridge tự search → model chỉ viết 1–2 câu tổng kết. Không mở session/tool, ~6–7s.
+- **Agent path** cho hành động (thêm video, tag, web): session OpenCode + MCP, stream thật qua `session.text.delta`.
+- **Không lặp thông tin**: khi có danh sách file, text chỉ là câu tổng kết; app render **file card** (bấm mở viewer). Prompt agent cấm liệt kê tên file trong text.
+- Streaming: bridge phát SSE `delta` / `tool` / `done`; app đọc bằng fetch + ReadableStream, hiện cursor và nút Dừng.
+
 ## Bảo mật
 - Bridge chỉ mở `:4180` với token; OpenCode vẫn ở `127.0.0.1`.
 - Agent `librarian` bị **deny toàn bộ** trừ tool đọc Perkeep + websearch/webfetch.
