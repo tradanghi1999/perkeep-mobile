@@ -17,7 +17,7 @@
 
 import { OpenCode } from '@opencode/client';
 import { Service } from '@opencode/client/service';
-import { createVideoLink, setTag, findDupes, search as pkSearchItems } from './perkeep-lib.mjs';
+import { createVideoLink, setTag, findDupes, search as pkSearchItems, hideVaultExpr } from './perkeep-lib.mjs';
 import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { randomBytes } from 'node:crypto';
@@ -68,7 +68,7 @@ async function pkSearch(expression, limit = 5) {
   const res = await fetch(PK + '/my-search/camli/search/query', {
     method: 'POST',
     headers: pkHeaders({ 'Content-Type': 'application/json' }),
-    body: JSON.stringify({ expression, limit, sort: '-created' })
+    body: JSON.stringify({ expression: hideVaultExpr(expression), limit, sort: '-created' })
   });
   const j = await res.json().catch(() => ({}));
   if (!res.ok || j.error) throw new Error(j.error || `HTTP ${res.status}`);

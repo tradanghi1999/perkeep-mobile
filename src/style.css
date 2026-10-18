@@ -187,6 +187,30 @@ h3 { margin: 12px 4px; font-size: 1.0625rem; }
 .ai-send[disabled]{background:#cfd8d2}
 .ai-empty{color:var(--muted);font-size:13px;line-height:1.55;padding:6px 4px}
 
+/* ---------- Vault ---------- */
+.vault-screen{position:fixed;inset:0;z-index:55;background:#fff;display:flex;flex-direction:column}
+.vault-screen[hidden]{display:none}
+.vault-top{display:flex;align-items:center;gap:5px;padding:10px 10px 8px;border-bottom:1px solid #f1f1f1;flex:none}
+.vault-title{flex:1;min-width:0;padding:0 2px}
+.vault-title b{display:block;font-size:16px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.vault-title small{display:block;color:var(--muted);font-size:11px;margin-top:1px}
+.vault-top .iconbtn{width:38px;height:38px;flex:none;border:0;border-radius:50%;background:#f1f5f3;color:var(--green);
+  display:flex;align-items:center;justify-content:center}
+.vault-searchwrap{flex:none;display:flex;align-items:center;gap:8px;margin:10px 12px 2px;padding:8px 12px;
+  background:#f1f4f2;border-radius:22px}
+.vault-searchwrap .s-ico{display:flex;color:#7b8c83}
+.vault-searchwrap input{flex:1;min-width:0;border:0;outline:none;background:none;font:inherit;font-size:14px;color:#1f1f1f}
+.vault-body{flex:1;min-height:0;overflow:auto;padding:4px 12px 90px}
+.vault-fab{position:absolute;right:18px;bottom:24px;width:52px;height:52px;border:0;border-radius:50%;background:var(--green);
+  color:#fff;display:flex;align-items:center;justify-content:center;font-size:26px;box-shadow:0 8px 20px #3f6b5740;z-index:56}
+.vrow{display:flex;align-items:center;gap:12px;padding:13px 4px;border-bottom:1px solid var(--line)}
+.vrow .vio{width:36px;height:36px;flex:none;border-radius:10px;background:#eef4f0;color:var(--green);display:flex;align-items:center;justify-content:center}
+.vrow .vtx{flex:1;min-width:0}
+.vrow b{display:block;font-size:13.5px;color:#20261f}
+.vrow small{display:block;color:var(--muted);font-size:11px;margin-top:1px}
+.vrow .chev{color:#b3beb8}
+
+
 /* ---------- Bộ sưu tập (Home) ---------- */
 .colls{padding:8px 12px 2px;flex:none}
 .colls:empty{display:none}

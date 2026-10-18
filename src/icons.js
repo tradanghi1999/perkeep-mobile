@@ -38,6 +38,9 @@ const P = {
   close: '<path d="M6.5 6.5l11 11M17.5 6.5l-11 11"/>',
   filterOff: '<path d="M3.5 5.5h17l-6.5 7.3v5.7l-4-2v-3.7z"/><path d="M4 4l16 16"/>',
   chevron: '<path d="M9.5 6l6 6-6 6"/>',
+  back: '<path d="M15 5.5 8.5 12l6.5 6.5"/>',
+  lock: '<rect x="5" y="10" width="14" height="10" rx="2.5"/><path d="M8.5 10V7.5a3.5 3.5 0 0 1 7 0V10"/>',
+  unlock: '<rect x="5" y="10" width="14" height="10" rx="2.5"/><path d="M8.5 10V7.5a3.5 3.5 0 0 1 6.6-1.7"/>',
   check: '<path d="M5 12.5 9.5 17 19 7.5"/>'
 };
 

@@ -149,6 +149,11 @@
           <div class="fx"><b data-i18n="set_ai">Trợ lý AI</b><small id="set-ai-sub"></small></div>
           <span class="chev" id="set-ai-state"></span>
         </div>
+        <div class="frow" id="set-vault">
+          <div class="fic" data-ico="lock"></div>
+          <div class="fx"><b data-i18n="set_vault">Vault</b><small id="set-vault-sub"></small></div>
+          <span class="chev" data-ico="chevron"></span>
+        </div>
         <div class="frow" id="set-backup">
           <div class="fic" data-ico="download"></div>
           <div class="fx"><b data-i18n="set_backup">Sao lưu cấu hình</b><small data-i18n="set_backup_sub">Chuyển máy / cài lại app</small></div>
@@ -172,6 +177,24 @@
         <p class="hint" data-i18n="set_hint">Đổi / sửa / xóa dịch vụ: mở mục “Dịch vụ Perkeep”, hoặc chạm avatar trên thanh tìm kiếm.</p>
         <pre id="out" hidden></pre>
         </div>
+      </div>
+
+      <!-- Vault: overlay toàn màn hình (không thêm tab thứ 6) -->
+      <div class="vault-screen" id="vault-screen" hidden>
+        <div class="vault-top">
+          <button class="iconbtn" id="vault-back" aria-label="back"></button>
+          <div class="vault-title"><b id="vault-title"></b><small id="vault-sub"></small></div>
+          <button class="iconbtn" id="vault-lock" aria-label="lock"></button>
+          <button class="iconbtn" id="vault-menu" aria-label="menu"></button>
+        </div>
+        <div class="vault-searchwrap">
+          <span class="s-ico" id="vault-s-ico"></span>
+          <input id="vault-q" autocomplete="off" />
+        </div>
+        <div class="vault-body" id="vault-body">
+          <div id="vault-list" class="list"></div>
+        </div>
+        <button class="vault-fab" id="vault-add" aria-label="add"></button>
       </div>
 
       <button class="fab" id="fab" aria-label="add"></button>

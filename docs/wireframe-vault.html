@@ -1,0 +1,415 @@
+<!doctype html>
+<html lang="vi"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Wireframe — Vault (nhiều vault, mật khẩu) · Perkeep Mobile</title>
+<style>
+*{box-sizing:border-box}
+:root{--green:#3F6B57;--green-d:#2E5546;--green-l:#e3f0e8;--blue:#375EAB;--muted:#68756d;--line:#ececec;--ink:#1f1f1f;--red:#b3261e;--amber:#8a6c1f}
+body{margin:0;font-family:system-ui,-apple-system,'Segoe UI',Helvetica,Arial,sans-serif;background:#0b0f14;color:#fff;display:flex;gap:22px;padding:22px;flex-wrap:wrap;align-items:flex-start}
+svg{display:block}
+
+/* ---------- legend ---------- */
+.legend{width:360px;color:#c9d6e2;font-size:13.5px;line-height:1.55}
+.legend h1{font-size:21px;margin:0 0 4px;color:#fff}
+.legend .sub{color:#8fa3b5;font-size:12.5px;margin:0 0 14px}
+.legend h2{font-size:12px;margin:18px 0 7px;color:#fff;text-transform:uppercase;letter-spacing:.6px;opacity:.85}
+.legend p{margin:0 0 8px}
+.legend b{color:#fff}
+.legend ol{margin:0;padding-left:19px}
+.legend li{margin:0 0 7px}
+.legend code{background:#16202a;border-radius:5px;padding:1px 5px;font-size:11.5px}
+.legend .fix{background:#16202a;border-left:3px solid #3F6B57;padding:9px 10px;border-radius:6px;font-size:12.5px;margin:12px 0}
+.legend .warn{background:#241d13;border-left:3px solid #c79b3b;padding:9px 10px;border-radius:6px;font-size:12.5px;margin:12px 0;color:#e8d7b3}
+.legend .badge{display:inline-block;background:#1f4d36;color:#9be7bd;font-size:10px;font-weight:700;border-radius:5px;padding:1px 5px;margin-left:5px;vertical-align:1px}
+.legend .q{color:#f0d47a}
+
+/* ---------- phone ---------- */
+.frames{display:flex;gap:22px;flex-wrap:wrap;align-items:flex-start;flex:1;min-width:0}
+.frame{flex:none}
+.phone{width:366px;height:758px;background:#f6f2fb;color:var(--ink);border-radius:44px;padding:13px;box-shadow:0 20px 60px #0008;position:relative}
+.screen{background:#fff;border-radius:33px;height:100%;display:flex;flex-direction:column;overflow:hidden;position:relative}
+.cap{margin:9px 4px 0;font-size:12px;color:#9fb0c0;text-align:center;line-height:1.4}
+.cap b{color:#e6eef5}
+
+/* ---------- chrome ---------- */
+.top{display:flex;align-items:center;gap:8px;padding:10px 10px 7px;flex:none;border-bottom:1px solid #f2f2f2;background:#fff}
+.top .ttl{flex:1;min-width:0}
+.top .ttl b{display:block;font-size:15.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.top .ttl small{color:var(--muted);font-size:11px}
+.iconbtn{width:36px;height:36px;flex:none;border:0;border-radius:50%;background:none;color:#4a4a4a;display:flex;align-items:center;justify-content:center;font-size:17px}
+.iconbtn.solid{background:#f1f5f3;color:var(--green)}
+.body{flex:1;min-height:0;overflow:auto;padding:12px}
+.pad{padding:0 12px}
+
+/* ---------- fields / buttons ---------- */
+.field{margin:0 0 13px}
+.field label{display:block;font-size:12px;font-weight:600;color:#3d4a43;margin:0 2px 6px}
+.field input{width:100%;border:1px solid #dfe5e1;border-radius:12px;padding:12px 13px;font:inherit;font-size:14px;color:#1f1f1f;background:#fbfcfb;outline:none}
+.field input.ph{color:#9aa79f}
+.field .hint{font-size:11px;color:var(--muted);margin:6px 2px 0;line-height:1.45}
+.btn{width:100%;border:0;border-radius:13px;padding:14px;font:inherit;font-size:14px;font-weight:700;background:var(--green);color:#fff}
+.btn.ghost{background:#eef1ef;color:#39433d;font-weight:600}
+.btn.red{background:var(--red)}
+.btn:disabled{background:#cfd8d2}
+.btnrow{display:grid;grid-template-columns:1fr 1fr;gap:9px}
+.linkbtn{border:0;background:none;color:var(--blue);font:inherit;font-size:12px;font-weight:600;padding:8px 0}
+
+/* ---------- settings rows ---------- */
+.srow{display:flex;align-items:center;gap:12px;padding:13px 4px;border-bottom:1px solid #f1f1f1}
+.srow .ic{width:34px;height:34px;flex:none;border-radius:10px;background:#eef4f0;display:flex;align-items:center;justify-content:center;color:var(--green);font-size:16px}
+.srow .tx{flex:1;min-width:0}
+.srow b{display:block;font-size:13.5px;font-weight:600;color:#20261f}
+.srow small{display:block;color:var(--muted);font-size:11px;margin-top:1px}
+.srow .chev{color:#b3beb8;font-size:18px}
+.srow.new{background:#f3faf5;border:1px solid #dcece1;border-radius:14px;padding:12px 10px;margin:8px 0 4px;border-bottom:1px solid #dcece1}
+.srow.new .ic{background:var(--green);color:#fff}
+.badge-new{background:var(--green);color:#fff;font-size:9.5px;font-weight:800;border-radius:5px;padding:2px 5px;margin-left:5px;vertical-align:1px}
+
+/* ---------- vault cards ---------- */
+.vcard2{display:flex;align-items:center;gap:12px;background:#fff;border:1px solid #e4ebe7;border-radius:15px;padding:12px;margin:0 0 10px;box-shadow:0 1px 2px #00000008}
+.vcard2 .lock{width:42px;height:42px;flex:none;border-radius:12px;background:#eef5f0;display:flex;align-items:center;justify-content:center;font-size:19px}
+.vcard2 .tx{flex:1;min-width:0}
+.vcard2 b{display:block;font-size:14px;color:#1f261f}
+.vcard2 small{display:block;font-size:11px;color:var(--muted);margin-top:2px}
+.vcard2 .go{color:#b3beb8;font-size:18px}
+.vcard2.open{border-color:#bcdcca;background:#f5fbf7}
+.vcard2.open .lock{background:var(--green);color:#fff}
+
+/* ---------- file rows ---------- */
+.flist{display:flex;flex-direction:column;gap:2px}
+.frow2{display:flex;align-items:center;gap:10px;padding:10px 4px;border-bottom:1px solid #f1f1f1}
+.frow2 .fico{width:40px;height:40px;flex:none;border-radius:10px;background:#eef3f0;display:flex;align-items:center;justify-content:center;color:var(--green);font-size:16px}
+.frow2 .fx{flex:1;min-width:0}
+.frow2 b{display:block;font-size:12.5px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.frow2 small{display:block;font-size:10.5px;color:var(--muted);margin-top:2px}
+.frow2 .lk{font-size:11px;color:#7b8c83;background:#f0f4f1;border-radius:7px;padding:2px 6px;flex:none}
+.frow2.sel{background:#e3efe7;box-shadow:inset 3px 0 0 var(--green);border-radius:8px}
+.chk2{width:21px;height:21px;flex:none;border-radius:7px;border:2px solid #b9c6be;display:flex;align-items:center;justify-content:center;color:#fff;font-size:11px}
+.chk2.on{background:var(--green);border-color:var(--green)}
+
+/* ---------- vault search ---------- */
+.vsearch{display:flex;align-items:center;gap:8px;background:#eef4f0;border-radius:22px;padding:8px 12px;color:#5d6c63;font-size:12.5px}
+.vsearch .tx{flex:1;min-width:0;color:#1f1f1f;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.vsearch .lk{font-size:11px;background:#fff;border-radius:8px;padding:2px 6px;color:#64756b}
+.hintline{font-size:10.5px;color:#7d8b83;margin:7px 2px 9px;line-height:1.4}
+
+/* ---------- bottom nav ---------- */
+.nav{flex:none;display:flex;justify-content:space-around;align-items:center;background:#f4eefb;padding:7px 6px 9px;border-top:1px solid #eee}
+.nav .it{display:flex;flex-direction:column;align-items:center;gap:3px;font-size:9.5px;color:#6f6678;min-width:52px}
+.nav .it .ic{width:22px;height:22px;display:flex;align-items:center;justify-content:center;font-size:15px}
+.nav .it.on{color:var(--green);font-weight:700}
+.fab{position:absolute;right:16px;bottom:18px;width:52px;height:52px;border-radius:50%;background:var(--green);color:#fff;display:flex;align-items:center;justify-content:center;font-size:24px;box-shadow:0 8px 20px #3f6b5740}
+
+/* ---------- sheet ---------- */
+.overlay{position:absolute;inset:0;background:#0003;display:flex;flex-direction:column;justify-content:flex-end}
+.sheet2{background:#fff;border-radius:22px 22px 0 0;padding:12px 14px 18px;box-shadow:0 -8px 30px #0002}
+.handle{width:42px;height:4px;border-radius:3px;background:#d9dde1;margin:2px auto 10px}
+.sheet2 h3{margin:0 0 10px;font-size:15px;color:#1f261f}
+.rowbtn2{display:flex;align-items:center;gap:11px;width:100%;border:0;background:none;padding:12px 4px;font:inherit;font-size:13.5px;color:#20261f;text-align:left;border-radius:10px}
+.rowbtn2 .ic{width:20px;flex:none;color:var(--green);font-size:15px;text-align:center}
+.rowbtn2.danger{color:var(--red)}
+.rowbtn2.danger .ic{color:var(--red)}
+
+/* ---------- annotations ---------- */
+.anno{font-size:10.5px;line-height:1.45;color:#3f5e7a;background:#eef6ff;border:1px dashed #b9d4ee;border-radius:8px;padding:6px 8px;margin:8px 0 0}
+.anno b{color:#1e4f7a}
+.callout{display:inline-flex;align-items:center;justify-content:center;width:17px;height:17px;border-radius:50%;background:#375EAB;color:#fff;font-size:10px;font-weight:800;margin-right:5px;vertical-align:1px}
+
+/* screen-specific */
+.emptyv{text-align:center;color:#8a978f;font-size:12px;padding:18px 10px}
+.emptyv .big{font-size:34px;display:block;margin-bottom:8px}
+.lockhero{text-align:center;padding:26px 14px 8px}
+.lockhero .big{width:64px;height:64px;border-radius:50%;background:#eef5f0;display:flex;align-items:center;justify-content:center;font-size:30px;margin:0 auto 12px}
+.lockhero h3{margin:0 0 5px;font-size:16px}
+.lockhero p{margin:0;color:var(--muted);font-size:12px;line-height:1.5}
+.errline{color:var(--red);font-size:11.5px;margin:6px 2px 0}
+.warnbox{background:#fff7f2;border:1px solid #f0d3c4;border-radius:12px;padding:10px 11px;font-size:12px;color:#7a3b22;line-height:1.5;margin:2px 0 12px}
+.okbox{background:#f3faf5;border:1px solid #cfe3d7;border-radius:12px;padding:10px 11px;font-size:12px;color:#2b5c3f;line-height:1.5;margin:2px 0 12px}
+.stepdots{display:flex;gap:5px;justify-content:center;margin:4px 0 10px}
+.stepdots i{width:5px;height:5px;border-radius:50%;background:#d4ddd7}
+.stepdots i.on{background:var(--green)}
+</style></head>
+<body>
+
+<aside class="legend">
+  <h1>Vault — wireframe duyệt trước</h1>
+  <p class="sub">Khoá riêng từng nhóm file · nhiều vault · xoá vault thì file hiện lại</p>
+
+  <h2>Luồng chính</h2>
+  <ol>
+    <li><b>Cài đặt → Vault</b> → danh sách vault.</li>
+    <li>Tạo vault: <b>tên + mật khẩu + nhập lại</b>.</li>
+    <li>Mở vault: nhập mật khẩu → màn vault riêng.</li>
+    <li>Trong vault: tìm kiếm <b>chỉ trong vault đó</b>; thêm file từ thư viện.</li>
+    <li>Từ thư viện chính: long-press/⋮ → <b>Đưa vào vault</b> → file biến mất khỏi thư viện.</li>
+    <li>Xoá vault: các file <b>hiện lại</b>, không bị xoá.</li>
+  </ol>
+
+  <h2>Quyết định cần duyệt</h2>
+  <ol>
+    <li><b>Lối vào:</b> Cài đặt → Vault (không thêm tab thứ 6).</li>
+    <li><b>1 file thuộc 1 vault:</b> thêm vào vault khác = chuyển sang vault đó. Muốn 1 file ở nhiều vault?</li>
+    <li><b>Bảo vệ:</b> ẩn trong app + mật khẩu. <b>Chưa mã hoá blob</b> — Perkeep Web/Jellyfin vẫn đọc được. Cần mã hoá thật thì làm giai đoạn 2.</li>
+    <li><b>Quên mật khẩu:</b> vẫn được xoá vault (gõ tên để xác nhận) để file hiện lại; không mất file. Đồng ý?</li>
+    <li><b>Tự khoá:</b> mở khoá giữ trong phiên; nút Khoá; đóng app là khoá. Có cần tự khoá sau 5 phút rời app?</li>
+    <li><b>Thêm file:</b> từ trong vault (picker) + từ menu file ngoài. Có cần upload trực tiếp vào vault?</li>
+  </ol>
+
+  <div class="fix">
+    <b>Cơ chế đề xuất (v1)</b><br>
+    Mỗi file trong vault được gắn tag <code>pkvault</code> + <code>pkvault-&lt;id&gt;</code>.
+    Mọi tìm kiếm ngoài thư viện tự thêm <code>-tag:pkvault</code>.
+    Xoá vault chỉ <b>gỡ tag</b>, không xoá blob.
+    Mật khẩu lưu dạng <b>PBKDF2-SHA256 + salt</b>, không lưu plaintext.
+    AI/MCP cũng lọc <code>pkvault</code>; vault tự tìm bằng truy vấn riêng.
+  </div>
+
+  <div class="warn">
+    <b>Giới hạn cần biết:</b> đây là vault cấp app, không phải mã hoá đầu-cuối.
+    Ai mở được Perkeep Web, Jellyfin hoặc dùng client khác vẫn thấy/thao tác được file gốc.
+    Nếu bạn cần “không ai đọc được kể cả khi có server”, phải mã hoá file trước khi upload (giai đoạn 2) — sẽ mất tìm kiếm nội dung/Jellyfin.
+  </div>
+
+  <h2>Ghi chú kỹ thuật</h2>
+  <p>• Nhiều vault: mỗi vault 1 id + 1 tag riêng, 1 mật khẩu riêng.<br>
+  • Xoá vault = gỡ tag của toàn bộ file trong vault → hiện lại ở Home/Tệp/tìm kiếm.<br>
+  • Khôi phục cấu hình (mã backup) sẽ gồm metadata vault + hash mật khẩu; file/tag nằm trong Perkeep.<br>
+  • Vault không hiện trong bottom nav; màn vault là overlay toàn màn hình.</p>
+
+  <p class="q">Bạn duyệt các mục 1–6 ở trên (hoặc ghi chú thay đổi) rồi mình implement.</p>
+</aside>
+
+<main class="frames">
+
+  <!-- 1. Settings entry -->
+  <div class="frame">
+    <div class="phone"><div class="screen">
+      <div class="top"><div class="ttl"><b>Cài đặt</b><small>Perkeep Mobile</small></div></div>
+      <div class="body">
+        <div class="srow"><div class="ic">🖥</div><div class="tx"><b>Dịch vụ Perkeep</b><small>192.168.123.9 · đã kết nối</small></div><span class="chev">›</span></div>
+        <div class="srow"><div class="ic">🌐</div><div class="tx"><b>Ngôn ngữ</b><small>Tiếng Việt</small></div><span class="chev">›</span></div>
+        <div class="srow"><div class="ic">🔔</div><div class="tx"><b>Quyền thông báo</b><small>Đã cấp</small></div><span class="chev">›</span></div>
+        <div class="srow"><div class="ic">🎬</div><div class="tx"><b>Jellyfin (phát mượt)</b><small>Đã kết nối · 8 Mbps</small></div><span class="chev">›</span></div>
+        <div class="srow"><div class="ic">✨</div><div class="tx"><b>Trợ lý AI</b><small>Đã kết nối</small></div><span class="chev">›</span></div>
+
+        <div class="srow new">
+          <div class="ic">🔒</div>
+          <div class="tx"><b>Vault <span class="badge-new">MỚI</span></b><small>2 vault · 15 file đang ẩn khỏi thư viện</small></div>
+          <span class="chev">›</span>
+        </div>
+
+        <div class="srow"><div class="ic">📡</div><div class="tx"><b>Theo dõi kênh</b><small>1 kênh · hàng chờ 2</small></div><span class="chev">›</span></div>
+        <div class="srow"><div class="ic">📄</div><div class="tx"><b>Giới thiệu Perkeep</b><small>Lưu trữ dữ liệu suốt đời</small></div><span class="chev">›</span></div>
+
+        <div class="anno"><span class="callout">1</span><b>Lối vào duy nhất:</b> Cài đặt → Vault. Không thêm tab thứ 6 cho đỡ chật; vault vẫn mở nhanh bằng 1 chạm.</div>
+      </div>
+      <div class="nav">
+        <div class="it"><span class="ic">🏠</span>Nhà</div>
+        <div class="it"><span class="ic">⭐</span>Ghim</div>
+        <div class="it"><span class="ic">📁</span>Tệp</div>
+        <div class="it"><span class="ic">✨</span>Trợ lý</div>
+        <div class="it on"><span class="ic">⚙️</span>Cài đặt</div>
+      </div>
+    </div></div>
+    <p class="cap"><b>1.</b> Cài đặt — dòng Vault mới</p>
+  </div>
+
+  <!-- 2. Vault list -->
+  <div class="frame">
+    <div class="phone"><div class="screen">
+      <div class="top">
+        <button class="iconbtn">←</button>
+        <div class="ttl"><b>Vault</b><small>Mỗi vault có mật khẩu riêng</small></div>
+        <button class="iconbtn solid">＋</button>
+      </div>
+      <div class="body">
+        <p style="font-size:11.5px;color:#6b7770;line-height:1.5;margin:0 0 12px">File trong vault không xuất hiện ở Home, Tệp hay tìm kiếm chính. Mở vault mới xem được.</p>
+
+        <div class="vcard2">
+          <div class="lock">🔒</div>
+          <div class="tx"><b>Cá nhân</b><small>3 mục · khoá</small></div>
+          <span class="go">›</span>
+        </div>
+        <div class="vcard2 open">
+          <div class="lock">🔓</div>
+          <div class="tx"><b>Công việc</b><small>12 mục · đang mở khoá</small></div>
+          <span class="go">›</span>
+        </div>
+        <div class="vcard2">
+          <div class="lock">🔒</div>
+          <div class="tx"><b>Lưu trữ</b><small>0 mục · khoá</small></div>
+          <span class="go">›</span>
+        </div>
+
+        <button class="btn ghost" style="margin-top:4px">＋ Tạo vault mới</button>
+        <div class="anno"><span class="callout">2</span>Chạm vault đang khoá → nhập mật khẩu. Vault đang mở khoá vào thẳng. Nút <b>＋</b> = tạo vault mới.</div>
+      </div>
+    </div></div>
+    <p class="cap"><b>2.</b> Danh sách nhiều vault</p>
+  </div>
+
+  <!-- 3. Create vault -->
+  <div class="frame">
+    <div class="phone"><div class="screen">
+      <div class="top"><button class="iconbtn">←</button><div class="ttl"><b>Tạo vault</b><small>Đặt tên và mật khẩu</small></div></div>
+      <div class="body">
+        <div class="field"><label>Tên vault</label><input class="ph" value="Cá nhân"></div>
+        <div class="field"><label>Mật khẩu vault</label><input class="ph" value="••••••••" type="password"><div class="hint">Tối thiểu 6 ký tự. Mật khẩu chỉ lưu dạng hash, không xem lại được.</div></div>
+        <div class="field"><label>Nhập lại mật khẩu</label><input class="ph" value="••••••••" type="password"></div>
+        <div class="warnbox"><b>Nếu quên mật khẩu:</b> bạn vẫn có thể xoá vault để các file hiện lại trong thư viện. File không bị mất.</div>
+        <button class="btn">Tạo vault</button>
+        <div class="anno"><span class="callout">3</span>Tạo xong → mở vault luôn (không cần nhập lại mật khẩu).</div>
+      </div>
+    </div></div>
+    <p class="cap"><b>3.</b> Tạo vault</p>
+  </div>
+
+  <!-- 4. Unlock -->
+  <div class="frame">
+    <div class="phone"><div class="screen">
+      <div class="top"><button class="iconbtn">←</button><div class="ttl"><b>Cá nhân</b><small>Vault đang khoá</small></div></div>
+      <div class="body">
+        <div class="lockhero">
+          <div class="big">🔒</div>
+          <h3>Nhập mật khẩu để mở vault</h3>
+          <p>Chỉ file trong vault này được tìm thấy sau khi mở.</p>
+        </div>
+        <div class="field" style="margin-top:12px"><label>Mật khẩu</label><input class="ph" value="••••••" type="password"></div>
+        <div class="errline">✕ Sai mật khẩu. Thử lại.</div>
+        <button class="btn" style="margin-top:8px">Mở khoá</button>
+        <div style="text-align:center"><button class="linkbtn">Quên mật khẩu? Xoá vault để file hiện lại</button></div>
+        <div class="anno"><span class="callout">4</span>Mở khoá giữ trong phiên hiện tại. Nút <b>Khoá</b> ở màn vault; đóng app là khoá lại.</div>
+      </div>
+    </div></div>
+    <p class="cap"><b>4.</b> Mở khoá vault</p>
+  </div>
+
+  <!-- 5. Vault screen -->
+  <div class="frame">
+    <div class="phone"><div class="screen">
+      <div class="top">
+        <button class="iconbtn">←</button>
+        <div class="ttl"><b>🔒 Cá nhân</b><small>3 mục · đang mở khoá</small></div>
+        <button class="iconbtn solid">🔓</button>
+        <button class="iconbtn">⋮</button>
+      </div>
+      <div class="body">
+        <div class="vsearch"><span>🔍</span><span class="tx">Tìm trong vault…</span><span class="lk">🔒 vault</span></div>
+        <div class="hintline">Chỉ tìm trong 3 file của vault này. Không đụng tới thư viện chính.</div>
+
+        <div class="flist">
+          <div class="frow2">
+            <div class="fico">📄</div>
+            <div class="fx"><b>Hợp đồng 2026.pdf</b><small>1.2 MB · 12/10/2026</small></div>
+            <span class="lk">🔒</span>
+          </div>
+          <div class="frow2">
+            <div class="fico">🖼</div>
+            <div class="fx"><b>IMG_2410.jpg</b><small>4.8 MB · 15/10/2026</small></div>
+            <span class="lk">🔒</span>
+          </div>
+          <div class="frow2">
+            <div class="fico">🎬</div>
+            <div class="fx"><b>Video demo.mp4</b><small>128 MB · 17/10/2026</small></div>
+            <span class="lk">🔒</span>
+          </div>
+        </div>
+
+        <div class="anno" style="margin-top:10px"><span class="callout">5</span>Tìm kiếm chỉ chạy <code>tag:pkvault-&lt;id&gt;</code>. Nút <b>🔓</b> = khoá ngay; <b>⋮</b> = đổi mật khẩu / xoá vault.</div>
+      </div>
+      <div class="fab">＋</div>
+    </div></div>
+    <p class="cap"><b>5.</b> Trong vault — tìm &amp; xem file</p>
+  </div>
+
+  <!-- 6. Add files -->
+  <div class="frame">
+    <div class="phone"><div class="screen">
+      <div class="top"><button class="iconbtn">✕</button><div class="ttl"><b>Thêm vào Cá nhân</b><small>Chọn file từ thư viện chính</small></div></div>
+      <div class="body">
+        <div class="vsearch"><span>🔍</span><span class="tx">Tìm trong thư viện…</span></div>
+        <div class="hintline">File đã chọn sẽ bị ẩn khỏi Home/Tệp/tìm kiếm chính và chỉ còn trong vault này.</div>
+
+        <div class="flist">
+          <div class="frow2 sel">
+            <div class="chk2 on">✓</div>
+            <div class="fico">📄</div>
+            <div class="fx"><b>Hợp đồng 2026.pdf</b><small>1.2 MB · 12/10/2026</small></div>
+          </div>
+          <div class="frow2">
+            <div class="chk2"></div>
+            <div class="fico">🖼</div>
+            <div class="fx"><b>Ảnh đại diện.png</b><small>860 KB · 14/10/2026</small></div>
+          </div>
+          <div class="frow2 sel">
+            <div class="chk2 on">✓</div>
+            <div class="fico">🎬</div>
+            <div class="fx"><b>Video demo.mp4</b><small>128 MB · 17/10/2026</small></div>
+          </div>
+        </div>
+
+        <div class="btnrow" style="margin-top:12px">
+          <button class="btn">Thêm 2 file</button>
+          <button class="btn ghost">Huỷ</button>
+        </div>
+        <button class="btn ghost" style="margin-top:9px">⬆ Tải file mới lên vault</button>
+        <div class="anno"><span class="callout">6</span>Picker lọc sẵn file không thuộc vault. Upload trực tiếp là tuỳ chọn — nếu bạn cần mình làm luôn.</div>
+      </div>
+    </div></div>
+    <p class="cap"><b>6.</b> Thêm file vào vault</p>
+  </div>
+
+  <!-- 7. Main library actions -->
+  <div class="frame">
+    <div class="phone"><div class="screen">
+      <div class="top"><div class="ttl"><b>Tệp</b><small>Thư viện chính · vault đang ẩn</small></div></div>
+      <div class="body" style="padding-bottom:0">
+        <div class="vsearch"><span>🔍</span><span class="tx">Tên tệp, tag…</span></div>
+        <div class="hintline">14 mục · 15 file đang ẩn trong 2 vault</div>
+        <div class="flist">
+          <div class="frow2 sel">
+            <div class="fico">📄</div>
+            <div class="fx"><b>Hợp đồng 2026.pdf</b><small>1.2 MB · 12/10/2026</small></div>
+            <span style="color:#b3beb8">⋮</span>
+          </div>
+          <div class="frow2"><div class="fico">🖼</div><div class="fx"><b>IMG_2409.jpg</b><small>3.1 MB · 15/10/2026</small></div></div>
+          <div class="frow2"><div class="fico">🎬</div><div class="fx"><b>clip.mp4</b><small>42 MB · 16/10/2026</small></div></div>
+        </div>
+      </div>
+      <div class="overlay"><div class="sheet2">
+        <div class="handle"></div>
+        <h3>Hợp đồng 2026.pdf</h3>
+        <button class="rowbtn2"><span class="ic">👁</span>Mở</button>
+        <button class="rowbtn2"><span class="ic">⬇</span>Tải về máy</button>
+        <button class="rowbtn2"><span class="ic">🔗</span>Sao chép link</button>
+        <button class="rowbtn2" style="color:var(--green);font-weight:700"><span class="ic">🔒</span>Đưa vào vault</button>
+        <button class="rowbtn2"><span class="ic">ℹ</span>Chi tiết</button>
+        <button class="rowbtn2 danger"><span class="ic">🗑</span>Xoá mục</button>
+      </div></div>
+    </div></div>
+    <p class="cap"><b>7.</b> Long-press/⋮ ở thư viện → Đưa vào vault</p>
+  </div>
+
+  <!-- 8. Delete vault -->
+  <div class="frame">
+    <div class="phone"><div class="screen">
+      <div class="top"><button class="iconbtn">←</button><div class="ttl"><b>Xoá vault</b><small>Cá nhân</small></div></div>
+      <div class="body">
+        <div class="lockhero" style="padding-top:14px">
+          <div class="big" style="background:#fdecea;color:var(--red)">🗑</div>
+          <h3>Xoá vault “Cá nhân”?</h3>
+          <p>3 file sẽ <b>hiện lại</b> trong thư viện chính.<br>Không file nào bị xoá khỏi Perkeep.</p>
+        </div>
+        <div class="okbox"><b>Đây là cách gỡ khi quên mật khẩu:</b> xoá vault chỉ gỡ lớp ẩn, file vẫn còn nguyên.</div>
+        <div class="field"><label>Gõ “Cá nhân” để xác nhận</label><input class="ph" value="Cá nhân"></div>
+        <div class="btnrow">
+          <button class="btn red">Xoá vault</button>
+          <button class="btn ghost">Huỷ</button>
+        </div>
+        <div class="anno"><span class="callout">7</span>Xoá xong: vault biến mất, 3 file xuất hiện lại ở Home/Tệp/tìm kiếm. Có thể tạo vault mới và thêm lại.</div>
+      </div>
+    </div></div>
+    <p class="cap"><b>8.</b> Xoá vault → file visible lại</p>
+  </div>
+
+</main>
+</body></html>

@@ -121,6 +121,51 @@ const I18N = {
     link_play: 'Xem', link_open: 'Mở YouTube', link_unreadable: 'Không đọc được dữ liệu link này.',
     share_no_url: 'Nội dung chia sẻ không có link hợp lệ.',
     nav_ai: 'Trợ lý', set_ai: 'Trợ lý AI', set_backup: 'Sao lưu cấu hình', set_backup_sub: 'Chuyển máy / cài lại app',
+    set_vault: 'Vault',
+    vault_title: 'Vault',
+    vault_hint: 'Mỗi vault có mật khẩu riêng. File trong vault chỉ tìm thấy khi mở vault.',
+    vault_none: 'Chưa có vault nào.',
+    vault_new: 'Tạo vault mới',
+    vault_create: 'Tạo vault',
+    vault_name: 'Tên vault',
+    vault_pass: 'Mật khẩu vault',
+    vault_pass2: 'Nhập lại mật khẩu',
+    vault_unlock: 'Mở khoá',
+    vault_unlock_hint: 'Nhập mật khẩu để mở vault. Chỉ file trong vault này được tìm thấy.',
+    vault_wrong: 'Sai mật khẩu. Thử lại.',
+    vault_open: 'đang mở khoá',
+    vault_locked: 'đang khoá',
+    vault_unlocked_sub: 'Đang mở khoá · file chỉ ở trong vault này',
+    vault_empty: 'Vault trống. Thêm file từ thư viện.',
+    vault_search_ph: 'Tìm trong vault…',
+    vault_search_hint: (n) => `Chỉ tìm trong ${n} file của vault này.`,
+    vault_add: 'Thêm file',
+    vault_add_title: 'Thêm vào vault',
+    vault_add_hint: 'File đã chọn sẽ bị ẩn khỏi thư viện chính.',
+    vault_add_btn: (n) => `Thêm ${n} file`,
+    vault_added: (n) => `Đã thêm ${n} file vào vault`,
+    vault_pick_empty: 'Không còn file nào để thêm.',
+    vault_remove: 'Lấy ra khỏi vault',
+    vault_removed: 'Đã lấy ra khỏi vault',
+    vault_put: 'Đưa vào vault',
+    vault_choose: 'Chọn vault',
+    vault_need_name: 'Nhập tên vault',
+    vault_pass_short: 'Mật khẩu tối thiểu 6 ký tự',
+    vault_pass_mismatch: 'Mật khẩu nhập lại không khớp',
+    vault_created: 'Đã tạo vault',
+    vault_locked_msg: 'Đã khoá vault',
+    vault_lock: 'Khoá vault',
+    vault_forgot: 'Quên mật khẩu? Xoá vault để file hiện lại',
+    vault_del_title: (name) => `Xoá vault “${name}”?`,
+    vault_del_body: 'Các file sẽ hiện lại trong thư viện chính. Không file nào bị xoá khỏi Perkeep.',
+    vault_del_type: (name) => `Gõ “${name}” để xác nhận`,
+    vault_del_btn: 'Xoá vault',
+    vault_del_wrong: 'Tên không khớp',
+    vault_del_running: (i, n) => `Đang gỡ ${i}/${n} file…`,
+    vault_del_done: (n) => `Đã xoá vault — ${n} file đã hiện lại`,
+    vault_del_fail: 'Không xoá được vault',
+    vault_need_permanode: 'Chỉ đưa được mục (permanode) vào vault.',
+    vault_app_only: 'Vault chỉ ẩn trong app; file gốc vẫn còn trên Perkeep (Web/Jellyfin vẫn thấy).',
     ai_off: 'Chưa kết nối bridge',
     ai_title: 'Trợ lý AI — kết nối bridge',
     ai_hint: 'Bridge chạy trên PC (scripts/ai-bridge.mjs). Điện thoại chỉ gửi câu hỏi; tool chạy trên PC cạnh Perkeep.',
@@ -286,6 +331,51 @@ const I18N = {
     link_play: 'Play', link_open: 'Open YouTube', link_unreadable: 'Could not read this link item.',
     share_no_url: 'The shared text has no valid link.',
     nav_ai: 'Assistant', set_ai: 'AI assistant', set_backup: 'Back up settings', set_backup_sub: 'New phone / reinstall',
+    set_vault: 'Vault',
+    vault_title: 'Vault',
+    vault_hint: 'Each vault has its own password. Vault files are only searchable after unlocking.',
+    vault_none: 'No vaults yet.',
+    vault_new: 'Create vault',
+    vault_create: 'Create vault',
+    vault_name: 'Vault name',
+    vault_pass: 'Vault password',
+    vault_pass2: 'Confirm password',
+    vault_unlock: 'Unlock',
+    vault_unlock_hint: 'Enter the password to unlock. Only files in this vault are searchable.',
+    vault_wrong: 'Wrong password. Try again.',
+    vault_open: 'unlocked',
+    vault_locked: 'locked',
+    vault_unlocked_sub: 'Unlocked · files only in this vault',
+    vault_empty: 'This vault is empty. Add files from the library.',
+    vault_search_ph: 'Search this vault…',
+    vault_search_hint: (n) => `Only the ${n} files in this vault are searched.`,
+    vault_add: 'Add files',
+    vault_add_title: 'Add to vault',
+    vault_add_hint: 'Selected files will be hidden from the main library.',
+    vault_add_btn: (n) => `Add ${n} files`,
+    vault_added: (n) => `Added ${n} files to the vault`,
+    vault_pick_empty: 'No files left to add.',
+    vault_remove: 'Remove from vault',
+    vault_removed: 'Removed from vault',
+    vault_put: 'Put in vault',
+    vault_choose: 'Choose a vault',
+    vault_need_name: 'Enter a vault name',
+    vault_pass_short: 'Password must be at least 6 characters',
+    vault_pass_mismatch: 'Passwords do not match',
+    vault_created: 'Vault created',
+    vault_locked_msg: 'Vault locked',
+    vault_lock: 'Lock vault',
+    vault_forgot: 'Forgot password? Delete the vault to unhide its files',
+    vault_del_title: (name) => `Delete vault “${name}”?`,
+    vault_del_body: 'The files will become visible in the main library again. Nothing is deleted from Perkeep.',
+    vault_del_type: (name) => `Type “${name}” to confirm`,
+    vault_del_btn: 'Delete vault',
+    vault_del_wrong: 'Name does not match',
+    vault_del_running: (i, n) => `Unhiding ${i}/${n} files…`,
+    vault_del_done: (n) => `Vault deleted — ${n} files are visible again`,
+    vault_del_fail: 'Could not delete the vault',
+    vault_need_permanode: 'Only items (permanodes) can be added to a vault.',
+    vault_app_only: 'The vault only hides files inside the app; the original files remain in Perkeep (Web/Jellyfin can still see them).',
     ai_off: 'Bridge not connected',
     ai_title: 'AI assistant — bridge connection',
     ai_hint: 'The bridge runs on the PC (scripts/ai-bridge.mjs). The phone only sends questions; tools run on the PC next to Perkeep.',
@@ -385,6 +475,7 @@ function applyLang() {
   qEl.placeholder = t('ph_q');
   $('ob-name').placeholder = t('ph_name');
   $('ob-url').placeholder = t('ph_url');
+  if ($('vault-q')) $('vault-q').placeholder = t('vault_search_ph');
   $('ob-user').placeholder = t('ph_user');
   $('ob-pass').placeholder = t('ph_pass');
   langSubEl.textContent = lang === 'vi' ? 'Tiếng Việt ✓' : 'English ✓';
@@ -424,6 +515,9 @@ const LS_SERVERS = 'pk-servers-v1';
 const LS_ACTIVE = 'pk-active-v1';
 const LS_RECENT = 'pk-recent-v1';
 const LS_ONBOARD = 'pk-onboarded-v1';
+const VAULT_KEY = 'pk-vaults-v1';
+const VAULT_TAG = 'pkvault';
+const VAULT_TAG_PREFIX = 'pkvault-';
 
 const seed = [{ id: 'local', name: 'Localhost', url: 'http://localhost:3179' }];
 function loadServers() {
@@ -436,6 +530,12 @@ function loadServers() {
 let servers = loadServers();
 let activeId = localStorage.getItem(LS_ACTIVE) || servers[0]?.id;
 let editingId = null;
+
+let vaults = [];
+try { vaults = JSON.parse(localStorage.getItem(VAULT_KEY) || '[]') || []; } catch { vaults = []; }
+const vaultUnlocked = new Set();
+let vaultCurrent = null;
+let vaultLoadGen = 0;
 
 const qEl = $('q');
 const listEl = $('home-list');
@@ -629,10 +729,18 @@ function serverSort() {
   return filters.sort === 'oldest' ? 'created' : '-created';
 }
 
-async function query(expression, limit = 50, sort = '', cont = '') {
+/** Mọi truy vấn thư viện chính ẩn file trong vault; vault tự query riêng. */
+function hideVaultExpr(expression) {
+  const e = String(expression || '').trim();
+  if (/(^|\s)-tag:pkvault(\s|$)/.test(e)) return e;
+  return e ? `(${e}) -tag:pkvault` : '-tag:pkvault';
+}
+
+async function query(expression, limit = 50, sort = '', cont = '', opts = {}) {
   const b = base();
   if (!b) throw new Error('no server');
-  const body = { expression, limit, describe: DESCRIBE };
+  const expr = opts.vault ? expression : hideVaultExpr(expression);
+  const body = { expression: expr, limit, describe: DESCRIBE };
   if (sort) body.sort = sort;
   // Token "continue" của Perkeep: lấy trang kế tiếp của cùng query/limit/sort
   if (cont) body.continue = cont;
@@ -901,8 +1009,10 @@ function gridCard(blob, meta, index = 0) {
   return c;
 }
 
+const isInternalVaultTag = (x) => x === VAULT_TAG || String(x).startsWith(VAULT_TAG_PREFIX);
+const visibleTags = (meta) => (meta.tags || []).filter((x) => !isInternalVaultTag(x));
 const metaLine = (meta) =>
-  [fmtSize(meta.size), fmtDate(meta.date), ...(meta.tags || []).map((x) => '#' + x)].filter(Boolean).join(' · ');
+  [fmtSize(meta.size), fmtDate(meta.date), ...visibleTags(meta).map((x) => '#' + x)].filter(Boolean).join(' · ');
 
 /** Chọn cách render theo "View by". */
 const renderer = () => {
@@ -2015,7 +2125,7 @@ async function changeTag(blob, meta, tag, add, msg) {
     snack(msg || (add ? t('tag_added')(tag) : t('tag_removed')(tag)));
     await setTag(permaRef, tag, add);
     // index cập nhật async -> chờ chút rồi tải lại
-    setTimeout(() => reloadTab(currentTab()), 900);
+    setTimeout(() => { if (vaultCurrent) loadVault(); else reloadTab(currentTab()); }, 900);
   } catch (e) {
     snack(t('tag_fail') + ': ' + e.message);
     log(`tag FAIL: ${e.message}`);
@@ -2054,7 +2164,7 @@ function confirmDelete(blob, meta) {
       await deletePermanode(blob);
       snack(t('del_ok'));
       closeSheet();
-      setTimeout(() => reloadTab(currentTab()), 1200);
+      setTimeout(() => { if (vaultCurrent) loadVault(); else reloadTab(currentTab()); }, 1200);
     } catch (e) {
       btn.disabled = false;
       errEl.textContent = `${t('del_fail')}: ${e.message}`;
@@ -2390,6 +2500,8 @@ function fileActions(blob, meta, el) {
   const rows = [
     { k: 'star', ico: 'star', label: isStarred(meta) ? t('star_removed') : t('star_add') },
     { k: 'tag', ico: 'plus', label: t('tag_add') },
+    ...(meta.isPermanode && !vaultCurrent ? [{ k: 'vault', ico: 'lock', label: t('vault_put') }] : []),
+    ...(vaultCurrent && (meta.tags || []).includes(`${VAULT_TAG}-${vaultCurrent.id}`) ? [{ k: 'unvault', ico: 'unlock', label: t('vault_remove') }] : []),
     { k: 'view', ico: 'image', label: t('vw_view') },
     ...(/^(video|audio)\//i.test(meta.mime) ? [{ k: 'cache', ico: 'download', label: t('cache_play') }] : []),
     { k: 'external', ico: 'external', label: t('vw_open_app') },
@@ -2400,7 +2512,7 @@ function fileActions(blob, meta, el) {
   ];
   openSheet(`<h3>${esc(meta.name)}</h3>
     <p class="meta">${esc([meta.mime, fmtSize(meta.size), fmtDate(meta.date)].filter(Boolean).join(' · '))}</p>
-    ${meta.tags.length ? `<div class="tags">${meta.tags.map((x) => `<span class="tagchip">#${esc(x)}<button data-untag="${esc(x)}" title="${esc(t('tag_remove'))}">✕</button></span>`).join('')}</div>` : ''}
+    ${visibleTags(meta).length ? `<div class="tags">${visibleTags(meta).map((x) => `<span class="tagchip">#${esc(x)}<button data-untag="${esc(x)}" title="${esc(t('tag_remove'))}">✕</button></span>`).join('')}</div>` : ''}
     ${rows.map((r) => `<button class="rowbtn${r.danger ? ' danger' : ''}" data-k="${r.k}">${icon(r.ico)}<span>${esc(r.label)}</span></button>`).join('')}`);
   sheetBody.querySelectorAll('[data-untag]').forEach((x) => {
     x.onclick = (e) => { e.stopPropagation(); closeSheet(); changeTag(blob, meta, x.dataset.untag, false); };
@@ -2441,6 +2553,12 @@ function fileActions(blob, meta, el) {
           try { const d = await loadLink(meta); if (d?.url) link = d.url; } catch {}
         }
         try { await navigator.clipboard.writeText(link); snack(t('copied')); } catch { snack(link); }
+      } else if (b.dataset.k === 'unvault') {
+        closeSheet();
+        removeFromVault(blob, meta);
+      } else if (b.dataset.k === 'vault') {
+        closeSheet();
+        openVaultChooseForBlob(blob, meta);
       } else if (b.dataset.k === 'delete') {
         confirmDelete(blob, meta);
       } else if (b.dataset.k === 'open') {
@@ -2451,6 +2569,449 @@ function fileActions(blob, meta, el) {
       }
     };
   });
+}
+
+// ============================================================
+// Vault: mỗi file gắn tag pkvault + pkvault-<id>.
+// - Main query tự thêm -tag:pkvault (ẩn khỏi Home/Tệp/tìm kiếm/AI).
+// - Vault query dùng riêng tag:pkvault-<id>.
+// - Xoá vault chỉ gỡ tag -> file hiện lại; không xoá blob.
+// ============================================================
+function vaultTagOf(v) { return `${VAULT_TAG}-${v.id}`; }
+function vaultById(id) { return vaults.find((v) => v.id === id); }
+function bytesToVaultB64(bytes) {
+  let s = '';
+  for (let i = 0; i < bytes.length; i += 0x8000) s += String.fromCharCode(...bytes.subarray(i, i + 0x8000));
+  return btoa(s);
+}
+function vaultB64ToBytes(b64) {
+  const s = atob(b64);
+  const out = new Uint8Array(s.length);
+  for (let i = 0; i < s.length; i++) out[i] = s.charCodeAt(i);
+  return out;
+}
+function vaultSalt(n = 16) {
+  const a = new Uint8Array(n);
+  crypto.getRandomValues(a);
+  return bytesToVaultB64(a);
+}
+async function vaultHash(pass, saltB64, iter = 150000) {
+  if (!crypto?.subtle) throw new Error('WebCrypto không khả dụng');
+  const key = await crypto.subtle.importKey('raw', new TextEncoder().encode(String(pass)), 'PBKDF2', false, ['deriveBits']);
+  const bits = await crypto.subtle.deriveBits(
+    { name: 'PBKDF2', salt: vaultB64ToBytes(saltB64), iterations: iter, hash: 'SHA-256' },
+    key,
+    256
+  );
+  return bytesToVaultB64(new Uint8Array(bits));
+}
+function saveVaults() {
+  try { localStorage.setItem(VAULT_KEY, JSON.stringify(vaults)); } catch {}
+  renderVaultState();
+}
+function renderVaultState() {
+  const sub = $('set-vault-sub');
+  if (!sub) return;
+  if (!vaults.length) { sub.textContent = t('vault_none'); return; }
+  const open = vaults.filter((v) => vaultUnlocked.has(v.id)).length;
+  sub.textContent = `${vaults.length} vault${open ? ` · ${open} ${t('vault_open')}` : ''}`;
+}
+
+function openVaultList() {
+  const rows = vaults.map((v) => {
+    const un = vaultUnlocked.has(v.id);
+    return `<div class="vrow" data-v="${esc(v.id)}">
+      <span class="vio">${icon(un ? 'unlock' : 'lock')}</span>
+      <span class="vtx"><b>${esc(v.name)}</b><small>${esc(t(un ? 'vault_open' : 'vault_locked'))}</small></span>
+      <span class="chev">${icon('chevron')}</span>
+    </div>`;
+  }).join('');
+  openSheet(`<h3>${esc(t('vault_title'))}</h3>
+    <p class="meta">${esc(t('vault_hint'))}</p>
+    ${vaults.length ? rows : `<p class="meta">${esc(t('vault_none'))}</p>`}
+    <button class="rowbtn" id="vault-new">${icon('plus')}<span>${esc(t('vault_new'))}</span></button>
+    <p class="meta" style="margin-top:10px">${esc(t('vault_app_only'))}</p>`);
+  sheetBody.querySelector('#vault-new').onclick = () => { closeSheet(); openVaultCreateSheet(); };
+  sheetBody.querySelectorAll('[data-v]').forEach((el) => {
+    el.onclick = () => {
+      const v = vaultById(el.dataset.v);
+      if (!v) return;
+      if (vaultUnlocked.has(v.id)) { closeSheet(); openVault(v); }
+      else promptVaultUnlock(v, () => openVault(v));
+    };
+  });
+}
+
+function openVaultCreateSheet(onCreated) {
+  openSheet(`<h3>${esc(t('vault_new'))}</h3>
+    <div class="edt">
+      <label>${esc(t('vault_name'))}</label><input id="v-name" autocomplete="off" />
+      <label>${esc(t('vault_pass'))}</label><input id="v-pass" type="password" autocomplete="new-password" />
+      <label>${esc(t('vault_pass2'))}</label><input id="v-pass2" type="password" autocomplete="new-password" />
+      <div class="btns"><button id="v-create">${esc(t('vault_create'))}</button><button class="cx" data-cx>${esc(t('btn_cancel'))}</button></div>
+      <p class="err" id="v-err" hidden></p>
+    </div>
+    <p class="meta">${esc(t('vault_app_only'))}</p>
+    <p class="meta">${esc(t('vault_forgot'))}</p>`);
+  const errEl = sheetBody.querySelector('#v-err');
+  const fail = (msg) => { errEl.textContent = msg; errEl.hidden = false; };
+  sheetBody.querySelector('[data-cx]').onclick = closeSheet;
+  const btn = sheetBody.querySelector('#v-create');
+  btn.onclick = async () => {
+    const name = sheetBody.querySelector('#v-name').value.trim();
+    const pass = sheetBody.querySelector('#v-pass').value;
+    const pass2 = sheetBody.querySelector('#v-pass2').value;
+    errEl.hidden = true;
+    if (!name) return fail(t('vault_need_name'));
+    if (pass.length < 6) return fail(t('vault_pass_short'));
+    if (pass !== pass2) return fail(t('vault_pass_mismatch'));
+    btn.disabled = true;
+    btn.textContent = t('link_saving');
+    try {
+      const salt = vaultSalt();
+      const hash = await vaultHash(pass, salt);
+      const v = {
+        id: 'v' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
+        name, salt, hash, iter: 150000, createdAt: Date.now()
+      };
+      vaults.push(v);
+      vaultUnlocked.add(v.id);
+      saveVaults();
+      closeSheet();
+      snack(t('vault_created'));
+      if (onCreated) await onCreated(v);
+      else openVault(v);
+    } catch (e) {
+      btn.disabled = false;
+      btn.textContent = t('vault_create');
+      fail(e.message);
+    }
+  };
+}
+
+function promptVaultUnlock(v, onOk) {
+  openSheet(`<h3>${esc(v.name)}</h3>
+    <p class="meta">${esc(t('vault_unlock_hint'))}</p>
+    <div class="edt">
+      <label>${esc(t('vault_pass'))}</label><input id="v-pass" type="password" autocomplete="current-password" />
+      <div class="btns"><button id="v-unlock">${esc(t('vault_unlock'))}</button><button class="cx" data-cx>${esc(t('btn_cancel'))}</button></div>
+      <p class="err" id="v-err" hidden></p>
+    </div>
+    <button class="rowbtn" id="v-forgot">${icon('trash')}<span>${esc(t('vault_forgot'))}</span></button>
+    <p class="meta">${esc(t('vault_app_only'))}</p>`);
+  const input = sheetBody.querySelector('#v-pass');
+  const errEl = sheetBody.querySelector('#v-err');
+  const btn = sheetBody.querySelector('#v-unlock');
+  const fail = (msg) => { errEl.textContent = msg; errEl.hidden = false; };
+  sheetBody.querySelector('[data-cx]').onclick = closeSheet;
+  sheetBody.querySelector('#v-forgot').onclick = () => openVaultDelete(v);
+  const go = async () => {
+    const pass = input.value;
+    errEl.hidden = true;
+    if (!pass) return fail(t('vault_wrong'));
+    btn.disabled = true;
+    btn.textContent = t('link_saving');
+    try {
+      const h = await vaultHash(pass, v.salt, v.iter || 150000);
+      if (h !== v.hash) {
+        btn.disabled = false;
+        btn.textContent = t('vault_unlock');
+        return fail(t('vault_wrong'));
+      }
+      vaultUnlocked.add(v.id);
+      closeSheet();
+      if (onOk) onOk();
+    } catch (e) {
+      btn.disabled = false;
+      btn.textContent = t('vault_unlock');
+      fail(e.message);
+    }
+  };
+  btn.onclick = go;
+  input.addEventListener('keydown', (e) => {
+    if (e.isComposing || e.keyCode === 229) return;
+    if (e.key === 'Enter') { e.preventDefault(); go(); }
+  });
+  input.focus();
+}
+
+function paintVaultHeader() {
+  $('vault-back').innerHTML = icon('back', 20);
+  $('vault-lock').innerHTML = icon('unlock', 20);
+  $('vault-menu').innerHTML = icon('more', 20);
+  $('vault-add').innerHTML = icon('plus', 24);
+  $('vault-s-ico').innerHTML = icon('search', 18);
+  $('vault-q').placeholder = t('vault_search_ph');
+}
+
+function openVault(v) {
+  if (!vaultUnlocked.has(v.id)) return promptVaultUnlock(v, () => openVault(v));
+  vaultCurrent = v;
+  $('vault-screen').hidden = false;
+  $('vault-title').textContent = v.name;
+  $('vault-sub').textContent = t('vault_unlocked_sub');
+  $('vault-q').value = '';
+  paintVaultHeader();
+  loadVault();
+}
+
+function closeVault() {
+  vaultCurrent = null;
+  vaultLoadGen++;
+  $('vault-screen').hidden = true;
+  currentItems = [];
+  if (!viewerEl.hidden) closeViewer();
+  reloadTab(currentTab());
+}
+
+async function loadVault() {
+  const v = vaultCurrent;
+  if (!v) return;
+  const box = $('vault-list');
+  const gen = ++vaultLoadGen;
+  const q = $('vault-q').value.trim();
+  let expr = `tag:${vaultTagOf(v)}`;
+  if (q) {
+    const safe = q.replace(/[()"\\]/g, ' ').replace(/\s+/g, ' ').trim();
+    if (safe) expr += ` (filename:*${safe}* or title:*${safe}*)`;
+  }
+  box.innerHTML = `<p class="empty">${esc(t('loading'))}</p>`;
+  box.classList.remove('is-empty');
+  try {
+    const r = await query(expr, 100, '-created', '', { vault: true });
+    if (gen !== vaultLoadGen || !vaultCurrent) return;
+    const items = (r.blobs || []).map((b) => ({ blob: b, meta: metaFor(b, r.description) }));
+    currentItems = items;
+    box.innerHTML = '';
+    box.classList.toggle('gridmode', filters.view === 'grid');
+    if (!items.length) {
+      box.classList.add('is-empty');
+      box.innerHTML = `<p class="empty">${esc(q ? t('empty') : t('vault_empty'))}</p>`;
+    } else {
+      items.forEach((it, i) => box.appendChild(renderer()(it.blob, it.meta, i)));
+    }
+    $('vault-sub').textContent = t('vault_search_hint')(items.length);
+  } catch (e) {
+    if (gen !== vaultLoadGen) return;
+    box.innerHTML = `<p class="empty">${esc(t('conn_err'))}: ${esc(e.message)}</p>`;
+  }
+}
+
+async function addBlobToVault(v, blob, meta) {
+  if (!meta?.isPermanode) throw new Error(t('vault_need_permanode'));
+  const tag = vaultTagOf(v);
+  const old = (meta.tags || []).filter((x) => String(x).startsWith(VAULT_TAG_PREFIX) && x !== tag);
+  for (const t of old) await setTag(blob, t, false);
+  await setTag(blob, VAULT_TAG, true);
+  await setTag(blob, tag, true);
+}
+
+async function removeFromVault(blob, meta) {
+  const v = vaultCurrent;
+  if (!v) return;
+  const tag = vaultTagOf(v);
+  const other = (meta.tags || []).some((x) => String(x).startsWith(VAULT_TAG_PREFIX) && x !== tag);
+  try {
+    await setTag(blob, tag, false);
+    if (!other) await setTag(blob, VAULT_TAG, false);
+    snack(t('vault_removed'));
+    loadVault();
+  } catch (e) {
+    snack(t('vault_del_fail') + ': ' + e.message);
+  }
+}
+
+function openVaultChooseForBlob(blob, meta) {
+  if (!meta.isPermanode) return snack(t('vault_need_permanode'));
+  const add = async (v) => {
+    try {
+      await addBlobToVault(v, blob, meta);
+      closeSheet();
+      snack(t('vault_added')(1));
+      reloadTab(currentTab());
+    } catch (e) {
+      snack(t('vault_del_fail') + ': ' + e.message);
+    }
+  };
+  if (!vaults.length) {
+    return openVaultCreateSheet(async (v) => {
+      try {
+        await addBlobToVault(v, blob, meta);
+        snack(t('vault_added')(1));
+        reloadTab(currentTab());
+      } catch (e) { snack(e.message); }
+    });
+  }
+  openSheet(`<h3>${esc(t('vault_choose'))}</h3>
+    ${vaults.map((v) => `<div class="vrow" data-v="${esc(v.id)}">
+      <span class="vio">${icon(vaultUnlocked.has(v.id) ? 'unlock' : 'lock')}</span>
+      <span class="vtx"><b>${esc(v.name)}</b><small>${esc(t(vaultUnlocked.has(v.id) ? 'vault_open' : 'vault_locked'))}</small></span>
+      <span class="chev">${icon('chevron')}</span>
+    </div>`).join('')}
+    <button class="rowbtn" id="v-new">${icon('plus')}<span>${esc(t('vault_new'))}</span></button>`);
+  sheetBody.querySelector('#v-new').onclick = () => {
+    closeSheet();
+    openVaultCreateSheet(async (v) => {
+      try {
+        await addBlobToVault(v, blob, meta);
+        snack(t('vault_added')(1));
+        reloadTab(currentTab());
+      } catch (e) { snack(e.message); }
+    });
+  };
+  sheetBody.querySelectorAll('[data-v]').forEach((el) => {
+    el.onclick = () => {
+      const v = vaultById(el.dataset.v);
+      if (!v) return;
+      if (vaultUnlocked.has(v.id)) add(v);
+      else promptVaultUnlock(v, () => add(v));
+    };
+  });
+}
+
+async function openVaultAdd() {
+  const v = vaultCurrent;
+  if (!v) return;
+  openSheet(`<h3>${esc(t('vault_add_title'))}</h3>
+    <p class="meta">${esc(v.name)}</p>
+    <p class="meta">${esc(t('vault_add_hint'))}</p>
+    <input class="adv" id="va-q" placeholder="${esc(t('ph_q'))}" autocomplete="off" />
+    <div id="va-list"><p class="meta">${esc(t('loading'))}</p></div>
+    <div class="btns"><button id="va-go" disabled>${esc(t('vault_add_btn')(0))}</button><button class="cx" data-cx>${esc(t('btn_cancel'))}</button></div>
+    <p class="err" id="va-err" hidden></p>`);
+  sheetBody.querySelector('[data-cx]').onclick = closeSheet;
+  const listEl2 = sheetBody.querySelector('#va-list');
+  const btn = sheetBody.querySelector('#va-go');
+  const errEl = sheetBody.querySelector('#va-err');
+  const sel = new Set();
+  let items = [];
+  try {
+    const r = await query('', 100, '-created', '');
+    items = r.blobs
+      .map((b) => ({ blob: b, meta: metaFor(b, r.description) }))
+      .filter((it) => it.meta.isPermanode);
+  } catch (e) {
+    listEl2.innerHTML = `<p class="err">${esc(e.message)}</p>`;
+    return;
+  }
+  const paint = () => {
+    const q = sheetBody.querySelector('#va-q').value.trim();
+    const needle = norm(q);
+    const arr = items.filter((it) => !needle || norm(displayName(it.meta)).includes(needle));
+    if (!arr.length) {
+      listEl2.innerHTML = `<p class="meta">${esc(t('vault_pick_empty'))}</p>`;
+    } else {
+      listEl2.innerHTML = arr.map((it) => `
+        <div class="pickrow" data-b="${esc(it.blob)}" style="display:flex;gap:9px;align-items:center;padding:9px 2px;border-bottom:1px solid var(--line)">
+          <span class="chk" style="width:20px;height:20px;border-radius:6px;border:2px solid #b9c6be;display:flex;align-items:center;justify-content:center;font-size:11px;color:#fff;background:${sel.has(it.blob) ? 'var(--green)' : 'transparent'};border-color:${sel.has(it.blob) ? 'var(--green)' : '#b9c6be'}">${sel.has(it.blob) ? '✓' : ''}</span>
+          <span class="fico" style="width:36px;height:36px;flex:none;border-radius:9px;background:#eef3f0;display:flex;align-items:center;justify-content:center;color:var(--green)">${icon(iconFor(it.meta.mime), 17)}</span>
+          <span style="flex:1;min-width:0"><b style="display:block;font-size:12.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(displayName(it.meta))}</b><small style="color:#68756d;font-size:10.5px">${esc(metaLine(it.meta))}</small></span>
+        </div>`).join('');
+      listEl2.querySelectorAll('[data-b]').forEach((row) => {
+        row.onclick = () => {
+          const b = row.dataset.b;
+          if (sel.has(b)) sel.delete(b); else sel.add(b);
+          btn.disabled = !sel.size;
+          btn.textContent = t('vault_add_btn')(sel.size);
+          paint();
+        };
+      });
+    }
+    btn.disabled = !sel.size;
+    btn.textContent = t('vault_add_btn')(sel.size);
+  };
+  sheetBody.querySelector('#va-q').addEventListener('input', paint);
+  btn.onclick = async () => {
+    if (!sel.size) return;
+    btn.disabled = true;
+    errEl.hidden = true;
+    let n = 0;
+    try {
+      for (const b of sel) {
+        const it = items.find((x) => x.blob === b);
+        if (!it) continue;
+        await addBlobToVault(v, b, it.meta);
+        n++;
+      }
+      closeSheet();
+      snack(t('vault_added')(n));
+      loadVault();
+    } catch (e) {
+      btn.disabled = false;
+      errEl.textContent = e.message;
+      errEl.hidden = false;
+    }
+  };
+  paint();
+}
+
+function openVaultDelete(v) {
+  openSheet(`<h3>${esc(t('vault_del_title')(v.name))}</h3>
+    <p class="meta">${esc(t('vault_del_body'))}</p>
+    <div class="edt">
+      <label>${esc(t('vault_del_type')(v.name))}</label>
+      <input id="vd-name" autocomplete="off" />
+      <div class="btns"><button class="danger" id="vd-go">${esc(t('vault_del_btn'))}</button><button class="cx" data-cx>${esc(t('btn_cancel'))}</button></div>
+      <p class="err" id="vd-err" hidden></p>
+      <p class="meta" id="vd-progress" hidden></p>
+    </div>
+    <p class="meta">${esc(t('vault_app_only'))}</p>`);
+  sheetBody.querySelector('[data-cx]').onclick = closeSheet;
+  const errEl = sheetBody.querySelector('#vd-err');
+  const prog = sheetBody.querySelector('#vd-progress');
+  const btn = sheetBody.querySelector('#vd-go');
+  btn.onclick = async () => {
+    if (sheetBody.querySelector('#vd-name').value.trim() !== v.name) {
+      errEl.textContent = t('vault_del_wrong');
+      errEl.hidden = false;
+      return;
+    }
+    btn.disabled = true;
+    errEl.hidden = true;
+    prog.hidden = false;
+    prog.textContent = t('vault_del_running')(0, 0);
+    try {
+      const refs = [];
+      const seen = new Set();
+      let cont = '';
+      let pages = 0;
+      do {
+        const r = await query(`tag:${vaultTagOf(v)}`, 200, '', cont, { vault: true });
+        for (const b of r.blobs || []) {
+          if (seen.has(b)) continue;
+          seen.add(b);
+          refs.push({ blob: b, meta: metaFor(b, r.description) });
+        }
+        cont = r.continue || '';
+        pages++;
+      } while (cont && pages < 20);
+      let i = 0;
+      for (const it of refs) {
+        i++;
+        prog.textContent = t('vault_del_running')(i, refs.length);
+        const other = (it.meta.tags || []).some((x) => String(x).startsWith(VAULT_TAG_PREFIX) && x !== vaultTagOf(v));
+        await setTag(it.blob, vaultTagOf(v), false);
+        if (!other) await setTag(it.blob, VAULT_TAG, false);
+      }
+      vaults = vaults.filter((x) => x.id !== v.id);
+      vaultUnlocked.delete(v.id);
+      saveVaults();
+      const wasOpen = vaultCurrent?.id === v.id;
+      if (wasOpen) {
+        vaultCurrent = null;
+        vaultLoadGen++;
+        $('vault-screen').hidden = true;
+        currentItems = [];
+      }
+      closeSheet();
+      snack(t('vault_del_done')(refs.length));
+      reloadTab(currentTab());
+    } catch (e) {
+      btn.disabled = false;
+      errEl.textContent = t('vault_del_fail') + ': ' + e.message;
+      errEl.hidden = false;
+    }
+  };
 }
 
 // ---------- FAB ----------
@@ -3970,7 +4531,7 @@ async function openWatchQueue() {
 // ---------- sao lưu cấu hình ----------
 // Mã tự chứa (base64 JSON) gồm server + tài khoản + token AI + Jellyfin.
 // Dùng khi đổi máy / cài lại app, tránh nhập lại credential.
-const BK_KEYS = [LS_SERVERS, LS_ACTIVE, AI_KEY, 'pk-jf-v1', 'pk-jf-mbps-v1', 'pk-jf-mode-v1'];
+const BK_KEYS = [LS_SERVERS, LS_ACTIVE, AI_KEY, 'pk-jf-v1', 'pk-jf-mbps-v1', 'pk-jf-mode-v1', VAULT_KEY];
 const b64enc = (s) => {
   const b = new TextEncoder().encode(s);
   let out = '';
@@ -4040,7 +4601,42 @@ $('s-ai').onclick = aiSearchFromInput;
 $('set-ai').onclick = openAiSheet;
 $('ob-restore').onclick = openBackupSheet;
 $('set-backup').onclick = openBackupSheet;
+$('set-vault').onclick = openVaultList;
 $('set-watch').onclick = openWatchSheet;
+
+$('vault-back').onclick = closeVault;
+$('vault-lock').onclick = () => {
+  if (!vaultCurrent) return;
+  vaultUnlocked.delete(vaultCurrent.id);
+  closeVault();
+  snack(t('vault_locked_msg'));
+};
+$('vault-menu').onclick = () => {
+  const v = vaultCurrent;
+  if (!v) return;
+  openSheet(`<h3>${esc(v.name)}</h3>
+    <button class="rowbtn danger" id="v-del">${icon('trash')}<span>${esc(t('vault_del_btn'))}</span></button>
+    <p class="meta">${esc(t('vault_app_only'))}</p>`);
+  sheetBody.querySelector('#v-del').onclick = () => openVaultDelete(v);
+};
+$('vault-add').onclick = openVaultAdd;
+let vaultSearchTimer = 0;
+$('vault-q').addEventListener('input', () => {
+  clearTimeout(vaultSearchTimer);
+  vaultSearchTimer = setTimeout(loadVault, 300);
+});
+
+// Tự khoá vault sau 5 phút ở nền (đóng app thì Set trong RAM tự mất).
+let vaultHiddenAt = 0;
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden) { vaultHiddenAt = Date.now(); return; }
+  if (vaultHiddenAt && Date.now() - vaultHiddenAt > 5 * 60 * 1000) {
+    const wasOpen = !!vaultCurrent;
+    vaultUnlocked.clear();
+    if (wasOpen) { closeSheet(); closeVault(); snack(t('vault_locked_msg')); }
+  }
+  vaultHiddenAt = 0;
+});
 $('ai-new').onclick = aiNewChat;
 $('ai-history').onclick = openAiHistory;
 $('ai-plus').onclick = openAiAttachSheet;
@@ -4070,6 +4666,8 @@ aiInputEl.addEventListener('keydown', (e) => {
 applyLang();
 paintIcons();
 renderAiState();
+renderVaultState();
+paintVaultHeader();
 aiComposerState();
 aiRender();
 renderColls();

@@ -12,6 +12,15 @@ export const BASE = (process.env.PK_BASE || 'http://127.0.0.1:3179').replace(/\/
 const USER = process.env.PK_USER || '';
 const PASS = process.env.PK_PASS || '';
 
+/** File trong vault gắn tag này; mọi search mặc định ẩn chúng. */
+export const VAULT_TAG = process.env.PK_VAULT_TAG || 'pkvault';
+
+export function hideVaultExpr(expression) {
+  const e = String(expression || '').trim();
+  if (/(^|\s)-tag:pkvault(\s|$)/.test(e)) return e;
+  return e ? `(${e}) -tag:pkvault` : '-tag:pkvault';
+}
+
 export const authHeaders = (extra = {}) => {
   const h = { ...extra };
   if (USER) h.Authorization = 'Basic ' + Buffer.from(`${USER}:${PASS}`).toString('base64');
@@ -138,10 +147,11 @@ export function mapItem(blob, desc) {
   };
 }
 
-export async function search(expression, limit = 20, sort = '-created') {
+export async function search(expression, limit = 20, sort = '-created', opts = {}) {
+  const expr = opts.includeVault ? expression : hideVaultExpr(expression);
   const j = await pkFetch('/my-search/camli/search/query', {
     method: 'POST',
-    body: { expression, limit, describe: DESCRIBE, sort }
+    body: { expression: expr, limit, describe: DESCRIBE, sort }
   });
   if (j.error) throw new Error(j.error.split('\n')[0]);
   return (j.blobs || []).map((b) => mapItem(b.blob, j.description));
