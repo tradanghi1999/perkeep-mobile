@@ -139,7 +139,7 @@ const I18N = {
     ai_attach_title: 'Đính kèm ảnh', ai_attach_lib: 'Chọn từ thư viện', ai_attach_cam: 'Chụp ảnh',
     ai_img_only: 'Chỉ đính kèm được ảnh.', ai_img_max: 'Tối đa 4 ảnh mỗi tin nhắn.',
     ai_img_fail: 'Không đọc được ảnh này.', ai_img_remove: 'Xoá ảnh', ai_image: 'Ảnh',
-    ai_thinking_img: 'Đang xem ảnh…', ai_working: 'Đang xử lý…',
+    ai_thinking_img: 'Đang xem ảnh', ai_working: 'Đang xử lý',
     ai_tags: 'Gợi ý tag bằng AI', ai_tags_ok: 'Đã điền tag gợi ý', ai_tags_fail: 'Không gợi ý được tag',
     fab_channel: 'Thêm video từ kênh (YouTube)',
     ch_title: 'Thêm video từ kênh', ch_url: 'Link kênh (youtube.com/@ten)', ch_count: 'Số video mới nhất',
@@ -304,7 +304,7 @@ const I18N = {
     ai_attach_title: 'Attach an image', ai_attach_lib: 'Choose from library', ai_attach_cam: 'Take a photo',
     ai_img_only: 'Only images can be attached.', ai_img_max: 'Up to 4 images per message.',
     ai_img_fail: 'Could not read this image.', ai_img_remove: 'Remove image', ai_image: 'Image',
-    ai_thinking_img: 'Looking at the image…', ai_working: 'Working…',
+    ai_thinking_img: 'Looking at the image', ai_working: 'Working',
     ai_tags: 'Suggest tags with AI', ai_tags_ok: 'Suggested tags applied', ai_tags_fail: 'Could not suggest tags',
     fab_channel: 'Add videos from a channel (YouTube)',
     ch_title: 'Add videos from a channel', ch_url: 'Channel link (youtube.com/@name)', ch_count: 'Latest videos',
@@ -3284,6 +3284,22 @@ function openAiHistory() {
 
 let aiBusy = false;
 let aiAbort = null;
+let aiStatusTimer = null;
+
+function startAiStatusTicker() {
+  if (aiStatusTimer) clearInterval(aiStatusTimer);
+  aiStatusTimer = setInterval(() => {
+    const el = document.querySelector('#ai-chat .ai-status .ai-sec');
+    if (!el) return;
+    const m = aiMsgs[aiMsgs.length - 1];
+    if (!m?.streaming) return;
+    const sec = Math.floor((Date.now() - (m.startedAt || Date.now())) / 1000);
+    if (sec > 0) el.textContent = `${sec}s`;
+  }, 500);
+}
+function stopAiStatusTicker() {
+  if (aiStatusTimer) { clearInterval(aiStatusTimer); aiStatusTimer = null; }
+}
 
 function prettyTool(name) {
   let s = String(name || '');
@@ -3406,7 +3422,7 @@ function aiRender() {
       ? `<div class="ai-files">${m.items.map((it, ii) => aiFileCard(it, `${mi}:${ii}`)).join('')}</div>`
       : '';
     const status = m.streaming && !m.text
-      ? `<span class="ai-status">${esc(m.status || t('ai_working'))}</span>`
+      ? `<span class="ai-status"><span class="ai-dots"><i></i><i></i><i></i></span><span>${esc(String(m.status || t('ai_working')).replace(/[.…]+$/, ''))}</span><span class="ai-sec">0s</span></span>`
       : '';
     const cursor = m.streaming && m.text ? '<span class="ai-cursor"></span>' : '';
     return `${tools}<div class="${cls}">${status}${mdLite(m.text)}${cursor}</div>${files}`;
@@ -3471,12 +3487,13 @@ async function aiSend(text) {
   aiAbort = new AbortController();
   aiEnsureSession(text || (thumbs.length ? t('ai_image') : ''));
   aiMsgs.push({ role: 'me', text, images: thumbs });
-  const bot = { role: 'bot', text: '', tools: [], toolCalls: [], items: [], streaming: true, status: thumbs.length ? t('ai_thinking_img') : t('ai_working') };
+  const bot = { role: 'bot', text: '', tools: [], toolCalls: [], items: [], streaming: true, startedAt: Date.now(), status: thumbs.length ? t('ai_thinking_img') : t('ai_working') };
   aiMsgs.push(bot);
   aiPersist();
   updateAiTitle();
   aiRender();
   aiComposerState();
+  startAiStatusTicker();
 
   let timer = null;
   let streamTimer = null;
@@ -3553,6 +3570,7 @@ async function aiSend(text) {
   } finally {
     if (timer) { clearTimeout(timer); timer = null; }
     if (streamTimer) { clearTimeout(streamTimer); streamTimer = null; }
+    stopAiStatusTicker();
     aiBusy = false;
     aiAbort = null;
     aiRender();
