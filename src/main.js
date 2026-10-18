@@ -134,6 +134,7 @@ const I18N = {
     ai_explain: 'AI hiểu', ai_used: 'Đã dùng',
     ai_tool_search: 'Tìm trong Perkeep', ai_tool_stats: 'Thống kê thư viện',
     ai_tool_describe: 'Đọc metadata', ai_tool_get_text: 'Đọc nội dung',
+    ai_tool_web: 'Tìm trên web', ai_tool_fetch: 'Đọc trang', ai_tool_dupes: 'Kiểm tra trùng',
     ai_send: 'Gửi', ai_stop: 'Dừng', ai_attach_soon: 'Đính kèm sẽ có ở giai đoạn sau',
     ai_attach_title: 'Đính kèm ảnh', ai_attach_lib: 'Chọn từ thư viện', ai_attach_cam: 'Chụp ảnh',
     ai_img_only: 'Chỉ đính kèm được ảnh.', ai_img_max: 'Tối đa 4 ảnh mỗi tin nhắn.',
@@ -298,6 +299,7 @@ const I18N = {
     ai_explain: 'AI understood', ai_used: 'Used',
     ai_tool_search: 'Search Perkeep', ai_tool_stats: 'Library stats',
     ai_tool_describe: 'Read metadata', ai_tool_get_text: 'Read content',
+    ai_tool_web: 'Search the web', ai_tool_fetch: 'Fetch page', ai_tool_dupes: 'Check duplicates',
     ai_send: 'Send', ai_stop: 'Stop', ai_attach_soon: 'Attachments come in a later phase',
     ai_attach_title: 'Attach an image', ai_attach_lib: 'Choose from library', ai_attach_cam: 'Take a photo',
     ai_img_only: 'Only images can be attached.', ai_img_max: 'Up to 4 images per message.',
@@ -3290,7 +3292,10 @@ function prettyTool(name) {
     search: t('ai_tool_search'),
     stats: t('ai_tool_stats'),
     describe: t('ai_tool_describe'),
-    get_text: t('ai_tool_get_text')
+    get_text: t('ai_tool_get_text'),
+    websearch: t('ai_tool_web'),
+    webfetch: t('ai_tool_fetch'),
+    dupes: t('ai_tool_dupes')
   };
   return map[s] || s;
 }
@@ -3302,8 +3307,7 @@ function mdLite(s) {
     .replace(/\n/g, '<br>');
 }
 
-function aiFileCard(item, key) {
-  const mime = item.mime || '';
+function aiFileCard(item, key) {  const mime = item.mime || '';
   const sub = [mime ? mime.split('/')[0] : '', item.size ? fmtSize(item.size) : '', item.date ? fmtDate(item.date) : '']
     .filter(Boolean).join(' · ');
   return `<button class="ai-file" data-ai-file="${key}">
@@ -3335,6 +3339,39 @@ function openAiItem(item) {
   renderViewer();
 }
 
+function consolidateTools(list) {
+  const map = new Map();
+  const num = (s) => Number((String(s || '').match(/(\d+)/) || [])[1] || 0);
+  for (const t of list || []) {
+    const key = t.name || '';
+    const cur = map.get(key);
+    if (!cur) {
+      map.set(key, { ...t, count: Number(t.count) || 1 });
+    } else {
+      cur.count += Number(t.count) || 1;
+      if (t.state) cur.state = t.state;
+      if (t.detail) {
+        // websearch chạy nhiều lần: giữ kết quả nhiều nhất, không lấy lần 0 kết quả
+        if (key === 'websearch' && num(t.detail) < num(cur.detail)) continue;
+        cur.detail = t.detail;
+      }
+    }
+  }
+  return [...map.values()];
+}
+
+function aiToolRow(t) {
+  const state = t.state || 'done';
+  const busy = state === 'start' || state === 'running';
+  const ic = busy ? '<span class="spin"></span>' : state === 'error' ? '<b>!</b>' : icon('check', 14);
+  const cnt = t.count > 1 ? `<span class="cnt">×${t.count}</span>` : '';
+  return `<div class="ai-tool${state === 'error' ? ' err' : ''}">
+    <span class="ic">${ic}</span>
+    <span class="nm">${esc(prettyTool(t.name))}${cnt}</span>
+    ${t.detail ? `<span class="st">${esc(t.detail)}</span>` : ''}
+  </div>`;
+}
+
 function aiRender() {
   const box = $('ai-chat');
   if (!box) return;
@@ -3361,9 +3398,10 @@ function aiRender() {
     }
     if (m.role === 'tool') return `<div class="ai-tool"><span>${esc(m.text)}</span><span class="st">···</span></div>`;
     const cls = m.role === 'err' ? 'ai-msg err' : 'ai-msg bot';
-    const tools = (m.tools || []).length
-      ? `<div class="ai-tools-line">${esc(t('ai_used'))}: ${m.tools.map((x) => esc(prettyTool(x))).join(' · ')}</div>`
-      : '';
+    const tcs = consolidateTools((m.toolCalls || []).length
+      ? m.toolCalls
+      : (m.tools || []).map((name) => ({ name, state: 'done', detail: '' })));
+    const tools = tcs.length ? `<div class="ai-tools">${tcs.map(aiToolRow).join('')}</div>` : '';
     const files = (m.items || []).length
       ? `<div class="ai-files">${m.items.map((it, ii) => aiFileCard(it, `${mi}:${ii}`)).join('')}</div>`
       : '';
@@ -3371,7 +3409,7 @@ function aiRender() {
       ? `<span class="ai-status">${esc(m.status || t('ai_working'))}</span>`
       : '';
     const cursor = m.streaming && m.text ? '<span class="ai-cursor"></span>' : '';
-    return `<div class="${cls}">${status}${mdLite(m.text)}${cursor}${tools}</div>${files}`;
+    return `${tools}<div class="${cls}">${status}${mdLite(m.text)}${cursor}</div>${files}`;
   }).join('');
   box.querySelectorAll('[data-ai-file]').forEach((b) => {
     const [mi, ii] = b.dataset.aiFile.split(':').map(Number);
@@ -3433,7 +3471,7 @@ async function aiSend(text) {
   aiAbort = new AbortController();
   aiEnsureSession(text || (thumbs.length ? t('ai_image') : ''));
   aiMsgs.push({ role: 'me', text, images: thumbs });
-  const bot = { role: 'bot', text: '', tools: [], items: [], streaming: true, status: thumbs.length ? t('ai_thinking_img') : t('ai_working') };
+  const bot = { role: 'bot', text: '', tools: [], toolCalls: [], items: [], streaming: true, status: thumbs.length ? t('ai_thinking_img') : t('ai_working') };
   aiMsgs.push(bot);
   aiPersist();
   updateAiTitle();
@@ -3457,7 +3495,33 @@ async function aiSend(text) {
       signal: aiAbort.signal,
       onDelta: (d) => { bot.status = ''; bot.text += d; scheduleStream(); },
       onTool: (e) => {
-        if (e.name && !bot.tools.includes(e.name)) { bot.tools.push(e.name); schedule(); }
+        if (!Array.isArray(bot.toolCalls)) bot.toolCalls = [];
+        const key = e.id || e.name || '';
+        let cur = bot.toolCalls.find((x) => (x.id || x.name) === key);
+        if (e.state === 'start') {
+          if (!cur) bot.toolCalls.push({ id: key, name: e.name || '', state: 'start', detail: '' });
+        } else if (e.state === 'running') {
+          if (!cur) {
+            cur = { id: key, name: e.name || '', state: 'running', detail: '' };
+            bot.toolCalls.push(cur);
+          }
+          cur.state = 'running';
+          const n = String(e.name || '').replace(/^perkeep_/, '');
+          if (n === 'webfetch' && e.input?.url) {
+            try { cur.detail = new URL(e.input.url).hostname; } catch {}
+          } else if (n === 'websearch' && e.input?.query) {
+            cur.detail = String(e.input.query).slice(0, 40);
+          }
+        } else {
+          const st = e.state === 'error' ? 'error' : 'done';
+          if (cur) {
+            cur.state = st;
+            if (e.detail) cur.detail = e.detail;
+          } else {
+            bot.toolCalls.push({ id: key, name: e.name || '', state: st, detail: e.detail || '' });
+          }
+        }
+        schedule();
       }
     });
     bot.streaming = false;
@@ -3466,6 +3530,11 @@ async function aiSend(text) {
       if (typeof done.text === 'string' && done.text.trim()) bot.text = done.text;
       if (Array.isArray(done.items)) bot.items = done.items;
       if (Array.isArray(done.tools) && done.tools.length) bot.tools = done.tools;
+      if (Array.isArray(done.toolCalls) && done.toolCalls.length) {
+        bot.toolCalls = consolidateTools(done.toolCalls);
+      } else if (!bot.toolCalls.length && Array.isArray(done.tools)) {
+        bot.toolCalls = done.tools.map((name) => ({ name, state: 'done', detail: '' }));
+      }
       if (done.error) { bot.role = 'err'; bot.text = `${t('ai_fail')}: ${done.error}`; }
     }
     if (!String(bot.text || '').trim()) bot.text = t('ai_empty_answer');

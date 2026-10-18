@@ -246,9 +246,59 @@ async function generateJson(prompt) {
 }
 
 // ---------- agent session ----------
+function toolText(content) {
+  if (!Array.isArray(content)) return '';
+  return content.map((c) => (c?.type === 'text' ? String(c.text || '') : '')).join('\n').trim();
+}
+
+/** Tóm tắt ngắn kết quả tool để app hiển thị cạnh tên tool. */
+function toolDetail(name, content, metadata, input) {
+  const text = toolText(content);
+  const n = String(name || '').replace(/^perkeep_/, '');
+  if (n === 'search') {
+    try {
+      const j = JSON.parse(text);
+      if (Array.isArray(j.items)) return `${j.items.length} mục`;
+    } catch {}
+    const m = text.match(/(\d+)\s*(mục|kết quả)/i);
+    if (m) return `${m[1]} mục`;
+    return text ? text.slice(0, 50) : '';
+  }
+  if (n === 'dupes') {
+    try {
+      const j = JSON.parse(text);
+      const g = j.groups || j.dupes || j.items || [];
+      return `${Array.isArray(g) ? g.length : 0} nhóm`;
+    } catch {}
+    return text ? text.slice(0, 50) : '';
+  }
+  if (n === 'websearch') {
+    if (/no search results/i.test(text)) return '0 kết quả';
+    try {
+      const j = JSON.parse(text);
+      const r = j.results || j.items || j.data;
+      if (Array.isArray(r)) return `${r.length} kết quả`;
+    } catch {}
+    const lines = text.split('\n').filter((l) => /^\s*(\d+[.)]|[-*])\s+/.test(l));
+    if (lines.length) return `${lines.length} kết quả`;
+    const links = text.match(/https?:\/\//g);
+    if (links && links.length) return `${links.length} kết quả`;
+    if (metadata?.results) return `${Array.isArray(metadata.results) ? metadata.results.length : metadata.results} kết quả`;
+    if (metadata?.count) return `${metadata.count} kết quả`;
+    return text ? 'xong' : '';
+  }
+  if (n === 'webfetch') {
+    try { return new URL(String(input?.url || '')).hostname; } catch { return input?.url ? String(input.url).slice(0, 50) : ''; }
+  }
+  if (n === 'get_text') return text ? `${text.length} ký tự` : '';
+  if (n === 'describe' || n === 'stats') return 'xong';
+  return text ? text.slice(0, 50) : '';
+}
+
 function extractAssistant(messages) {
   const texts = [];
   const tools = [];
+  const toolCalls = [];
   const items = [];
   for (const m of messages || []) {
     if (m.type === 'assistant') {
@@ -257,7 +307,15 @@ function extractAssistant(messages) {
       for (const p of parts) {
         if (p?.type === 'text' && p.text) texts.push(p.text);
         if (p?.type === 'tool') {
-          if (p.name || p.tool) tools.push(p.name || p.tool);
+          const name = p.name || p.tool || '';
+          if (name) tools.push(name);
+          const st = p.state || {};
+          toolCalls.push({
+            id: String(p.id || p.callID || `call-${toolCalls.length}`),
+            name,
+            state: st.status === 'error' || st.status === 'failed' ? 'error' : 'done',
+            detail: toolDetail(name, st.content, st.metadata, st.input || {})
+          });
           // lấy items từ output JSON của perkeep_search (ổn định hơn <ui>)
           const outs = p?.state?.content;
           if (Array.isArray(outs)) {
@@ -291,7 +349,7 @@ function extractAssistant(messages) {
   }
   const seen = new Set();
   const uniq = items.filter((i) => (seen.has(i.blobref) ? false : (seen.add(i.blobref), true))).slice(0, 10);
-  return { text: texts.join('\n').trim(), tools: [...new Set(tools)], items: uniq };
+  return { text: texts.join('\n').trim(), tools: [...new Set(tools)], toolCalls, items: uniq };
 }
 
 async function askAgent(text) {
@@ -315,7 +373,7 @@ async function askAgent(text) {
     if (!out.text && idle?.error) {
       throw new Error(`AI lỗi: ${idle.error.message || idle.error.type || 'unknown'}`);
     }
-    return { text: out.text, tools: out.tools, items: out.items, sessionID: sid };
+    return { text: out.text, tools: out.tools, toolCalls: out.toolCalls, items: out.items, sessionID: sid };
   } finally {
     try { await c.session.remove({ sessionID: sid }); } catch {}
   }
@@ -466,7 +524,13 @@ Yêu cầu: ${JSON.stringify(text)}`;
               const tm = setInterval(() => {
                 if (i < parts.length) { send('delta', { t: parts[i++] }); return; }
                 clearInterval(tm);
-                send('done', { text: fast.text, items: fast.items, tools: fast.tools, ok: true });
+                send('done', {
+                  text: fast.text,
+                  items: fast.items,
+                  tools: fast.tools,
+                  toolCalls: [{ id: 'fast-search', name: 'perkeep_search', state: 'done', detail: `${fast.items.length} mục` }],
+                  ok: true
+                });
                 closed = true;
                 try { controller.close(); } catch {}
               }, 25);
@@ -526,6 +590,7 @@ Yêu cầu: ${JSON.stringify(text)}`;
             // lắng nghe event của phiên này
             (async () => {
               const toolNames = new Map();
+              const toolInputs = new Map();
               try {
                 for await (const ev of c.event.subscribe({ signal: ctrl.signal })) {
                   const d = ev?.data || {};
@@ -534,12 +599,18 @@ Yêu cầu: ${JSON.stringify(text)}`;
                     if (d.delta) send('delta', { t: d.delta });
                   } else if (ev.type === 'session.tool.input.started') {
                     toolNames.set(d.id, d.name);
-                    send('tool', { name: d.name, state: 'start' });
+                    toolInputs.set(d.id, null);
+                    send('tool', { id: d.id, name: d.name, state: 'start' });
+                  } else if (ev.type === 'session.tool.called') {
+                    toolInputs.set(d.id, d.input || {});
+                    send('tool', { id: d.id, name: toolNames.get(d.id) || '', state: 'running', input: d.input || {} });
                   } else if (ev.type === 'session.tool.success' || ev.type === 'session.tool.error') {
-                    send('tool', { name: toolNames.get(d.id) || '', state: 'done' });
+                    const name = toolNames.get(d.id) || '';
+                    const detail = toolDetail(name, d.content, d.metadata, toolInputs.get(d.id) || {});
+                    send('tool', { id: d.id, name, state: ev.type.endsWith('success') ? 'done' : 'error', detail });
                   } else if (ev.type === 'session.execution.succeeded' || ev.type === 'session.execution.failed') {
                     clearInterval(hb);
-                    let final = { text: '', tools: [], items: [] };
+                    let final = { text: '', tools: [], toolCalls: [], items: [] };
                     try {
                       const msgs = await c.session.context({ sessionID: sid });
                       const out = extractAssistant(msgs);
@@ -548,7 +619,7 @@ Yêu cầu: ${JSON.stringify(text)}`;
                       for (const it of [...(out.items || []), ...(ui.items || [])]) {
                         if (it?.blobref) map.set(it.blobref, { ...map.get(it.blobref), ...it });
                       }
-                      final = { text: ui.text, tools: out.tools, items: matchItems(ui.text, [...map.values()]) };
+                      final = { text: ui.text, tools: out.tools, toolCalls: out.toolCalls, items: matchItems(ui.text, [...map.values()]) };
                     } catch {}
                     await finish({ ...final, ok: ev.type.endsWith('succeeded') });
                     return;
@@ -557,7 +628,7 @@ Yêu cầu: ${JSON.stringify(text)}`;
               } catch (e) {
                 if (!closed) {
                   clearInterval(hb);
-                  await finish({ text: '', tools: [], items: [], error: String(e?.message || e).slice(0, 200) });
+                  await finish({ text: '', tools: [], toolCalls: [], items: [], error: String(e?.message || e).slice(0, 200) });
                 }
               }
             })();
