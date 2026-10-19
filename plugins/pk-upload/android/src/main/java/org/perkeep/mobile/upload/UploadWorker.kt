@@ -128,7 +128,10 @@ class UploadWorker(ctx: Context, params: WorkerParameters) : CoroutineWorker(ctx
         fileRef: String
     ): String {
         val pubKey = signerPubKey(server)
-        val permaUnsigned = """{"camliSigner":"$pubKey","camliType":"permanode","camliVersion":1}"""
+        // Perkeep permanode BẮT BUỘC có "random": nếu không, mọi lần upload ký ra
+        // cùng một blobref -> cùng 1 permanode, và index coi đó là permanode không hợp lệ.
+        val rnd = java.util.UUID.randomUUID().toString()
+        val permaUnsigned = """{"camliSigner":"$pubKey","camliType":"permanode","camliVersion":1,"random":"$rnd"}"""
         val permaSigned = uploader.sign(permaUnsigned)
         val permaRef = Sha224.blobRef(permaSigned)
         if (permaRef !in uploader.stat(listOf(permaRef))) {
