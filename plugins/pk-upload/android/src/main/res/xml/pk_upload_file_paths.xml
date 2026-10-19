@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<paths>
+    <!-- File tải về để mở bằng app khác (VLC/MX Player...) nằm trong cache/media -->
+    <cache-path name="pkmedia" path="media/" />
+</paths>

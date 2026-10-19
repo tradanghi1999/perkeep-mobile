@@ -1,0 +1,11 @@
+{
+  "appId": "com.example.pkapp",
+  "appName": "pk-app",
+  "webDir": "dist",
+  "server": {
+    "cleartext": true
+  },
+  "android": {
+    "allowMixedContent": true
+  }
+}

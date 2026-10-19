@@ -1,0 +1,11 @@
+# Chuẩn hoá line-ending: giữ LF cho file text để CI (Linux) và Gradle ổn định.
+* text=auto eol=lf
+
+*.png binary
+*.jpg binary
+*.ico binary
+*.gif binary
+
+# Windows scripts nếu sau này có
+*.bat text eol=crlf
+*.cmd text eol=crlf

@@ -1,0 +1,87 @@
+name: android-apk
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  apk:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: 17
+
+      # Cùng một chữ ký cho mọi lần build → cài đè được, KHÔNG mất localStorage
+      # (trước đây mỗi runner tạo debug keystore mới → buộc gỡ app → nhập lại credential)
+      - name: Dùng keystore cố định (giữ dữ liệu khi cập nhật)
+        env:
+          KS_B64: ${{ secrets.ANDROID_DEBUG_KEYSTORE_B64 }}
+        run: |
+          if [ -z "$KS_B64" ]; then
+            echo "::error::Thiếu secret ANDROID_DEBUG_KEYSTORE_B64 — không build để tránh APK đổi chữ ký làm mất dữ liệu."
+            exit 1
+          fi
+          mkdir -p "$HOME/.android"
+          printf '%s' "$KS_B64" | base64 -d > "$HOME/.android/debug.keystore"
+          keytool -list -keystore "$HOME/.android/debug.keystore" -storepass android -alias androiddebugkey | head -2
+
+      # v4 bo package "tools" (da bi go khoi Android SDK repo) -> mac dinh chi con platform-tools.
+      # v3 voi mac dinh cu se fail: "Failed to find package 'tools'".
+      - uses: android-actions/setup-android@v4
+        with:
+          packages: 'platform-tools'
+
+      - run: bun install
+      - run: bun run build
+
+      - name: Capacitor sync (nạp plugin pk-upload)
+        run: |
+          if [ ! -d android ]; then bunx cap add android; fi
+          bunx cap sync android
+          echo "--- plugin đã nạp ---"
+          grep -E "include ':" android/capacitor.settings.gradle || true
+          # Cho phep HTTP thuong (Perkeep LAN khong co HTTPS)
+          sed -i 's/<application/<application android:usesCleartextTraffic="true"/' android/app/src/main/AndroidManifest.xml
+
+      - run: chmod +x android/gradlew
+
+      - name: Build APK
+        run: cd android && ./gradlew assembleDebug --no-daemon --stacktrace --init-script ../ci-sign.gradle
+
+      - name: Kiểm tra manifest merge + APK
+        run: |
+          MAN=$(find android/app/build/intermediates -name AndroidManifest.xml -path "*merged_manifest*" | head -1)
+          echo "merged manifest: $MAN"
+          echo "--- quyền / foregroundServiceType / provider ---"
+          grep -Eo 'android.permission.[A-Z_]+|foregroundServiceType="[A-Za-z]+"|usesCleartextTraffic="true"|org.perkeep.mobile.upload.PkFileProvider|androidx.core.content.FileProvider|org.perkeep.mobile.upload.ShareActivity|android.intent.action.SEND|text/plain' "$MAN" | sort -u
+          echo "--- APK ---"
+          ls -lh android/app/build/outputs/apk/debug/app-debug.apk
+
+      - name: Kiểm tra chữ ký APK
+        run: |
+          set -euo pipefail
+          APK=android/app/build/outputs/apk/debug/app-debug.apk
+          APKSIGNER=$(find "${ANDROID_SDK_ROOT:-$ANDROID_HOME}/build-tools" -name apksigner -type f | sort -V | tail -1)
+          OUT=$("$APKSIGNER" verify --print-certs "$APK")
+          echo "$OUT" | head -6
+          if ! echo "$OUT" | grep -q "7c19ad4fa950f90674c265b0d91186d166a21c420f196bf6ffe01bf76970beb5"; then
+            echo "::error::APK không được ký bằng keystore cố định — cập nhật sẽ mất dữ liệu."
+            exit 1
+          fi
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: pk-app-debug
+          path: android/app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error

@@ -1,0 +1,64 @@
+// Plugin local pk-upload.
+// Lưu ý: project Android do Capacitor sinh ra không bật Kotlin plugin,
+// nên phải tự khai classpath kotlin-gradle-plugin ở đây (giống các plugin
+// Capacitor chính thức). Version khớp với Capacitor (1.9.10).
+buildscript {
+    ext.pkKotlinVersion = '1.9.10'
+    repositories {
+        google()
+        mavenCentral()
+    }
+    dependencies {
+        classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$pkKotlinVersion"
+    }
+}
+
+apply plugin: 'com.android.library'
+apply plugin: 'kotlin-android'
+
+ext {
+    pkUploadVersion = project.hasProperty('pkUploadVersion') ? project.pkUploadVersion : '0.1.0'
+    androidxWorkVersion = project.hasProperty('androidxWorkVersion') ? project.androidxWorkVersion : '2.9.1'
+}
+
+// Lấy version từ rootProject.ext (Capacitor variables.gradle), có fallback.
+def pkCompileSdk = rootProject.ext.has('compileSdkVersion') ? rootProject.ext.compileSdkVersion : 34
+def pkMinSdk = rootProject.ext.has('minSdkVersion') ? rootProject.ext.minSdkVersion : 23
+def pkTargetSdk = rootProject.ext.has('targetSdkVersion') ? rootProject.ext.targetSdkVersion : 34
+
+android {
+    namespace "org.perkeep.mobile.upload"
+    compileSdk pkCompileSdk
+
+    defaultConfig {
+        minSdkVersion pkMinSdk
+        targetSdkVersion pkTargetSdk
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+
+    kotlinOptions {
+        jvmTarget = '17'
+    }
+}
+
+repositories {
+    google()
+    mavenCentral()
+}
+
+dependencies {
+    implementation "org.jetbrains.kotlin:kotlin-stdlib:$pkKotlinVersion"
+    implementation "androidx.core:core-ktx:1.12.0"
+    // ActivityResult (cho @ActivityCallback / startActivityForResult) không được
+    // kế thừa từ app vì module plugin là library riêng.
+    implementation "androidx.activity:activity:1.8.0"
+    implementation "androidx.work:work-runtime-ktx:$androidxWorkVersion"
+    // HTTP server siêu nhỏ (~60KB) để proxy media: <video> không gửi được header
+    // Authorization nên phải qua proxy nội bộ 127.0.0.1.
+    implementation 'org.nanohttpd:nanohttpd:2.3.1'
+    implementation project(':capacitor-android')
+}

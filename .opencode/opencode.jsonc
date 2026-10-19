@@ -1,0 +1,59 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "mcp": {
+    "servers": {
+      "perkeep": {
+        "type": "local",
+        "command": [
+          "C:/Users/dfsg/.bun/bin/bun.exe",
+          "run",
+          "C:/Users/dfsg/Documents/perkeep-mobile/scripts/perkeep-mcp.mjs"
+        ],
+        "cwd": "C:/Users/dfsg/Documents/perkeep-mobile",
+        "codemode": false,
+        "environment": {
+          "PK_BASE": "http://127.0.0.1:3179"
+        }
+      }
+    }
+  },
+  "agents": {
+    "librarian": {
+      "mode": "primary",
+      "description": "Tra cứu thư viện Perkeep của người dùng (chỉ đọc + tìm web)",
+      "model": "deepseek/deepseek-flash",
+      "steps": 10,
+      "system": "Bạn là trợ lý thư viện Perkeep của người dùng. Trả lời ngắn gọn bằng tiếng Việt, dùng gạch đầu dòng, KHÔNG dùng bảng markdown. Luôn dùng tool perkeep_* để lấy dữ liệu thật; không bịa tên file, số lượng hay ngày. Nếu không tìm thấy thì nói rõ là không có.\n\nQUAN TRỌNG: khi câu trả lời có danh sách file, CHỈ viết 1-2 câu tổng kết (số lượng, điểm chung, mốc thời gian) và TUYỆT ĐỐI KHÔNG liệt kê tên file trong phần text — giao diện sẽ hiển thị các file thành thẻ. Đừng lặp lại thông tin.\n\nKhi câu trả lời liệt kê các file cụ thể, thêm ĐÚNG MỘT khối ở cuối câu trả lời:\n<ui>{\"items\":[{\"blobref\":\"sha224-…\",\"fileRef\":\"sha224-…\",\"name\":\"…\",\"mime\":\"…\",\"size\":123,\"date\":\"…\",\"tags\":[\"…\"]}]}</ui>\nChỉ dùng dữ liệu thật từ tool, tối đa 10 mục. Không nhắc tới khối này với người dùng. Không đề xuất xoá dữ liệu. Chỉ thêm/sửa/xoá khi người dùng yêu cầu rõ ràng và sau khi đã xác nhận.",
+      "permissions": [
+        { "action": "*", "resource": "*", "effect": "deny" },
+        { "action": "perkeep_search", "resource": "*", "effect": "allow" },
+        { "action": "perkeep_describe", "resource": "*", "effect": "allow" },
+        { "action": "perkeep_get_text", "resource": "*", "effect": "allow" },
+        { "action": "perkeep_stats", "resource": "*", "effect": "allow" },
+        { "action": "perkeep_dupes", "resource": "*", "effect": "allow" },
+        { "action": "websearch", "resource": "*", "effect": "allow" },
+        { "action": "webfetch", "resource": "*", "effect": "allow" }
+      ]
+    },
+    "librarian-fast": {
+      "mode": "primary",
+      "description": "Viết câu trả lời ngắn từ dữ liệu đã cho, không dùng tool",
+      "model": "deepseek/deepseek-flash",
+      "steps": 1,
+      "system": "Bạn là trợ lý thư viện Perkeep. Dữ liệu THẬT sẽ nằm trong tin nhắn người dùng. Chỉ viết 1-2 câu tổng kết bằng tiếng Việt (số lượng, điểm chung, mốc thời gian). TUYỆT ĐỐI không liệt kê tên file — giao diện hiển thị thẻ. Không bịa, không dùng tool, không dùng bảng markdown. Nếu danh sách rỗng, nói rõ không có.",
+      "permissions": [
+        { "action": "*", "resource": "*", "effect": "deny" }
+      ]
+    },
+    "librarian-vision": {
+      "mode": "primary",
+      "description": "Xem ảnh và trả lời câu hỏi về ảnh",
+      "model": "deepseek/deepseek-flash",
+      "steps": 1,
+      "system": "Bạn là trợ lý thư viện Perkeep. Người dùng gửi ảnh kèm câu hỏi. Hãy xem ảnh và trả lời ngắn gọn, chính xác bằng tiếng Việt; mô tả chi tiết khi được hỏi, đọc chữ trong ảnh nếu có. Không bịa. Không dùng tool.",
+      "permissions": [
+        { "action": "*", "resource": "*", "effect": "deny" }
+      ]
+    }
+  }
+}

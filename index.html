@@ -1,0 +1,235 @@
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="theme-color" content="#3F6B57" />
+    <title>Perkeep Mobile</title>
+    <link rel="icon" href="/favicon.ico" />
+    <link rel="stylesheet" href="/src/style.css" />
+  </head>
+  <body>
+    <!-- ===== Màn đăng nhập dịch vụ (first run) ===== -->
+    <div id="onboarding" class="login" hidden>
+      <img class="logo" src="/keepy.png" alt="Keepy – Perkeep" />
+      <h2 data-i18n="ob_title">Kết nối Perkeep</h2>
+      <p class="sub" data-i18n="ob_sub">Nhập địa chỉ server để bắt đầu</p>
+      <label data-i18n="f_name">Tên gợi nhớ</label>
+      <input id="ob-name" type="text" placeholder="PC nhà" />
+      <label data-i18n="f_url">Địa chỉ server</label>
+      <input id="ob-url" type="url" inputmode="url" placeholder="https://desktop-9clnd5v.tailffa535.ts.net" />
+      <label data-i18n="f_user">Tài khoản (nếu có)</label>
+      <input id="ob-user" type="text" autocomplete="username" />
+      <label data-i18n="f_pass">Mật khẩu</label>
+      <input id="ob-pass" type="password" autocomplete="current-password" />
+      <p class="hint" data-i18n="login_how" style="white-space:pre-line">…</p>
+      <details class="cfbox" id="ob-cf">
+        <summary data-i18n="f_cf_title">Cloudflare Access (nếu dùng tunnel)</summary>
+        <p class="meta" data-i18n="f_cf_hint">…</p>
+        <label data-i18n="f_cf_id">CF-Access-Client-Id</label>
+        <input id="ob-cfid" autocomplete="off" />
+        <label data-i18n="f_cf_secret">CF-Access-Client-Secret</label>
+        <input id="ob-cfsecret" type="password" autocomplete="off" />
+      </details>
+      <p id="ob-err" class="err" hidden></p>
+      <button class="go" id="ob-connect" data-i18n="ob_connect">Kết nối →</button>
+      <button class="skip" id="ob-restore" data-i18n="ob_restore">Đã có mã sao lưu? Khôi phục</button>
+      <div class="seg">
+        <button id="seg-vi" class="on">Tiếng Việt</button>
+        <button id="seg-en">English</button>
+      </div>
+      <button class="skip" id="ob-skip" data-i18n="ob_skip">Dùng thử không cần server →</button>
+    </div>
+
+    <!-- ===== App ===== -->
+    <div id="app" class="screen">
+      <div class="searchbar">
+        <span class="s-ico" id="s-ico"></span>
+        <input id="q" type="search" />
+        <button class="s-ai" id="s-ai" aria-label="AI"></button>
+        <span class="avatar" id="av" title="Dịch vụ">P</span>
+      </div>
+      <div class="filterbar">
+        <div class="filters" id="filters"></div>
+      </div>
+      <div class="aibar" id="aibar" hidden></div>
+
+      <div class="tabhead">
+        <h3 id="tab-title"></h3>
+        <div class="viewseg" id="viewseg" role="group" aria-label="view">
+          <button data-v="list" id="btn-view-list"></button>
+          <button data-v="grid" id="btn-view-grid"></button>
+        </div>
+      </div>
+
+      <div class="content" id="content">
+        <div class="ptr" id="ptr" aria-hidden="true">
+          <svg viewBox="0 0 40 40" width="40" height="40">
+            <circle class="ptr-track" cx="20" cy="20" r="16" />
+            <circle class="ptr-arc" id="ptr-arc" cx="20" cy="20" r="16" />
+          </svg>
+        </div>
+
+        <div class="tabs on" id="t-home">
+          <div id="uploads" class="uploads" hidden></div>
+          <div id="home-colls" class="colls"></div>
+          <div id="home-list" class="list"></div>
+        </div>
+
+        <div class="tabs" id="t-star">
+          <div id="star-list" class="list"></div>
+        </div>
+
+        <div class="tabs" id="t-files">
+          <div id="file-list" class="list"></div>
+        </div>
+
+        <div class="tabs ai-tab" id="t-ai">
+          <div class="ai-head">
+            <b id="ai-title">Trợ lý</b>
+            <div class="ai-head-actions">
+              <button id="ai-history" aria-label="history"></button>
+              <button id="ai-new" aria-label="new chat"></button>
+            </div>
+          </div>
+          <div class="ai-chat" id="ai-chat"></div>
+          <div class="ai-attachbar" id="ai-attach" hidden></div>
+          <div class="ai-composer">
+            <button class="ai-plus" id="ai-plus" aria-label="attach"></button>
+            <input id="ai-input" enterkeyhint="send" />
+            <button class="ai-send" id="ai-send" aria-label="send"></button>
+          </div>
+          <input type="file" id="ai-file" accept="image/*" multiple hidden />
+          <input type="file" id="ai-cam" accept="image/*" capture="environment" hidden />
+        </div>
+
+        <div class="tabs" id="t-set">
+        <div class="frow" id="set-svc">
+          <div class="fic" data-ico="server"></div>
+          <div class="fx"><b data-i18n="set_svc">Dịch vụ Perkeep</b><small id="set-svc-sub"></small></div>
+          <span class="chev" data-ico="chevron"></span>
+        </div>
+        <div class="frow" id="set-lang">
+          <div class="fic" data-ico="globe"></div>
+          <div class="fx"><b data-i18n="set_lang">Ngôn ngữ</b><small id="set-lang-sub"></small></div>
+          <span class="chev" data-ico="chevron"></span>
+        </div>
+        <div class="frow" id="set-font">
+          <div class="fic" data-ico="doc"></div>
+          <div class="fx"><b data-i18n="set_font">Cỡ chữ</b><small id="set-font-sub"></small></div>
+          <span class="chev" data-ico="chevron"></span>
+        </div>
+        <div class="frow" id="set-vid">
+          <div class="fic" data-ico="video"></div>
+          <div class="fx"><b data-i18n="set_vid">Thumbnail video</b><small id="set-vid-sub"></small></div>
+          <span class="chev" id="set-vid-state"></span>
+        </div>
+        <div class="frow" id="set-wifi">
+          <div class="fic" data-ico="upload"></div>
+          <div class="fx"><b data-i18n="set_wifi">Chỉ tải khi dùng Wi-Fi</b><small id="set-wifi-sub"></small></div>
+          <span class="chev" id="set-wifi-state"></span>
+        </div>
+        <div class="frow" id="set-jf">
+          <div class="fic" data-ico="server"></div>
+          <div class="fx"><b data-i18n="set_jf">Jellyfin (phát mượt)</b><small id="set-jf-sub"></small></div>
+          <span class="chev" id="set-jf-state"></span>
+        </div>
+        <div class="frow" id="set-cache">
+          <div class="fic" data-ico="download"></div>
+          <div class="fx"><b data-i18n="set_cache">File đã tải để xem mượt</b><small id="set-cache-sub"></small></div>
+          <span class="chev" data-ico="chevron"></span>
+        </div>
+        <div class="frow" id="set-perm">
+          <div class="fic" data-ico="pulse"></div>
+          <div class="fx"><b data-i18n="set_perm">Quyền thông báo</b><small id="set-perm-sub"></small></div>
+          <span class="chev" data-ico="chevron"></span>
+        </div>
+        <div class="frow" id="set-ai">
+          <div class="fic" data-ico="sparkle"></div>
+          <div class="fx"><b data-i18n="set_ai">Trợ lý AI</b><small id="set-ai-sub"></small></div>
+          <span class="chev" id="set-ai-state"></span>
+        </div>
+        <div class="frow" id="set-vault">
+          <div class="fic" data-ico="lock"></div>
+          <div class="fx"><b data-i18n="set_vault">Vault</b><small id="set-vault-sub"></small></div>
+          <span class="chev" data-ico="chevron"></span>
+        </div>
+        <div class="frow" id="set-backup">
+          <div class="fic" data-ico="download"></div>
+          <div class="fx"><b data-i18n="set_backup">Sao lưu cấu hình</b><small data-i18n="set_backup_sub">Chuyển máy / cài lại app</small></div>
+          <span class="chev" data-ico="chevron"></span>
+        </div>
+        <div class="frow" id="set-watch">
+          <div class="fic" data-ico="video"></div>
+          <div class="fx"><b data-i18n="set_watch">Theo dõi kênh</b><small id="set-watch-sub"></small></div>
+          <span class="chev" data-ico="chevron"></span>
+        </div>
+        <div class="frow" id="set-diag">
+          <div class="fic" data-ico="pulse"></div>
+          <div class="fx"><b data-i18n="set_diag">Chẩn đoán</b><small data-i18n="set_diag_sub">Log kỹ thuật, blob, JSON</small></div>
+          <span class="chev" data-ico="chevron"></span>
+        </div>
+        <div class="frow" id="set-about">
+          <div class="fic" data-ico="info"></div>
+          <div class="fx"><b data-i18n="set_about">Giới thiệu Perkeep</b><small data-i18n="set_about_sub">Lưu trữ dữ liệu suốt đời</small></div>
+          <span class="chev" data-ico="chevron"></span>
+        </div>
+        <p class="hint" data-i18n="set_hint">Đổi / sửa / xóa dịch vụ: mở mục “Dịch vụ Perkeep”, hoặc chạm avatar trên thanh tìm kiếm.</p>
+        <pre id="out" hidden></pre>
+        </div>
+      </div>
+
+      <!-- Vault: overlay toàn màn hình (không thêm tab thứ 6) -->
+      <div class="vault-screen" id="vault-screen" hidden>
+        <div class="vault-top">
+          <button class="iconbtn" id="vault-back" aria-label="back"></button>
+          <div class="vault-title"><b id="vault-title"></b><small id="vault-sub"></small></div>
+          <button class="iconbtn" id="vault-lock" aria-label="lock"></button>
+          <button class="iconbtn" id="vault-menu" aria-label="menu"></button>
+        </div>
+        <div class="vault-searchwrap">
+          <span class="s-ico" id="vault-s-ico"></span>
+          <input id="vault-q" autocomplete="off" />
+        </div>
+        <div class="vault-body" id="vault-body">
+          <div id="vault-list" class="list"></div>
+        </div>
+        <button class="vault-fab" id="vault-add" aria-label="add"></button>
+      </div>
+
+      <button class="fab" id="fab" aria-label="add"></button>
+
+      <!-- Trình xem file toàn màn hình -->
+      <div class="viewer" id="viewer" hidden>
+        <div class="vw-top">
+          <button class="vw-btn" id="vw-close" aria-label="close"></button>
+          <div class="vw-title"><b id="vw-name"></b><small id="vw-sub"></small></div>
+          <button class="vw-btn" id="vw-external" aria-label="open external"></button>
+        </div>
+        <div class="vw-body" id="vw-body"></div>
+        <div class="vw-nav">
+          <button class="vw-btn" id="vw-prev" aria-label="prev"></button>
+          <span class="vw-count" id="vw-count"></span>
+          <button class="vw-btn" id="vw-next" aria-label="next"></button>
+        </div>
+      </div>
+
+      <div class="sheet" id="sheet" hidden>
+        <div class="sheet-handle"></div>
+        <div id="sheet-body"></div>
+        <button class="rowbtn" id="close"></button>
+      </div>
+      <div class="snack" id="snack" hidden></div>
+
+      <nav class="nav">
+        <button class="on" data-t="t-home"><span data-ico="home"></span><em data-i18n="nav_home">Nhà</em></button>
+        <button data-t="t-star"><span data-ico="star"></span><em data-i18n="nav_star">Ghim</em></button>
+        <button data-t="t-files"><span data-ico="folder"></span><em data-i18n="nav_files">Tệp</em></button>
+        <button data-t="t-ai"><span data-ico="sparkle"></span><em data-i18n="nav_ai">Trợ lý</em></button>
+        <button data-t="t-set"><span data-ico="settings"></span><em data-i18n="nav_set">Cài đặt</em></button>
+      </nav>
+    </div>
+
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>

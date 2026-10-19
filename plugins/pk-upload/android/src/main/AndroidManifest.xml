@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC" />
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+
+    <application>
+        <!-- WorkManager nâng worker lên foreground service; từ Android 14 phải khai báo type -->
+        <service
+            android:name="androidx.work.impl.foreground.SystemForegroundService"
+            android:foregroundServiceType="dataSync"
+            tools:node="merge" />
+
+        <!-- Chia sẻ file đã tải cho app khác (VLC/MX Player) qua content://.
+             Dùng lớp con PkFileProvider vì app Capacitor đã có FileProvider riêng;
+             khai trùng android:name sẽ gây lỗi manifest merger. -->
+        <provider
+            android:name="org.perkeep.mobile.upload.PkFileProvider"
+            android:authorities="${applicationId}.pkupload.files"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/pk_upload_file_paths" />
+        </provider>
+
+        <receiver
+            android:name="org.perkeep.mobile.upload.CancelReceiver"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="org.perkeep.mobile.upload.CANCEL" />
+            </intent-filter>
+        </receiver>
+
+        <!-- Nhận chia sẻ link từ YouTube / Chrome (ACTION_SEND text/plain).
+             Hoạt động không UI: lưu text rồi mở app chính. -->
+        <activity
+            android:name="org.perkeep.mobile.upload.ShareActivity"
+            android:exported="true"
+            android:theme="@android:style/Theme.Translucent.NoTitleBar"
+            android:excludeFromRecents="true"
+            android:noHistory="true">
+            <intent-filter>
+                <action android:name="android.intent.action.SEND" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:mimeType="text/plain" />
+            </intent-filter>
+        </activity>
+    </application>
+
+</manifest>
