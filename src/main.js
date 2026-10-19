@@ -579,6 +579,7 @@ function snack(msg) {
   snack._t = setTimeout(() => { snackEl.hidden = true; }, 1800);
 }
 function openSheet(html) {
+  sheetEl.classList.remove('vault-add-open');
   sheetBody.innerHTML = html;
   sheetEl.style.transform = '';
   sheetEl.style.transition = '';
@@ -587,6 +588,7 @@ function openSheet(html) {
 }
 function closeSheet() {
   sheetEl.hidden = true;
+  sheetEl.classList.remove('vault-add-open');
   sheetEl.style.transform = '';
   sheetEl.style.transition = '';
   sheetBody.innerHTML = '';
@@ -2872,13 +2874,20 @@ function openVaultChooseForBlob(blob, meta) {
 async function openVaultAdd() {
   const v = vaultCurrent;
   if (!v) return;
-  openSheet(`<h3>${esc(t('vault_add_title'))}</h3>
-    <p class="meta">${esc(v.name)}</p>
-    <p class="meta">${esc(t('vault_add_hint'))}</p>
-    <input class="adv" id="va-q" placeholder="${esc(t('ph_q'))}" autocomplete="off" />
-    <div id="va-list"><p class="meta">${esc(t('loading'))}</p></div>
-    <div class="btns"><button id="va-go" disabled>${esc(t('vault_add_btn')(0))}</button><button class="cx" data-cx>${esc(t('btn_cancel'))}</button></div>
-    <p class="err" id="va-err" hidden></p>`);
+  openSheet(`<div class="va-sheet">
+    <div class="va-head">
+      <h3>${esc(t('vault_add_title'))}</h3>
+      <p class="meta">${esc(v.name)}</p>
+      <p class="meta">${esc(t('vault_add_hint'))}</p>
+      <input class="adv" id="va-q" placeholder="${esc(t('ph_q'))}" autocomplete="off" />
+    </div>
+    <div id="va-list" class="va-list"><p class="meta">${esc(t('loading'))}</p></div>
+    <div class="va-foot edt">
+      <div class="btns"><button id="va-go" disabled>${esc(t('vault_add_btn')(0))}</button><button class="cx" data-cx>${esc(t('btn_cancel'))}</button></div>
+      <p class="err" id="va-err" hidden></p>
+    </div>
+  </div>`);
+  sheetEl.classList.add('vault-add-open');
   sheetBody.querySelector('[data-cx]').onclick = closeSheet;
   const listEl2 = sheetBody.querySelector('#va-list');
   const btn = sheetBody.querySelector('#va-go');
@@ -2910,10 +2919,16 @@ async function openVaultAdd() {
       listEl2.querySelectorAll('[data-b]').forEach((row) => {
         row.onclick = () => {
           const b = row.dataset.b;
-          if (sel.has(b)) sel.delete(b); else sel.add(b);
+          const on = !sel.has(b);
+          if (on) sel.add(b); else sel.delete(b);
+          const chk = row.querySelector('.chk');
+          if (chk) {
+            chk.textContent = on ? '✓' : '';
+            chk.style.background = on ? 'var(--green)' : 'transparent';
+            chk.style.borderColor = on ? 'var(--green)' : '#b9c6be';
+          }
           btn.disabled = !sel.size;
           btn.textContent = t('vault_add_btn')(sel.size);
-          paint();
         };
       });
     }

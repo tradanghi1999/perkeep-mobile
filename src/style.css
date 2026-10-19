@@ -209,6 +209,19 @@ h3 { margin: 12px 4px; font-size: 1.0625rem; }
 .vrow b{display:block;font-size:13.5px;color:#20261f}
 .vrow small{display:block;color:var(--muted);font-size:11px;margin-top:1px}
 .vrow .chev{color:#b3beb8}
+.sheet.vault-add-open{display:flex;flex-direction:column;overflow:hidden}
+.sheet.vault-add-open #sheet-body{display:flex;flex-direction:column;min-height:0;flex:1;overflow:hidden}
+.sheet.vault-add-open #close{display:none}
+.va-sheet{display:flex;flex-direction:column;min-height:0;flex:1}
+.va-head{flex:none}
+.va-head h3{margin:4px 2px 8px}
+.va-head .meta{margin:0 2px 8px;word-break:break-word}
+.va-head input.adv{width:100%;margin:4px 0 8px;box-sizing:border-box}
+.va-list{flex:1;min-height:0;overflow:auto;border-top:1px solid #f3f3f3}
+.va-foot{flex:none;padding-top:8px;background:#fff;border-top:1px solid #f1f1f1}
+.va-foot .btns{margin-top:0}
+.va-foot .err{margin:6px 2px 0}
+.edt .btns button[disabled]{opacity:.45}
 
 
 /* ---------- Bộ sưu tập (Home) ---------- */
