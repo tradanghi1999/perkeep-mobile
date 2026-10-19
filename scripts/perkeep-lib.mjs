@@ -14,11 +14,15 @@ const PASS = process.env.PK_PASS || '';
 
 /** File trong vault gắn tag này; mọi search mặc định ẩn chúng. */
 export const VAULT_TAG = process.env.PK_VAULT_TAG || 'pkvault';
+/** Mục metadata vault (JSON: tên + salt + hash), cũng ẩn khỏi thư viện. */
+export const VAULT_META_TAG = process.env.PK_VAULT_META_TAG || 'pkvault-meta';
 
 export function hideVaultExpr(expression) {
   const e = String(expression || '').trim();
-  if (/(^|\s)-tag:pkvault(\s|$)/.test(e)) return e;
-  return e ? `(${e}) -tag:pkvault` : '-tag:pkvault';
+  const esc = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  if (new RegExp(`(^|\\s)-tag:${esc(VAULT_TAG)}(\\s|$)`).test(e)) return e;
+  const hide = `-tag:${VAULT_TAG} -tag:${VAULT_META_TAG}`;
+  return e ? `(${e}) ${hide}` : hide;
 }
 
 export const authHeaders = (extra = {}) => {
@@ -163,6 +167,33 @@ export async function getText(ref, maxBytes = 50000) {
   const slice = buf.slice(0, maxBytes);
   const text = new TextDecoder('utf-8', { fatal: false }).decode(slice);
   return { text, bytes: buf.length, truncated: buf.length > maxBytes, binary: text.includes('\u0000') };
+}
+
+/**
+ * Danh sách vault lưu trong Perkeep (dùng cho web/CLI).
+ * Mỗi mục: { id, name, salt, hash, iter, createdAt, permanode, fileRef }.
+ * `hash` là PBKDF2-SHA256(salt, mật khẩu) — đủ để kiểm tra mật khẩu, không có plaintext.
+ */
+export async function listVaults(limit = 200) {
+  const j = await pkFetch('/my-search/camli/search/query', {
+    method: 'POST',
+    body: { expression: `tag:${VAULT_META_TAG}`, limit, sort: '-created', describe: DESCRIBE }
+  });
+  if (j.error) throw new Error(j.error.split('\n')[0]);
+  const out = [];
+  for (const b of j.blobs || []) {
+    const item = mapItem(b.blob, j.description);
+    if (!item.fileRef) continue;
+    try {
+      const { text } = await getText(item.fileRef, 10000);
+      const data = JSON.parse(text);
+      if (!data || data.type !== 'pk.vault' || !data.id) continue;
+      out.push({ ...data, permanode: b.blob, fileRef: item.fileRef });
+    } catch {
+      // Bỏ qua mục metadata hỏng/không đọc được
+    }
+  }
+  return out;
 }
 
 // ---------- ghi ----------

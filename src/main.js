@@ -166,6 +166,11 @@ const I18N = {
     vault_del_fail: 'Không xoá được vault',
     vault_need_permanode: 'Chỉ đưa được mục (permanode) vào vault.',
     vault_app_only: 'Vault chỉ ẩn trong app; file gốc vẫn còn trên Perkeep (Web/Jellyfin vẫn thấy).',
+    vault_sync: 'Đồng bộ vault',
+    vault_sync_running: 'Đang đồng bộ…',
+    vault_sync_done: (n) => `Đã đồng bộ ${n} vault`,
+    vault_sync_ok: 'Vault đã đồng bộ',
+    vault_sync_fail: 'Chưa đồng bộ được vault',
     ai_off: 'Chưa kết nối bridge',
     ai_title: 'Trợ lý AI — kết nối bridge',
     ai_hint: 'Bridge chạy trên PC (scripts/ai-bridge.mjs). Điện thoại chỉ gửi câu hỏi; tool chạy trên PC cạnh Perkeep.',
@@ -376,6 +381,11 @@ const I18N = {
     vault_del_fail: 'Could not delete the vault',
     vault_need_permanode: 'Only items (permanodes) can be added to a vault.',
     vault_app_only: 'The vault only hides files inside the app; the original files remain in Perkeep (Web/Jellyfin can still see them).',
+    vault_sync: 'Sync vaults',
+    vault_sync_running: 'Syncing…',
+    vault_sync_done: (n) => `Synced ${n} vault${n === 1 ? '' : 's'}`,
+    vault_sync_ok: 'Vaults are up to date',
+    vault_sync_fail: 'Could not sync vaults',
     ai_off: 'Bridge not connected',
     ai_title: 'AI assistant — bridge connection',
     ai_hint: 'The bridge runs on the PC (scripts/ai-bridge.mjs). The phone only sends questions; tools run on the PC next to Perkeep.',
@@ -518,6 +528,10 @@ const LS_ONBOARD = 'pk-onboarded-v1';
 const VAULT_KEY = 'pk-vaults-v1';
 const VAULT_TAG = 'pkvault';
 const VAULT_TAG_PREFIX = 'pkvault-';
+// Metadata vault (tên + salt + hash PBKDF2) lưu thành 1 mục Perkeep để
+// thiết bị/bản web khác đọc lại được. Không chứa mật khẩu gốc.
+const VAULT_META_TAG = 'pkvault-meta';
+const VAULT_META_TYPE = 'pk.vault';
 
 const seed = [{ id: 'local', name: 'Localhost', url: 'http://localhost:3179' }];
 function loadServers() {
@@ -734,8 +748,10 @@ function serverSort() {
 /** Mọi truy vấn thư viện chính ẩn file trong vault; vault tự query riêng. */
 function hideVaultExpr(expression) {
   const e = String(expression || '').trim();
+  // Ẩn cả file trong vault lẫn mục metadata vault (chỉ app đọc khi đồng bộ).
+  const hide = '-tag:pkvault -tag:pkvault-meta';
   if (/(^|\s)-tag:pkvault(\s|$)/.test(e)) return e;
-  return e ? `(${e}) -tag:pkvault` : '-tag:pkvault';
+  return e ? `(${e}) ${hide}` : hide;
 }
 
 async function query(expression, limit = 50, sort = '', cont = '', opts = {}) {
@@ -2611,6 +2627,130 @@ function saveVaults() {
   try { localStorage.setItem(VAULT_KEY, JSON.stringify(vaults)); } catch {}
   renderVaultState();
 }
+
+// ------------------------------------------------------------
+// Đồng bộ metadata vault lên Perkeep
+//   - 1 vault = 1 file JSON + 1 permanode tag "pkvault-meta".
+//   - File/tag của từng item vốn đã nằm trên Perkeep; phần thiếu trước đây
+//     chỉ là tên vault + salt/hash (localStorage). Lưu lên server để
+//     perkeep-web / máy khác mở được cùng danh sách vault.
+//   - Không lưu mật khẩu: chỉ salt + hash PBKDF2.
+// ------------------------------------------------------------
+function vaultMetaFileName(v) {
+  return `Vault ${sanitizeName(v.name) || v.id} [${v.id}].json`;
+}
+
+/** Ghi (hoặc cập nhật) metadata của 1 vault lên Perkeep. */
+async function pushVaultMeta(v) {
+  const text = JSON.stringify({
+    type: VAULT_META_TYPE,
+    version: 1,
+    id: v.id,
+    name: v.name,
+    salt: v.salt,
+    hash: v.hash,
+    iter: v.iter || 150000,
+    createdAt: v.createdAt || Date.now(),
+    updatedAt: new Date().toISOString()
+  }, null, 2);
+  const fileName = vaultMetaFileName(v);
+  const contentRef = await uploadBlobNamed(text, fileName);
+  const size = new TextEncoder().encode(text).length;
+  const schema = JSON.stringify({
+    camliType: 'file',
+    camliVersion: 1,
+    fileName,
+    parts: [{ blobRef: contentRef, size }],
+    size
+  });
+  const fileRef = blobRefOf(schema);
+  await uploadBlobText(fileRef, schema);
+
+  const isNew = !v.permaRef;
+  const permaRef = v.permaRef || await createPermanode();
+  await signClaim({ claimType: 'set-attribute', permaNode: permaRef, attribute: 'camliContent', value: fileRef });
+  await signClaim({ claimType: 'set-attribute', permaNode: permaRef, attribute: 'title', value: `Vault ${v.name}` });
+  await signClaim({ claimType: 'set-attribute', permaNode: permaRef, attribute: 'mimeType', value: 'application/json' });
+  await signClaim({ claimType: 'set-attribute', permaNode: permaRef, attribute: 'pkVaultId', value: v.id });
+  if (isNew) {
+    await signClaim({ claimType: 'add-attribute', permaNode: permaRef, attribute: 'tag', value: VAULT_META_TAG });
+    // Gắn thêm "pkvault" để bản app cũ / client chỉ biết tag này cũng ẩn metadata.
+    await signClaim({ claimType: 'add-attribute', permaNode: permaRef, attribute: 'tag', value: VAULT_TAG });
+  }
+  v.permaRef = permaRef;
+  v.metaFileRef = fileRef;
+  log(`vault meta: ${v.name} → ${permaRef.slice(0, 18)}…`);
+  return permaRef;
+}
+
+let vaultSyncBusy = false;
+
+/** Kéo metadata vault từ Perkeep, gộp theo id, rồi đẩy các vault còn local-only. */
+async function syncVaultsFromServer(opts = {}) {
+  if (vaultSyncBusy || !base()) return { pulled: 0, pushed: 0 };
+  vaultSyncBusy = true;
+  let pulled = 0;
+  let pushed = 0;
+  try {
+    const r = await query(`tag:${VAULT_META_TAG}`, 100, '', '', { vault: true });
+    const rows = (r.blobs || []).map((b) => ({ blob: b, meta: metaFor(b, r.description) }));
+    for (const row of rows) {
+      if (!row.meta.fileRef) continue;
+      let data = null;
+      try {
+        const res = await http(directUrl(row.meta.fileRef), { headers: authHeaders() });
+        if (res.ok && res.text) data = JSON.parse(res.text);
+      } catch (e) {
+        log(`vault meta read FAIL: ${e.message}`);
+      }
+      if (!data || data.type !== VAULT_META_TYPE || !data.id || !data.salt || !data.hash) continue;
+      const local = vaultById(data.id);
+      if (local) {
+        const changed = local.name !== (data.name || local.name)
+          || local.salt !== data.salt || local.hash !== data.hash;
+        local.name = data.name || local.name;
+        local.salt = data.salt;
+        local.hash = data.hash;
+        local.iter = Number(data.iter) || local.iter || 150000;
+        if (data.createdAt) local.createdAt = data.createdAt;
+        local.permaRef = row.blob;
+        local.metaFileRef = row.meta.fileRef;
+        if (changed) pulled++;
+      } else {
+        vaults.push({
+          id: data.id,
+          name: data.name || data.id,
+          salt: data.salt,
+          hash: data.hash,
+          iter: Number(data.iter) || 150000,
+          createdAt: data.createdAt || Date.now(),
+          permaRef: row.blob,
+          metaFileRef: row.meta.fileRef
+        });
+        pulled++;
+      }
+    }
+    // Vault tạo trước bản có đồng bộ (hoặc lần trước upload lỗi) chưa có permaRef.
+    for (const v of [...vaults]) {
+      if (v.permaRef) continue;
+      try {
+        await pushVaultMeta(v);
+        pushed++;
+      } catch (e) {
+        log(`vault meta push FAIL: ${e.message}`);
+        if (opts.throwOnError) throw e;
+      }
+    }
+    if (pulled || pushed) saveVaults();
+  } catch (e) {
+    log(`vault sync FAIL: ${e.message}`);
+    if (opts.throwOnError) throw e;
+  } finally {
+    vaultSyncBusy = false;
+  }
+  return { pulled, pushed };
+}
+
 function renderVaultState() {
   const sub = $('set-vault-sub');
   if (!sub) return;
@@ -2632,8 +2772,26 @@ function openVaultList() {
     <p class="meta">${esc(t('vault_hint'))}</p>
     ${vaults.length ? rows : `<p class="meta">${esc(t('vault_none'))}</p>`}
     <button class="rowbtn" id="vault-new">${icon('plus')}<span>${esc(t('vault_new'))}</span></button>
+    <button class="rowbtn" id="vault-sync">${icon('server')}<span>${esc(t('vault_sync'))}</span></button>
     <p class="meta" style="margin-top:10px">${esc(t('vault_app_only'))}</p>`);
   sheetBody.querySelector('#vault-new').onclick = () => { closeSheet(); openVaultCreateSheet(); };
+  const syncBtn = sheetBody.querySelector('#vault-sync');
+  syncBtn.onclick = async () => {
+    const label = syncBtn.querySelector('span');
+    syncBtn.disabled = true;
+    label.textContent = t('vault_sync_running');
+    try {
+      const r = await syncVaultsFromServer({ throwOnError: true });
+      const n = r.pulled + r.pushed;
+      snack(n ? t('vault_sync_done')(n) : t('vault_sync_ok'));
+      closeSheet();
+      openVaultList();
+    } catch (e) {
+      syncBtn.disabled = false;
+      label.textContent = t('vault_sync');
+      snack(t('vault_sync_fail') + ': ' + e.message);
+    }
+  };
   sheetBody.querySelectorAll('[data-v]').forEach((el) => {
     el.onclick = () => {
       const v = vaultById(el.dataset.v);
@@ -2681,6 +2839,11 @@ function openVaultCreateSheet(onCreated) {
       saveVaults();
       closeSheet();
       snack(t('vault_created'));
+      // Đẩy metadata lên server ngay; lỗi mạng thì lần mở app sau tự thử lại
+      // (v.permaRef chưa có nên syncVaultsFromServer sẽ đẩy lại).
+      pushVaultMeta(v)
+        .then(() => saveVaults())
+        .catch((e) => { log(`vault meta push FAIL: ${e.message}`); snack(t('vault_sync_fail')); });
       if (onCreated) await onCreated(v);
       else openVault(v);
     } catch (e) {
@@ -3008,6 +3171,11 @@ function openVaultDelete(v) {
         await setTag(it.blob, vaultTagOf(v), false);
         if (!other) await setTag(it.blob, VAULT_TAG, false);
       }
+      // Xoá luôn metadata trên server để máy/bản web khác không thấy vault này nữa.
+      if (v.permaRef) {
+        try { await deletePermanode(v.permaRef); }
+        catch (e) { log(`vault meta delete FAIL: ${e.message}`); }
+      }
       vaults = vaults.filter((x) => x.id !== v.id);
       vaultUnlocked.delete(v.id);
       saveVaults();
@@ -3163,7 +3331,14 @@ function renderSvcSheet() {
   html += `<button class="rowbtn" data-add>${icon('plus')}<span>${esc(t('svc_add').replace(/^\+\s*/, ''))}</span></button>`;
   openSheet(html);
   sheetBody.querySelectorAll('[data-pick]').forEach((b) => {
-    b.onclick = () => { activeId = b.dataset.pick; save(); renderSvcSub(); openSvcSheet(); reloadTab(currentTab()); };
+    b.onclick = () => {
+      activeId = b.dataset.pick;
+      save();
+      renderSvcSub();
+      openSvcSheet();
+      reloadTab(currentTab());
+      syncVaultsFromServer();
+    };
   });
   sheetBody.querySelectorAll('[data-edit]').forEach((b) => {
     b.onclick = () => svcEditor(b.dataset.edit);
@@ -3474,6 +3649,8 @@ function boot() {
   switchTab('t-home');
   loadHome();
   refreshUploads();
+  // Kéo metadata vault từ Perkeep (và đẩy vault tạo trước bản này lên server).
+  setTimeout(() => { syncVaultsFromServer(); }, 1500);
   // Nếu lần trước app bị crash, nhắc ngay để người dùng mở Chẩn đoán
   up.getLastCrash().then((c) => { if (c) snack(t('diag_crash_found')); }).catch(() => {});
   up.onProgress((job) => {

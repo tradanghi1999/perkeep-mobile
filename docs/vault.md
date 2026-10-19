@@ -23,6 +23,22 @@ Thiết kế đã duyệt: `docs/wireframe-vault.html` · link LAN: `http://192.
 - **Quên mật khẩu**: vẫn xoá được vault (gõ tên) để file hiện lại — không cần mật khẩu.
 - Mã **Sao lưu cấu hình** có `pk-vaults-v1` (metadata + hash); file/tag nằm trong Perkeep.
 
+## Đồng bộ metadata lên server (cho perkeep-web / máy khác)
+- Mỗi vault có **1 mục metadata** trên Perkeep: blob JSON + permanode gắn tag `pkvault-meta` (và `pkvault` để bản app cũ cũng ẩn).
+- JSON gồm: `type: "pk.vault"`, `id`, `name`, `salt`, `hash` (PBKDF2-SHA256), `iter`, `createdAt`, `updatedAt`. **Không có mật khẩu gốc.**
+- Lúc mở app: kéo `tag:pkvault-meta`, gộp theo `id`; vault tạo trước bản này (chưa có `permaRef`) được **tự đẩy lên** server.
+- Tạo vault mới: đẩy metadata ngay; lỗi mạng thì lần mở app sau tự thử lại.
+- Xoá vault: gỡ tag file + gửi `delete` claim cho permanode metadata.
+- Nút **Cài đặt → Vault → Đồng bộ vault** để chạy lại thủ công.
+- `pkvault-meta` cũng bị ẩn khỏi thư viện/AI/MCP như `pkvault`.
+- Web đọc bằng `listVaults()` trong `scripts/perkeep-lib.mjs` (hoặc tự query `tag:pkvault-meta` rồi tải JSON); file của vault vẫn query `tag:pkvault-<id>`.
+- Lưu ý: tên vault + salt/hash nay nằm trên server (ai đọc được blob cũng thấy), nhưng **không đủ để mở vault** nếu mật khẩu đủ mạnh.
+
+Kiểm tra nhanh trên máy chạy Perkeep:
+```powershell
+bun -e "import { listVaults } from './scripts/perkeep-lib.mjs'; console.log(await listVaults())"
+```
+
 ## Giới hạn
 - Đây là vault **cấp app** (ẩn + mật khẩu), **không mã hoá blob**.
 - Perkeep Web UI, Jellyfin và client khác vẫn thấy/thao tác file gốc.
@@ -33,6 +49,6 @@ Thiết kế đã duyệt: `docs/wireframe-vault.html` · link LAN: `http://192.
 
 ## File
 - `src/main.js`: UI/state vault, PBKDF2, add/remove/delete, query filter.
-- `scripts/perkeep-lib.mjs`: `hideVaultExpr`, `search()` mặc định ẩn vault.
+- `scripts/perkeep-lib.mjs`: `hideVaultExpr`, `search()` mặc định ẩn vault, `listVaults()` đọc metadata cho web/CLI.
 - `scripts/ai-bridge.mjs`: count `/ai/search` lọc vault.
 - `.opencode` MCP dùng `perkeep-lib` nên tự lọc.
